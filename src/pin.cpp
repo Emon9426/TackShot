@@ -64,6 +64,9 @@ struct PinWindow {
             winSizeW = ww; winSizeH = wh;
         }
         using namespace Gdiplus;
+        // 物理清零（关键！）：GDI+ 用全透明刷 FillRectangle 是混合操作、不清屏，
+        // 上一帧残影会与当前帧叠加（曾致"编辑条与入口菜单同时可见"缺陷）。
+        ZeroMemory(winBits, (SIZE_T)ww * wh * 4);
         Graphics g(winDc);
         g.SetSmoothingMode(SmoothingModeAntiAlias);
         g.SetInterpolationMode(InterpolationModeHighQualityBicubic);
@@ -126,6 +129,28 @@ struct PinWindow {
         }
 
         PremultiplyBits(winBits, ww, wh);
+
+        // 调试转储：环境变量 TACKSHOT_DEBUG_SHOT=1 时落盘当前帧（自动化验证用）
+        if (GetEnvironmentVariableW(L"TACKSHOT_DEBUG_SHOT", nullptr, 0)) {
+            DWORD hdrlen = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+            DWORD rowsz = (DWORD)ww * 4;
+            std::vector<BYTE> buf(hdrlen + rowsz * wh);
+            BITMAPFILEHEADER* fh = (BITMAPFILEHEADER*)buf.data();
+            BITMAPINFOHEADER* ih = (BITMAPINFOHEADER*)(buf.data() + sizeof(BITMAPFILEHEADER));
+            fh->bfType = 0x4D42; fh->bfOffBits = hdrlen; fh->bfSize = (DWORD)buf.size();
+            ih->biSize = sizeof(BITMAPINFOHEADER);
+            ih->biWidth = ww; ih->biHeight = -wh;
+            ih->biPlanes = 1; ih->biBitCount = 32; ih->biCompression = BI_RGB;
+            memcpy(buf.data() + hdrlen, winBits, (size_t)rowsz * wh);
+            HANDLE df = CreateFileW((g_exeDir + L"\\pinframe.bmp").c_str(),
+                                    GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
+                                    FILE_ATTRIBUTE_NORMAL, NULL);
+            if (df != INVALID_HANDLE_VALUE) {
+                DWORD wr = 0;
+                WriteFile(df, buf.data(), (DWORD)buf.size(), &wr, NULL);
+                CloseHandle(df);
+            }
+        }
 
         HDC sdc = GetDC(NULL);
         POINT src{ 0, 0 }; SIZE sz{ ww, wh };

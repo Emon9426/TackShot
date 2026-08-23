@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>钉图 TackShot · 轻量级 Windows 截图工具 需求规格说明书 V1.12</title>
+<title>钉图 TackShot · 轻量级 Windows 截图工具 需求规格说明书 V1.13</title>
 <style>
   :root{
     --accent:#2563eb; --accent-soft:#eff6ff; --text:#1f2937; --muted:#6b7280;
@@ -120,7 +120,7 @@
   <h1>轻量级 Windows 截图工具 · 需求规格说明书</h1>
   <div class="sub">产品名称：钉图 TackShot（2026-08-23 定名，原代号 ScreenShort 弃用；备选名 SnapTack，见 14.2 Q1）</div>
   <table>
-    <tr><th style="width:120px">文档版本</th><td>V1.12（草案 · 待评审）</td><th style="width:120px">发布日期</th><td>2026-08-23</td></tr>
+    <tr><th style="width:120px">文档版本</th><td>V1.13（草案 · 待评审）</td><th style="width:120px">发布日期</th><td>2026-08-23</td></tr>
     <tr><th>文档状态</th><td>初稿，供评审与开发估算使用</td><th>编制方式</th><td>基于用户原始需求分析、完善并结构化</td></tr>
     <tr><th>目标平台</th><td>Windows 10 (1809+) / Windows 11，x64</td><th>分发形式</th><td>ZIP 压缩包（绿色免安装）</td></tr>
   </table>
@@ -972,7 +972,8 @@
   <tr><td>2026-08-23</td><td>UI 优化</td><td>① 应用图标重绘：方头图钉（琥珀钉头+白描边+浅色针杆），消除"圆+柄"的放大镜混淆；托盘=运行时矢量绘制，exe 文件图标=tools/make_icon.py 生成 res/app.ico（7 尺寸）经 windres 嵌入（已验证 256/32px 条目存在于二进制）；② 工具条按钮悬停放大动画：160ms ease-out 至 1.3 倍，40ms 定时器补绘（截图工具条与贴图两处），提示当前点击目标</td></tr>
   <tr><td>2026-08-23</td><td>文档/发布</td><td>README 重构：中文正文在前 + 完整英文版置于文档最下方 + 作者联系方式 emonzhang3438@outlook.com（欢迎需求与 Bug 反馈）；release/ 移出 .gitignore 纳入仓库——用户下载单个文件夹即可使用</td></tr>
   <tr><td>2026-08-23</td><td>新增/完成</td><td>FR-3.15：马赛克三种涂抹样式（方格马赛克 / 高斯模糊[块内5点均值] / 纯黑涂抹[最强隐私]），样式经 ▾角标或右键在二级菜单切换；粒度与线宽解耦，马赛克工具激活时滚轮调节 6–80px（贴图编辑态滚轮临时由缩放切换为粒度，经用户确认），光标旁 HUD 短暂显示当前样式与粒度；样式与粒度随每笔标注持久化；截图编辑器与贴图就地编辑两处同步支持</td></tr>
-  <tr><td>2026-08-23</td><td>缺陷修复</td><td>贴图编辑态下入口菜单（带"编辑"按钮）违规重现：进入编辑时新增硬不变量（强制 menuVisible=false、清零 hover、击毙 TID_HOVER/TID_HIDE 全部在途定时器——旧代码不清理在途定时器存在竞态窗口）；插桩日志+脚本复现验证：完整流程（悬停→编辑→点击图片→拖动→再悬停）入口菜单零违规浮现</td></tr></table>
+  <tr><td>2026-08-23</td><td>缺陷修复</td><td>贴图编辑态下入口菜单（带"编辑"按钮）违规重现：进入编辑时新增硬不变量（强制 menuVisible=false、清零 hover、击毙 TID_HOVER/TID_HIDE 全部在途定时器——旧代码不清理在途定时器存在竞态窗口）；插桩日志+脚本复现验证：完整流程（悬停→编辑→点击图片→拖动→再悬停）入口菜单零违规浮现</td></tr>
+  <tr><td>2026-08-23</td><td>缺陷修复</td><td>「编辑工具条与入口菜单重叠」真根因定位并修复（V1.12 状态互斥修复未消除用户实际症状，因残影与状态无关）：贴图渲染原以 GDI+ 全透明刷 FillRectangle 作"清屏"，但该操作是 SrcOver 混合、对全透明色等于空操作，跨状态像素永久残留——编辑条（宽）残影留于两侧、入口菜单（居中窄）绘制其上，视觉即"两菜单同屏重叠"。修复＝每帧渲染前 ZeroMemory 物理清零窗口位图（pin.cpp）；新增贴图帧转储（TACKSHOT_DEBUG_SHOT=1 → dist/pinframe.bmp）供像素级验证；回归脚本 tools/verify_pin_clear.py：悬浮区 alpha 总和 基线 0 → 菜单显示 1,103,749 → 移开隐藏后归 0（PASS，无残影）</td></tr></table>
 
 <h2 id="s14">14. 附录 <span class="en">Appendix</span></h2>
 
@@ -1030,7 +1031,7 @@
 </ul>
 
 <footer>
-  钉图 TackShot · 需求规格说明书 V1.12（草案） · 2026-08-23 · 本文档基于用户原始需求分析完善生成，供评审使用
+  钉图 TackShot · 需求规格说明书 V1.13（草案） · 2026-08-23 · 本文档基于用户原始需求分析完善生成，供评审使用
 </footer>
 
 </div>
