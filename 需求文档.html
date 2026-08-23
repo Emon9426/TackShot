@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>钉图 TackShot · 轻量级 Windows 截图工具 需求规格说明书 V1.5</title>
+<title>钉图 TackShot · 轻量级 Windows 截图工具 需求规格说明书 V1.6</title>
 <style>
   :root{
     --accent:#2563eb; --accent-soft:#eff6ff; --text:#1f2937; --muted:#6b7280;
@@ -120,11 +120,11 @@
   <h1>轻量级 Windows 截图工具 · 需求规格说明书</h1>
   <div class="sub">产品名称：钉图 TackShot（2026-08-23 定名，原代号 ScreenShort 弃用；备选名 SnapTack，见 14.2 Q1）</div>
   <table>
-    <tr><th style="width:120px">文档版本</th><td>V1.5（草案 · 待评审）</td><th style="width:120px">发布日期</th><td>2026-08-23</td></tr>
+    <tr><th style="width:120px">文档版本</th><td>V1.6（草案 · 待评审）</td><th style="width:120px">发布日期</th><td>2026-08-23</td></tr>
     <tr><th>文档状态</th><td>初稿，供评审与开发估算使用</td><th>编制方式</th><td>基于用户原始需求分析、完善并结构化</td></tr>
     <tr><th>目标平台</th><td>Windows 10 (1809+) / Windows 11，x64</td><th>分发形式</th><td>ZIP 压缩包（绿色免安装）</td></tr>
   </table>
-  <p style="font-size:12.5px;color:var(--muted);text-align:center;margin:10px 0 0;">修订记录：V1.0（2026-08-23）初稿 · V1.1（2026-08-23）新增 4.9 功能需求跟踪总表（RTM）与第 5 章 UI 界面设计 · V1.2（2026-08-23）定名「钉图 TackShot」；默认完成动作改为「复制并贴图」；新增贴图悬浮菜单与就地编辑（FR-4.10 / FR-4.11 新增、FR-4.8 升级 P0、新增 5.7 UI-7）· V1.3（2026-08-23）开放问题全部定案：MIT 开源（Q2）、技术栈定 C++ 方案 A（Q3）、x64 首发零依赖 + ARM64 可选（Q4）、GitHub Releases + HTML 图文手册（Q5）、范围外功能不排期（Q6）；功能清单独立成章（原 4.9 → 第 13 章）· V1.4（2026-08-23）UI 优化：工具条按钮加大（工具 44 / 动作 46 基准）并全 UI 按显示器 DPI 等比缩放；选区控制点、坐标标签同步放大 · V1.5（2026-08-23）新增 FR-1.11 选区白色高亮、FR-3.14 工具条悬停提示；工具条整体缩小至 1/3 并升级彩色图标（已实施，2026-08-23）</p>
+  <p style="font-size:12.5px;color:var(--muted);text-align:center;margin:10px 0 0;">修订记录：V1.0（2026-08-23）初稿 · V1.1（2026-08-23）新增 4.9 功能需求跟踪总表（RTM）与第 5 章 UI 界面设计 · V1.2（2026-08-23）定名「钉图 TackShot」；默认完成动作改为「复制并贴图」；新增贴图悬浮菜单与就地编辑（FR-4.10 / FR-4.11 新增、FR-4.8 升级 P0、新增 5.7 UI-7）· V1.3（2026-08-23）开放问题全部定案：MIT 开源（Q2）、技术栈定 C++ 方案 A（Q3）、x64 首发零依赖 + ARM64 可选（Q4）、GitHub Releases + HTML 图文手册（Q5）、范围外功能不排期（Q6）；功能清单独立成章（原 4.9 → 第 13 章）· V1.4（2026-08-23）UI 优化：工具条按钮加大（工具 44 / 动作 46 基准）并全 UI 按显示器 DPI 等比缩放；选区控制点、坐标标签同步放大 · V1.5（2026-08-23）新增 FR-1.11 选区白色高亮、FR-3.14 工具条悬停提示；工具条整体缩小至 1/3 并升级彩色图标（已实施，2026-08-23）· V1.6（2026-08-23）修复 FR-3.14 悬停提示不触发缺陷（静止悬停无重绘）；FR-4.1 贴图改为锚定确认时鼠标位置；新增 14.4 技术探索（窗口吸附 / GitHub Models·OCR 可行性，仅研究未实施）</p>
 </header>
 
 <nav class="toc">
@@ -322,7 +322,7 @@
 <h3>FR-4 贴图（固定显示在屏幕最前端）</h3>
 <table>
   <tr><th style="width:76px">编号</th><th style="width:170px">需求</th><th>描述</th><th style="width:64px">优先级</th></tr>
-  <tr><td class="id">FR-4.1</td><td>一键贴图</td><td><strong>截图确认后默认自动贴图</strong>（与复制同时进行，见 FR-5.6）；编辑器中也可手动点"贴图"按钮，或对剪贴板图片使用贴图热键；生成无边框置顶窗口显示该图。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-4.1</td><td>一键贴图</td><td><strong>截图确认后默认自动贴图</strong>（与复制同时进行，见 FR-5.6）；贴图中心锚定确认时刻的鼠标位置并夹紧工作区（V1.6）；编辑器中也可手动点"贴图"按钮，或对剪贴板图片使用贴图热键；生成无边框置顶窗口显示该图。</td><td><span class="badge b0">P0</span></td></tr>
   <tr><td class="id">FR-4.2</td><td>窗口置顶</td><td>贴图窗口 Always-on-Top，始终位于其他窗口之上（可在设置中全局关闭置顶）。</td><td><span class="badge b0">P0</span></td></tr>
   <tr><td class="id">FR-4.3</td><td>拖动</td><td>按住鼠标左键任意拖动贴图位置。</td><td><span class="badge b0">P0</span></td></tr>
   <tr><td class="id">FR-4.4</td><td>滚轮缩放</td><td>以鼠标位置为中心缩放（10%–800%），图像采用高质量插值不闪变。</td><td><span class="badge b0">P0</span></td></tr>
@@ -912,7 +912,7 @@
   <tr><td class="id">FR-3.12</td><td>编辑器</td><td>键盘约定（Enter / Esc）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-3.13</td><td>编辑器</td><td>工具快捷键（R / A / B / T / M…）</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
   <tr><td class="id">FR-3.14</td><td>编辑器</td><td>工具条悬停提示（名称+快捷键）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>V1.5 新增并实施</td></tr>
-  <tr><td class="id">FR-4.1</td><td>贴图</td><td>一键贴图</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>确认后默认自动贴图（V1.2）</td></tr>
+  <tr><td class="id">FR-4.1</td><td>贴图</td><td>一键贴图</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>确认后默认自动贴图；V1.6 锚定鼠标位置</td></tr>
   <tr><td class="id">FR-4.2</td><td>贴图</td><td>窗口置顶（Topmost）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-4.3</td><td>贴图</td><td>拖动移动</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-4.4</td><td>贴图</td><td>滚轮缩放（10%–800%）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
@@ -956,7 +956,10 @@
   <tr><td>2026-08-23</td><td>新增</td><td>V1.5 需求确认（用户已答复澄清问题）：新增 FR-1.11（拖动选区白色半透明高亮，松开恢复原图清晰显示）、FR-3.14（工具条悬停提示：功能名+快捷键）；待用户许可后实施</td></tr>
   <tr><td>2026-08-23</td><td>规格变更</td><td>工具条整体缩小至 V1.4 的 1/3（工具/动作按钮 16px、色板/线宽 12px、面板高 20px 基准，仍随 DPI 缩放）；图标升级为彩色填充+粗线条点缀色；因小尺寸下文字标签不可读，功能名改由悬停提示（FR-3.14）承担；FR-4.8/4.10 贴图就地编辑交互维持现状（用户确认"先试试现状"）</td></tr>
   <tr><td>2026-08-23</td><td>完成</td><td>V1.5 UI 优化实施完成（构建+冒烟 3/3，干净退出）：FR-1.11 选区白色高亮、FR-3.14 工具条悬停提示置「已完成」；工具条缩至 1/3 + 彩色填充图标已实现（修复退出段错误：GDI+ 静态对象析构顺序）</td></tr>
-  <tr><td>2026-08-23</td><td>缺陷修复</td><td>修复"拖拽期间选区无任何可视化反馈"缺陷：初选拖动时 selValid=false，选区渲染（白色高亮/蓝边框/尺寸标签）整体被错误跳过（V1.5 首次实现为死代码）。修复后经程序自渲染帧像素级验证：遮罩外亮度 133 vs 选区内 235（1.83 倍对比）、边缘为规格蓝 #3B82F6；新增环境变量 TACKSHOT_DEBUG_SHOT=1 帧转储用于自动化验证</td></tr></table>
+  <tr><td>2026-08-23</td><td>缺陷修复</td><td>修复"拖拽期间选区无任何可视化反馈"缺陷：初选拖动时 selValid=false，选区渲染（白色高亮/蓝边框/尺寸标签）整体被错误跳过（V1.5 首次实现为死代码）。修复后经程序自渲染帧像素级验证：遮罩外亮度 133 vs 选区内 235（1.83 倍对比）、边缘为规格蓝 #3B82F6；新增环境变量 TACKSHOT_DEBUG_SHOT=1 帧转储用于自动化验证</td></tr>
+  <tr><td>2026-08-23</td><td>缺陷修复</td><td>修复 FR-3.14 悬停提示不触发：静止悬停不产生重绘事件（无 WM_PAINT 则提示条永不绘制），新增 320ms 定时器补一次重绘（截图工具条与贴图两处）；修复后悬停约 0.3 秒即显示"功能名 (快捷键)"</td></tr>
+  <tr><td>2026-08-23</td><td>变更</td><td>FR-4.1：确认后贴图中心锚定当时鼠标位置（移除级联偏移，夹紧工作区）</td></tr>
+  <tr><td>2026-08-23</td><td>研究</td><td>新增 14.4 技术探索：窗口吸附（Win32 可行，2–3 天）；"接入 Copilot"不可行，替代路线 GitHub Models API / Windows.Media.Ocr / Ollama 分析完毕（仅研究，未实施、未纳入范围）</td></tr></table>
 
 <h2 id="s14">14. 附录 <span class="en">Appendix</span></h2>
 
@@ -985,6 +988,26 @@
 </table>
 
 <h3>14.3 参考资料</h3>
+<h3>14.4 技术探索（2026-08-23，仅可行性研究，未实施）</h3>
+<h4>A. 窗口自动识别与吸附（支撑 FR-1.3 活动窗口截图）</h4>
+<p><strong>结论：完全可行</strong>，纯 Win32 实现约 2–3 天，无需第三方库：</p>
+<ul>
+  <li>光标下窗口定位：<code>WindowFromPoint</code> → <code>GetAncestor(GA_ROOT)</code> 取顶层窗口；</li>
+  <li>精确边框（剔除 Aero 阴影）：<code>DwmGetWindowAttribute(DWMWA_EXTENDED_FRAME_BOUNDS)</code>，遮罩层据此画高亮预览框，点击即整窗截取；</li>
+  <li>窗口位图捕获：<code>PrintWindow(PW_RENDERFULLCONTENT)</code>（Win 8.1+，兼容 Chrome/Electron 等硬件加速窗口），退化路径 BitBlt；</li>
+  <li>细节：以 <code>DWMWA_CLOAKED</code> 过滤挂起的 UWP 窗口；最大化/多屏混合 DPI 由现有 Per-Monitor V2 基础天然覆盖。</li>
+</ul>
+<h4>B. "接入 GitHub Copilot" 与 AI 能力（OCR 等）</h4>
+<table>
+  <tr><th style="width:210px">路线</th><th>可行性</th><th>要点</th></tr>
+  <tr><td>GitHub Copilot 本体</td><td>❌ 不可行</td><td>Copilot 仅面向 IDE 插件生态（VS Code/JetBrains），无面向第三方桌面应用的公开 API</td></tr>
+  <tr><td>GitHub Models API（同账号体系）</td><td>✅ 可行</td><td>OpenAI 兼容协议 + PAT 鉴权；含 GPT-4o 级视觉模型，截图直发多模态模型即可实现 OCR/问答/翻译，无需本地 OCR；代价：联网并上传截图——与"默认离线"原则冲突，必须显式 opt-in + 用户自备 PAT</td></tr>
+  <tr><td>Windows.Media.Ocr（本地离线）</td><td>✅ 最优解</td><td>操作系统自带 WinRT 组件（C++/WinRT 调用），离线、免费、零体积零依赖，印刷体识别率足够——最契合本项目"轻量离线"哲学</td></tr>
+  <tr><td>本地 LLM（Ollama 等）</td><td>✅ 可行</td><td>OpenAI 兼容协议天然同构：同一接入层仅需换端点即可在云端（GitHub Models）与本地（Ollama）之间切换</td></tr>
+</table>
+<p><strong>建议架构（若未来采纳）</strong>：OCR 采用 Windows.Media.Ocr（离线优先）；AI 面板做成可选模块，统一走 OpenAI 兼容协议、端点与令牌用户可配、默认关闭。许可证面：均为 API 调用与系统组件，无代码引入，合规无虞。</p>
+
+
 <ul>
   <li>Greenshot 官网（GPL 授权说明）：<a href="https://greenshot.org" target="_blank" rel="noopener">https://greenshot.org</a></li>
   <li>Snipaste 官网（授权与商用政策）：<a href="https://www.snipaste.com" target="_blank" rel="noopener">https://www.snipaste.com</a> · <a href="https://www.snipaste.com/eula.html" target="_blank" rel="noopener">EULA</a></li>
@@ -994,7 +1017,7 @@
 </ul>
 
 <footer>
-  钉图 TackShot · 需求规格说明书 V1.5（草案） · 2026-08-23 · 本文档基于用户原始需求分析完善生成，供评审使用
+  钉图 TackShot · 需求规格说明书 V1.6（草案） · 2026-08-23 · 本文档基于用户原始需求分析完善生成，供评审使用
 </footer>
 
 </div>

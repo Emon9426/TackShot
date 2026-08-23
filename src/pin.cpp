@@ -4,7 +4,7 @@
 namespace {
 
 const UINT WM_PRUNE = WM_APP + 3;
-enum { TID_HOVER = 1, TID_HIDE = 2 };
+enum { TID_HOVER = 1, TID_HIDE = 2, TID_TIP = 3 };
 const wchar_t* kPinCls = L"TackShotPin";
 
 struct PinWindow {
@@ -293,7 +293,12 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         int hov = 0;
         if (p->editing) hov = p->bar.Hit(x, y);
         else if (p->menuVisible) hov = p->menu.Hit(x, y);
-        if (hov != p->hover) { p->hover = hov; p->hoverSince = GetTickCount64(); p->Render(); }
+        if (hov != p->hover) {
+            p->hover = hov; p->hoverSince = GetTickCount64();
+            KillTimer(wnd, TID_TIP);
+            if (hov) SetTimer(wnd, TID_TIP, 320, NULL);   // 静止悬停补重绘以显示提示
+            p->Render();
+        }
         if (!p->menuVisible && !p->editing) SetTimer(wnd, TID_HOVER, 330, NULL);
         if (p->shapeDrag) {
             POINT ip = p->ImgPt(x, y);
@@ -320,6 +325,9 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         } else if (wp == TID_HIDE) {
             KillTimer(wnd, TID_HIDE);
             if (!p->editing) { p->menuVisible = false; p->Render(); }
+        } else if (wp == TID_TIP) {
+            KillTimer(wnd, TID_TIP);
+            if (p->hover) p->Render();
         }
         break; }
     case WM_MOUSELEAVE: {
@@ -435,9 +443,10 @@ void CreatePin(HBITMAP src) {
 
     int ww = (int)(iw * p->zoom) + 2, wh = (int)(ih * p->zoom) + 2;
     POINT cp; GetCursorPos(&cp);
-    int x = cp.x - ww / 2, y = cp.y - 24;
-    static int cascade = 0;
-    x += (cascade % 5) * 18; y += (cascade % 5) * 18; cascade++;
+    // FR-4.1（V1.6）：贴图中心锚定确认时的鼠标位置，并夹紧在工作区内
+    int x = cp.x - ww / 2, y = cp.y - wh / 2;
+    x = std::max<int>(avail.left, std::min<int>(x, avail.right - ww));
+    y = std::max<int>(avail.top, std::min<int>(y, avail.bottom - wh));
 
     p->wnd = CreateWindowExW(WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_TOOLWINDOW,
                              kPinCls, L"", WS_POPUP,

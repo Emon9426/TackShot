@@ -22,6 +22,8 @@ struct Session {
     bool  shapeDrag = false;
 } s;
 
+enum { TID_TIP = 3 };   // 悬停提示定时器：静止 320ms 后补一次重绘
+
 RECT Local(RECT r) { OffsetRect(&r, -s.vx, -s.vy); return r; }
 POINT LocalPt(POINT p) { return { p.x - s.vx, p.y - s.vy }; }
 RECT NormSel(POINT a, POINT b) {
@@ -310,7 +312,13 @@ LRESULT CALLBACK CapProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         int x = GET_X_LPARAM(lp), y = GET_Y_LPARAM(lp);
         POINT sp{ x + s.vx, y + s.vy };
         int hov = (s.phase == 1 && s.selValid) ? s.tb.Hit(x, y) : 0;
-        if (hov != s.hover) { s.hover = hov; s.hoverSince = GetTickCount64(); Invalidate(); }
+        if (hov != s.hover) {
+            s.hover = hov; s.hoverSince = GetTickCount64();
+            KillTimer(wnd, TID_TIP);
+            // 静止悬停不产生重绘事件，需定时器在 320ms 后补一次重绘，提示条才会出现
+            if (hov) SetTimer(wnd, TID_TIP, 320, NULL);
+            Invalidate();
+        }
         if (s.lbtn) {
             if (s.mode == 0) { s.sel = NormSel(s.down, sp); ClampSel(s.sel); }
             else if (s.mode == 1) {
@@ -407,6 +415,9 @@ LRESULT CALLBACK CapProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
     case WM_RBUTTONDOWN:
         Cancel();
         break;
+    case WM_TIMER:
+        if (wp == TID_TIP) { KillTimer(wnd, TID_TIP); Invalidate(); }
+        return 0;
     case WM_KEYDOWN: {
         if (TextEntryActive()) break;
         if (wp == VK_ESCAPE) { Cancel(); return 0; }
