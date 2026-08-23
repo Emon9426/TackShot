@@ -61,16 +61,35 @@ void DrawShape(Graphics& g, const Shape& s, Bitmap* base, POINT baseOff) {
     case Tool::Mosaic: {
         if (!base) break;
         int bw = (int)base->GetWidth(), bh = (int)base->GetHeight();
-        int blk = std::max(4, (int)(s.penW * 5.f));
+        if (s.mStyle == 2) {                     // 纯黑涂抹：最强隐私
+            SolidBrush b(Color(255, 10, 10, 10));
+            g.FillRectangle(&b, rc);
+            break;
+        }
+        int blk = std::max(4, s.mSize);
+        auto clampx = [&](int v) { return v < 0 ? 0 : (v >= bw ? bw - 1 : v); };
+        auto clampy = [&](int v) { return v < 0 ? 0 : (v >= bh ? bh - 1 : v); };
         for (int y = rc.Y; y < rc.Y + rc.Height; y += blk) {
             for (int x = rc.X; x < rc.X + rc.Width; x += blk) {
-                int sx = baseOff.x + x + blk / 2; if (sx >= bw) sx = bw - 1; if (sx < 0) sx = 0;
-                int sy = baseOff.y + y + blk / 2; if (sy >= bh) sy = bh - 1; if (sy < 0) sy = 0;
-                Color pc; base->GetPixel(sx, sy, &pc);
-                SolidBrush b(pc);
                 int w = std::min(blk, rc.X + rc.Width - x);
                 int h = std::min(blk, rc.Y + rc.Height - y);
-                if (w > 0 && h > 0) g.FillRectangle(&b, x, y, w, h);
+                if (w <= 0 || h <= 0) continue;
+                Color pc(255, 0, 0, 0);
+                if (s.mStyle == 1) {             // 模糊：块内 5 点均值
+                    int r = 0, gg = 0, bb = 0;
+                    const int off5[5][2] = { {w/4,h/4},{3*w/4,h/4},{w/2,h/2},{w/4,3*h/4},{3*w/4,3*h/4} };
+                    for (auto& p5 : off5) {
+                        Color c2; base->GetPixel(clampx(baseOff.x + x + p5[0]),
+                                                 clampy(baseOff.y + y + p5[1]), &c2);
+                        r += c2.GetR(); gg += c2.GetG(); bb += c2.GetB();
+                    }
+                    pc = Color(255, r / 5, gg / 5, bb / 5);
+                } else {                          // 方格：中心单像素
+                    base->GetPixel(clampx(baseOff.x + x + w / 2),
+                                   clampy(baseOff.y + y + h / 2), &pc);
+                }
+                SolidBrush b(pc);
+                g.FillRectangle(&b, x, y, w, h);
             }
         }
         break;
@@ -382,6 +401,16 @@ void Toolbar::Draw(HDC dc, const Editor* ed, int hover, TbMode mode, float hover
         if (active) { SolidBrush ab(Color(255, 37, 99, 235)); g.FillRectangle(&ab, r); }
         else if (hov) { SolidBrush hb(Color(70, 51, 65, 85)); g.FillRectangle(&hb, r); }
         Glyph(g, b.id, r, ed);
+        // 马赛克按钮：右下角 ▾ 角标提示有样式二级菜单
+        if (b.id == TB_MOSAIC) {
+            PointF p1(r.GetRight() - 4.f, r.GetBottom() - 5.f);
+            PointF p2(r.GetRight() - 8.f, r.GetBottom() - 5.f);
+            PointF p3(r.GetRight() - 6.f, r.GetBottom() - 2.f);
+            GraphicsPath tp;
+            tp.AddLine(p1, p2); tp.AddLine(p2, p3); tp.CloseFigure();
+            SolidBrush tb2(Color(255, 148, 163, 184));
+            g.FillPath(&tb2, &tp);
+        }
     }
 }
 
@@ -487,6 +516,9 @@ const wchar_t* TbName(int id) {
     case TB_ZOOMIN: return L"放大（也可滚轮）";
     case TB_OPAQUE: return L"透明度（Ctrl+滚轮）";
     case TB_CLOSE: return L"关闭（Esc / 双击）";
+    case TB_MS_MOSAIC: return L"方格马赛克";
+    case TB_MS_BLUR: return L"高斯模糊";
+    case TB_MS_BLACK: return L"纯黑涂抹";
     default: return L"";
     }
 }
@@ -511,4 +543,90 @@ void DrawTooltip(Gdiplus::Graphics& g, POINT pt, const RECT& clip,
     g.DrawRectangle(&bp, x, y, bw, bh);
     SolidBrush tb(0xFFF1F5F9);
     g.DrawString(text, -1, &f, PointF(x + pad, y + pad * 0.6f), &tb);
+}
+
+// ================= 马赛克样式二级菜单（FR-3.15） =================
+void MosaicFlyout::Layout(const RECT& anchorBtn, const RECT& clip, float scale) {
+    auto S = [scale](float v) { return (int)(v * scale + 0.5f); };
+    int w = S(104), rowH = S(22), h = rowH * 3 + S(8);
+    int x = anchorBtn.left;
+    int y = anchorBtn.bottom + S(4);
+    if (x + w > clip.right - 4) x = clip.right - 4 - w;
+    if (x < clip.left + 4) x = clip.left + 4;
+    if (y + h > clip.bottom - 4) y = anchorBtn.top - S(4) - h;
+    if (y < clip.top + 4) y = clip.top + 4;
+    bar = { x, y, x + w, y + h };
+}
+
+void MosaicFlyout::Draw(HDC dc, const Editor& ed, float scale) const {
+    using namespace Gdiplus;
+    if (!visible) return;
+    Graphics g(dc);
+    g.SetSmoothingMode(SmoothingModeAntiAlias);
+    INT fx = (INT)bar.left, fy = (INT)bar.top;
+    INT fw = (INT)(bar.right - bar.left), fh = (INT)(bar.bottom - bar.top);
+    SolidBrush bg(Color(243, 15, 23, 42));
+    g.FillRectangle(&bg, fx, fy, fw, fh);
+    Pen bp(Color(255, 51, 65, 85), 1.f);
+    g.DrawRectangle(&bp, fx, fy, fw, fh);
+    static const int ids[3] = { TB_MS_MOSAIC, TB_MS_BLUR, TB_MS_BLACK };
+    FontFamily ff(L"Segoe UI");
+    Font f(&ff, 12.f * scale, FontStyleRegular, UnitPixel);
+    auto S = [scale](float v) { return (INT)(v * scale + 0.5f); };
+    INT rowH = S(22);
+    for (int i = 0; i < 3; ++i) {
+        INT y = fy + S(4) + i * rowH;
+        bool sel = (ed.mosaicStyle == i);
+        if (sel) {
+            SolidBrush hb(Color(255, 37, 99, 235));
+            g.FillRectangle(&hb, fx + S(3), y, fw - S(6), rowH - S(2));
+        }
+        if (sel) {
+            SolidBrush dot(0xFF60A5FA);
+            g.FillEllipse(&dot, fx + S(8), y + rowH / 2 - S(4), S(7), S(7));
+        }
+        SolidBrush tbc(Color(255, 241, 245, 249));
+        g.DrawString(TbName(ids[i]), -1, &f,
+                     PointF((REAL)(fx + S(20)), (REAL)(y + S(4))), &tbc);
+    }
+}
+
+int MosaicFlyout::Hit(int x, int y) const {
+    if (!visible || !PtInRect(&bar, { x, y })) return 0;
+    // 三等分命中（与 Draw 的行距一致近似）
+    int rowH = (bar.bottom - bar.top) / 3;
+    int idx = (y - bar.top) / rowH;
+    if (idx < 0) idx = 0;
+    if (idx > 2) idx = 2;
+    static const int ids[3] = { TB_MS_MOSAIC, TB_MS_BLUR, TB_MS_BLACK };
+    return ids[idx];
+}
+
+void DrawSizeHud(Gdiplus::Graphics& g, POINT pt, const Editor& ed, float scale) {
+    using namespace Gdiplus;
+    wchar_t t[48];
+    if (ed.mosaicStyle == 2) swprintf_s(t, 48, L"纯黑涂抹");
+    else swprintf_s(t, 48, L"%s %dpx",
+                    ed.mosaicStyle == 1 ? L"模糊" : L"方格", ed.mosaicSize);
+    FontFamily ff(L"Segoe UI");
+    Font f(&ff, 13.f * scale, FontStyleRegular, UnitPixel);
+    RectF bb; StringFormat sf;
+    g.MeasureString(t, -1, &f, PointF(0, 0), &sf, &bb);
+    float x = pt.x + 14 * scale, y = pt.y - bb.Height - 10 * scale;
+    SolidBrush bg(Color(243, 15, 23, 42));
+    g.FillRectangle(&bg, x - 6, y - 4, bb.Width + 12, bb.Height + 8);
+    Pen bp(0xFF334155, 1.f);
+    g.DrawRectangle(&bp, x - 6, y - 4, bb.Width + 12, bb.Height + 8);
+    SolidBrush tbc(0xFFF1F5F9);
+    g.DrawString(t, -1, &f, PointF(x, y), &tbc);
+}
+
+RECT MosaicCaretZone(const Toolbar& tb) {
+    for (auto& b : tb.btns)
+        if (b.id == TB_MOSAIC) {
+            RECT z = b.r;
+            z.left = z.right - 10; z.top = z.bottom - 10;
+            return z;
+        }
+    return RECT{ 0, 0, 0, 0 };
 }

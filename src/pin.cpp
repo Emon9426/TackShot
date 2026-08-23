@@ -6,7 +6,7 @@
 namespace {
 
 const UINT WM_PRUNE = WM_APP + 3;
-enum { TID_HOVER = 1, TID_HIDE = 2, TID_TIP = 3, TID_ANIM = 4 };
+enum { TID_HOVER = 1, TID_HIDE = 2, TID_TIP = 3, TID_ANIM = 4, TID_HUD = 5 };
 const wchar_t* kPinCls = L"TackShotPin";
 const int BORDER = 2;      // 贴图黑色边框宽度
 const int STRIP_GAP = 6;   // 工具条与图片间距（逻辑 px）
@@ -32,6 +32,8 @@ struct PinWindow {
 
     Toolbar menu;      // 悬浮菜单
     Toolbar bar;       // 就地编辑工具条
+    MosaicFlyout flyout;   // 马赛克样式二级菜单（编辑态）
+    ULONGLONG sizeHudUntil = 0;
     Editor  ed;
     int     hover = 0;
     ULONGLONG hoverSince = 0;
@@ -105,6 +107,22 @@ struct PinWindow {
             RECT wr; GetWindowRect(wnd, &wr);
             DrawTooltip(g, { cp.x - wr.left, cp.y - wr.top },
                         RECT{ 0, 0, ww, wh }, TbName(hover), sc);
+        }
+
+        // 马赛克样式二级菜单与粒度 HUD（FR-3.15，仅编辑态）
+        if (editing && flyout.visible) {
+            for (auto& b : bar.btns)
+                if (b.id == TB_MOSAIC) {
+                    flyout.Layout(b.r, RECT{ 0, 0, ww, wh }, sc);
+                    break;
+                }
+            flyout.Draw(winDc, ed, sc);
+        }
+        if (editing && ed.cur == Tool::Mosaic && sizeHudUntil &&
+            GetTickCount64() < sizeHudUntil) {
+            POINT cp; GetCursorPos(&cp);
+            RECT wr; GetWindowRect(wnd, &wr);
+            DrawSizeHud(g, { cp.x - wr.left, cp.y - wr.top }, ed, sc);
         }
 
         PremultiplyBits(winBits, ww, wh);
@@ -250,9 +268,16 @@ void ApplyEdit(PinWindow* p) {
 void OnMenu(PinWindow* p, int id) {
     switch (id) {
     case TB_EDIT:
-        p->editing = true; p->menuVisible = false;
+        p->editing = true;
+        p->menuVisible = false;          // 硬不变量：编辑态下入口菜单必须隐藏
+        p->hover = 0;
+        if (p->wnd) {
+            KillTimer(p->wnd, TID_HOVER);
+            KillTimer(p->wnd, TID_HIDE);
+        }
         p->ed = Editor{};
         SetFocus(p->wnd);
+        Log(L"进入贴图编辑（入口菜单强制隐藏）");
         break;
     case TB_COPYIMG:
         BitmapToClipboard(p->wnd, p->img);
@@ -327,7 +352,33 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
             if (id) { OnMenu(p, id); break; }
         }
         if (p->editing) {
+            // 马赛克样式二级菜单（FR-3.15）
+            if (p->flyout.visible) {
+                int ms = p->flyout.Hit(x, y);
+                p->flyout.Hide();
+                if (ms) {
+                    p->ed.mosaicStyle = (ms == TB_MS_BLACK) ? 2 : (ms == TB_MS_BLUR ? 1 : 0);
+                    p->Render();
+                    break;
+                }
+                // 点在菜单外：仅关闭，继续处理本次点击
+            }
             int id = p->bar.Hit(x, y);
+            if (id == TB_MOSAIC) {
+                RECT cz = MosaicCaretZone(p->bar);
+                if (PtInRect(&cz, { x, y })) {      // ▾ 角标：展开样式菜单
+                    for (auto& b : p->bar.btns)
+                        if (b.id == TB_MOSAIC) {
+                            p->flyout.Layout(b.r, RECT{ 0, 0, p->ww, p->wh },
+                                             DpiScale(wnd));
+                            break;
+                        }
+                    p->flyout.visible = true;
+                    p->Render();
+                    break;
+                }
+                p->flyout.Hide();
+            }
             if (id) { OnEditBar(p, id); break; }
             if (x >= BORDER && y >= p->topZone + BORDER &&
                 x < p->ww - BORDER && y < p->wh - BORDER) {
@@ -365,6 +416,8 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
                     p->ed.draft.color = p->ed.color.GetValue();
                     p->ed.draft.penW = (float)PenWidth(p->ed.widthIdx);
                     p->ed.draft.fontSize = FontSizeFor(p->ed.widthIdx);
+                    p->ed.draft.mStyle = p->ed.mosaicStyle;
+                    p->ed.draft.mSize = p->ed.mosaicSize;
                     p->ed.draft.a = ip; p->ed.draft.b = ip;
                     if (p->ed.cur == Tool::Pen) p->ed.draft.pts.push_back(ip);
                     p->Render();
@@ -452,6 +505,10 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
             if (!p->hover || !p->hoverSince ||
                 GetTickCount64() - p->hoverSince > 260)
                 KillTimer(wnd, TID_ANIM);
+        } else if (wp == TID_HUD) {
+            p->Render();
+            if (!p->sizeHudUntil || GetTickCount64() > p->sizeHudUntil)
+                KillTimer(wnd, TID_HUD);
         }
         break; }
     case WM_MOUSELEAVE: {
@@ -484,12 +541,36 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         return 0; }
     case WM_RBUTTONDOWN:
         if (!p) break;
-        if (p->editing) { p->editing = false; p->shapeDrag = false; p->Render(); }
+        // 编辑态右键马赛克按钮 = 样式二级菜单（不退出编辑）
+        if (p->editing) {
+            int rx = GET_X_LPARAM(lp), ry = GET_Y_LPARAM(lp);
+            if (p->bar.Hit(rx, ry) == TB_MOSAIC) {
+                for (auto& b : p->bar.btns)
+                    if (b.id == TB_MOSAIC) {
+                        p->flyout.Layout(b.r, RECT{ 0, 0, p->ww, p->wh }, DpiScale(wnd));
+                        break;
+                    }
+                p->flyout.visible = !p->flyout.visible;
+                p->Render();
+                return 0;
+            }
+            p->editing = false; p->shapeDrag = false; p->flyout.Hide(); p->Render();
+        } else if (p->flyout.visible) {
+            p->flyout.Hide(); p->Render();
+        }
         else Close(p);
         return 0;
     case WM_MOUSEWHEEL: {
         if (!p) break;
         int delta = GET_WHEEL_DELTA_WPARAM(wp);
+        // 编辑态 + 马赛克工具：滚轮调粒度（FR-3.15，用户确认的语义）
+        if (p->editing && p->ed.cur == Tool::Mosaic) {
+            p->ed.mosaicSize = std::min(80, std::max(6, p->ed.mosaicSize + (delta > 0 ? 4 : -4)));
+            p->sizeHudUntil = GetTickCount64() + 800;
+            SetTimer(wnd, TID_HUD, 90, NULL);
+            p->Render();
+            return 0;
+        }
         POINT cp; GetCursorPos(&cp);
         if (GetKeyState(VK_CONTROL) & 0x8000) {
             int a = p->alpha + (delta > 0 ? 17 : -17);
@@ -503,6 +584,9 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         if (!p) break;
         if (TextEntryActive()) break;
         if (wp == VK_ESCAPE) {
+            if (p->editing && p->flyout.visible) {
+                p->flyout.Hide(); p->Render(); return 0;
+            }
             if (p->editing) { p->editing = false; p->shapeDrag = false; p->Render(); }
             else Close(p);
             return 0;

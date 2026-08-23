@@ -24,9 +24,11 @@ struct Session {
     std::vector<RECT> snaps;   // 会话开始枚举的可见顶层窗口（EnumWindows 自顶向下 z 序）
     int   snapIdx = -1;
     ULONGLONG hintUntil = 0;   // 进入截图后的操作引导显示截止时刻
+    MosaicFlyout flyout;       // 马赛克样式二级菜单（FR-3.15）
+    ULONGLONG sizeHudUntil = 0;
 } s;
 
-enum { TID_TIP = 3, TID_ANIM = 4 };   // 3=悬停提示 320ms 补绘；4=悬停放大动画 40ms 补绘
+enum { TID_TIP = 3, TID_ANIM = 4, TID_HUD = 5 };   // 3=悬停提示 4=放大动画 5=粒度HUD
 
 // ---------------- 窗口吸附（FR-1.3）----------------
 struct SnapEnumCtx { std::vector<RECT>* out; std::vector<std::wstring>* titles;
@@ -230,6 +232,21 @@ void RenderTo(HDC hdc) {
             DrawTooltip(g, cp, RECT{ 0, 0, s.vw, s.vh }, TbName(s.hover),
                         DpiScale(s.wnd));
         }
+    }
+
+    // 马赛克样式二级菜单与粒度 HUD（FR-3.15）
+    if (s.flyout.visible) {
+        for (auto& b : s.tb.btns)
+            if (b.id == TB_MOSAIC) {
+                s.flyout.Layout(b.r, RECT{ 0, 0, s.vw, s.vh }, DpiScale(s.wnd));
+                break;
+            }
+        s.flyout.Draw(s.backDc, s.ed, DpiScale(s.wnd));
+    }
+    if (s.ed.cur == Tool::Mosaic && s.sizeHudUntil &&
+        GetTickCount64() < s.sizeHudUntil) {
+        POINT cp; GetCursorPos(&cp);
+        DrawSizeHud(g, LocalPt(cp), s.ed, DpiScale(s.wnd));
     }
 
     // 操作引导条：进入截图后短暂显示，说明"点击整窗 / 拖动自由框选"两种方式
@@ -469,7 +486,32 @@ LRESULT CALLBACK CapProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         int x = GET_X_LPARAM(lp), y = GET_Y_LPARAM(lp);
         POINT sp{ x + s.vx, y + s.vy };
         if (s.phase == 1 && s.selValid) {
+            // 马赛克样式二级菜单（FR-3.15）
+            if (s.flyout.visible) {
+                int ms = s.flyout.Hit(x, y);
+                s.flyout.Hide();
+                if (ms) {
+                    s.ed.mosaicStyle = (ms == TB_MS_BLACK) ? 2 : (ms == TB_MS_BLUR ? 1 : 0);
+                    Invalidate();
+                    break;
+                }
+                // 点在菜单外：仅关闭，继续处理本次点击
+            }
             int id = s.tb.Hit(x, y);
+            if (id == TB_MOSAIC) {
+                RECT cz = MosaicCaretZone(s.tb);
+                if (PtInRect(&cz, { x, y })) {      // ▾ 角标：展开样式菜单
+                    for (auto& b : s.tb.btns)
+                        if (b.id == TB_MOSAIC) {
+                            s.flyout.Layout(b.r, RECT{ 0, 0, s.vw, s.vh }, DpiScale(s.wnd));
+                            break;
+                        }
+                    s.flyout.visible = true;
+                    Invalidate();
+                    break;
+                }
+                s.flyout.Hide();
+            }
             if (id) { OnToolbar(id); break; }
         }
         s.lbtn = true; s.down = sp;
@@ -506,6 +548,8 @@ LRESULT CALLBACK CapProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
                     s.ed.draft.color = s.ed.color.GetValue();
                     s.ed.draft.penW = (float)PenWidth(s.ed.widthIdx);
                     s.ed.draft.fontSize = FontSizeFor(s.ed.widthIdx);
+                    s.ed.draft.mStyle = s.ed.mosaicStyle;
+                    s.ed.draft.mSize = s.ed.mosaicSize;
                     s.ed.draft.a = cp; s.ed.draft.b = cp;
                     if (s.ed.cur == Tool::Pen) s.ed.draft.pts.push_back(cp);
                 } else {
@@ -554,9 +598,21 @@ LRESULT CALLBACK CapProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         POINT sp{ x + s.vx, y + s.vy };
         if (s.selValid && s.ed.cur == Tool::None && PtInRect(&s.sel, sp)) Confirm();
         break; }
-    case WM_RBUTTONDOWN:
+    case WM_RBUTTONDOWN: {
+        int rx = GET_X_LPARAM(lp), ry = GET_Y_LPARAM(lp);
+        // 右键马赛克按钮 = 切换样式二级菜单（不退出截图）
+        if (s.phase == 1 && s.selValid && s.tb.Hit(rx, ry) == TB_MOSAIC) {
+            for (auto& b : s.tb.btns)
+                if (b.id == TB_MOSAIC) {
+                    s.flyout.Layout(b.r, RECT{ 0, 0, s.vw, s.vh }, DpiScale(s.wnd));
+                    break;
+                }
+            s.flyout.visible = !s.flyout.visible;
+            Invalidate();
+            return 0;
+        }
         Cancel();
-        break;
+        break; }
     case WM_TIMER:
         if (wp == TID_TIP) { KillTimer(wnd, TID_TIP); Invalidate(); }
         else if (wp == TID_ANIM) {
@@ -565,10 +621,29 @@ LRESULT CALLBACK CapProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
                 GetTickCount64() - s.hoverSince > 260)
                 KillTimer(wnd, TID_ANIM);
         }
+        else if (wp == TID_HUD) {
+            Invalidate();
+            if (!s.sizeHudUntil || GetTickCount64() > s.sizeHudUntil)
+                KillTimer(wnd, TID_HUD);
+        }
         return 0;
+    case WM_MOUSEWHEEL: {
+        // 马赛克工具激活时：滚轮调粒度（FR-3.15），HUD 短暂显示
+        if (s.ed.cur == Tool::Mosaic) {
+            int d = GET_WHEEL_DELTA_WPARAM(wp);
+            s.ed.mosaicSize = std::min(80, std::max(6, s.ed.mosaicSize + (d > 0 ? 4 : -4)));
+            s.sizeHudUntil = GetTickCount64() + 800;
+            SetTimer(wnd, TID_HUD, 90, NULL);
+            Invalidate();
+            return 0;
+        }
+        break; }
     case WM_KEYDOWN: {
         if (TextEntryActive()) break;
-        if (wp == VK_ESCAPE) { Cancel(); return 0; }
+        if (wp == VK_ESCAPE) {
+            if (s.flyout.visible) { s.flyout.Hide(); Invalidate(); return 0; }
+            Cancel(); return 0;
+        }
         if (wp == VK_RETURN) { if (s.selValid) { Confirm(); return 0; } }
         if (wp == 'Z' && (GetKeyState(VK_CONTROL) & 0x8000)) {
             if (GetKeyState(VK_SHIFT) & 0x8000) s.ed.Redo(); else s.ed.Undo();

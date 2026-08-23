@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>钉图 TackShot · 轻量级 Windows 截图工具 需求规格说明书 V1.11</title>
+<title>钉图 TackShot · 轻量级 Windows 截图工具 需求规格说明书 V1.12</title>
 <style>
   :root{
     --accent:#2563eb; --accent-soft:#eff6ff; --text:#1f2937; --muted:#6b7280;
@@ -120,7 +120,7 @@
   <h1>轻量级 Windows 截图工具 · 需求规格说明书</h1>
   <div class="sub">产品名称：钉图 TackShot（2026-08-23 定名，原代号 ScreenShort 弃用；备选名 SnapTack，见 14.2 Q1）</div>
   <table>
-    <tr><th style="width:120px">文档版本</th><td>V1.11（草案 · 待评审）</td><th style="width:120px">发布日期</th><td>2026-08-23</td></tr>
+    <tr><th style="width:120px">文档版本</th><td>V1.12（草案 · 待评审）</td><th style="width:120px">发布日期</th><td>2026-08-23</td></tr>
     <tr><th>文档状态</th><td>初稿，供评审与开发估算使用</td><th>编制方式</th><td>基于用户原始需求分析、完善并结构化</td></tr>
     <tr><th>目标平台</th><td>Windows 10 (1809+) / Windows 11，x64</td><th>分发形式</th><td>ZIP 压缩包（绿色免安装）</td></tr>
   </table>
@@ -902,7 +902,7 @@
   <tr><td class="id">FR-3.2</td><td>编辑器</td><td>箭头</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-3.3</td><td>编辑器</td><td>自由画笔</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-3.4</td><td>编辑器</td><td>文字（支持 IME 输入法）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
-  <tr><td class="id">FR-3.5</td><td>编辑器</td><td>马赛克（像素化涂抹）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>粒度可调为 P2</td></tr>
+  <tr><td class="id">FR-3.5</td><td>编辑器</td><td>马赛克（像素化涂抹）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>V1.12：升级为三样式+滚轮粒度（FR-3.15）</td></tr>
   <tr><td class="id">FR-3.6</td><td>编辑器</td><td>高亮（半透明色块 / 荧光笔）</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
   <tr><td class="id">FR-3.7</td><td>编辑器</td><td>椭圆 / 直线</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
   <tr><td class="id">FR-3.8</td><td>编辑器</td><td>颜色与线宽切换</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>屏幕取色器为 P2</td></tr>
@@ -912,6 +912,7 @@
   <tr><td class="id">FR-3.12</td><td>编辑器</td><td>键盘约定（Enter / Esc）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-3.13</td><td>编辑器</td><td>工具快捷键（R / A / B / T / M…）</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
   <tr><td class="id">FR-3.14</td><td>编辑器</td><td>工具条悬停提示（名称+快捷键）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>V1.5 新增并实施</td></tr>
+  <tr><td class="id">FR-3.15</td><td>编辑器</td><td>马赛克三样式（方格/模糊/纯黑）+ 滚轮独立调粒度 + ▾/右键二级菜单</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>当前迭代</td><td>V1.12 新增并实施</td></tr>
   <tr><td class="id">FR-4.1</td><td>贴图</td><td>一键贴图</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>确认后默认自动贴图；V1.6 锚定鼠标位置</td></tr>
   <tr><td class="id">FR-4.2</td><td>贴图</td><td>窗口置顶（Topmost）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>V1.8 加 2px 黑色边框</td></tr>
   <tr><td class="id">FR-4.3</td><td>贴图</td><td>拖动移动</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
@@ -969,7 +970,9 @@
   <tr><td>2026-08-23</td><td>新增</td><td>FR-4.12：贴图四角/四边拖拽调整尺寸（四角等比缩放、四边单轴拉伸）；悬浮菜单与编辑工具条移至图片上方悬浮显示，不再遮挡图片内容；工具条图标整体放大 20%（V1.10 开发中）</td></tr>
   <tr><td>2026-08-23</td><td>完成</td><td>FR-4.12 实施完成并通过脚本验证（拖右上角 Δ168×111 等比、拖右边 Δ157×0 单轴）：zoomX/zoomY 分离、图片边缘 8 向缩放手柄（角优先判定）、光标随边缘变形；悬浮菜单/编辑工具条绘制于顶部预留区（HTTRANSPARENT 点击穿透），不再遮挡图片；修复 ResizeZone 判定顺序缺陷（边条件遮蔽角条件）；工具条图标整体放大 20%（工具 19px/色板 14px/面板高 24px 基准）</td></tr>
   <tr><td>2026-08-23</td><td>UI 优化</td><td>① 应用图标重绘：方头图钉（琥珀钉头+白描边+浅色针杆），消除"圆+柄"的放大镜混淆；托盘=运行时矢量绘制，exe 文件图标=tools/make_icon.py 生成 res/app.ico（7 尺寸）经 windres 嵌入（已验证 256/32px 条目存在于二进制）；② 工具条按钮悬停放大动画：160ms ease-out 至 1.3 倍，40ms 定时器补绘（截图工具条与贴图两处），提示当前点击目标</td></tr>
-  <tr><td>2026-08-23</td><td>文档/发布</td><td>README 重构：中文正文在前 + 完整英文版置于文档最下方 + 作者联系方式 emonzhang3438@outlook.com（欢迎需求与 Bug 反馈）；release/ 移出 .gitignore 纳入仓库——用户下载单个文件夹即可使用</td></tr></table>
+  <tr><td>2026-08-23</td><td>文档/发布</td><td>README 重构：中文正文在前 + 完整英文版置于文档最下方 + 作者联系方式 emonzhang3438@outlook.com（欢迎需求与 Bug 反馈）；release/ 移出 .gitignore 纳入仓库——用户下载单个文件夹即可使用</td></tr>
+  <tr><td>2026-08-23</td><td>新增/完成</td><td>FR-3.15：马赛克三种涂抹样式（方格马赛克 / 高斯模糊[块内5点均值] / 纯黑涂抹[最强隐私]），样式经 ▾角标或右键在二级菜单切换；粒度与线宽解耦，马赛克工具激活时滚轮调节 6–80px（贴图编辑态滚轮临时由缩放切换为粒度，经用户确认），光标旁 HUD 短暂显示当前样式与粒度；样式与粒度随每笔标注持久化；截图编辑器与贴图就地编辑两处同步支持</td></tr>
+  <tr><td>2026-08-23</td><td>缺陷修复</td><td>贴图编辑态下入口菜单（带"编辑"按钮）违规重现：进入编辑时新增硬不变量（强制 menuVisible=false、清零 hover、击毙 TID_HOVER/TID_HIDE 全部在途定时器——旧代码不清理在途定时器存在竞态窗口）；插桩日志+脚本复现验证：完整流程（悬停→编辑→点击图片→拖动→再悬停）入口菜单零违规浮现</td></tr></table>
 
 <h2 id="s14">14. 附录 <span class="en">Appendix</span></h2>
 
@@ -1027,7 +1030,7 @@
 </ul>
 
 <footer>
-  钉图 TackShot · 需求规格说明书 V1.11（草案） · 2026-08-23 · 本文档基于用户原始需求分析完善生成，供评审使用
+  钉图 TackShot · 需求规格说明书 V1.12（草案） · 2026-08-23 · 本文档基于用户原始需求分析完善生成，供评审使用
 </footer>
 
 </div>

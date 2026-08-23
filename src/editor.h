@@ -13,6 +13,8 @@ struct Shape {
     std::vector<POINT> pts;            // 画笔轨迹
     std::wstring text;
     int         fontSize = 26;
+    int         mStyle = 0;            // 马赛克样式：0 方格 1 模糊 2 纯黑
+    int         mSize = 20;            // 马赛克粒度（px）
 };
 
 struct Editor {
@@ -20,6 +22,8 @@ struct Editor {
     Tool         cur = Tool::None;
     Gdiplus::Color color{ 0xFF, 0xEF, 0x44, 0x44 };
     int          widthIdx = 1;         // 0/1/2 → 细/中/粗
+    int          mosaicStyle = 0;      // 0 方格 1 模糊 2 纯黑
+    int          mosaicSize = 20;      // 粒度 6..80，滚轮调节
     Shape        draft;
     bool         drafting = false;
 
@@ -44,7 +48,8 @@ enum TbId {
     TB_UNDO, TB_REDO,
     TB_C0, TB_C1, TB_C2, TB_C3, TB_C4, TB_C5,
     TB_W0, TB_W1, TB_W2,
-    TB_EDIT, TB_COPYIMG, TB_ZOOMOUT, TB_ZOOMIN, TB_OPAQUE, TB_CLOSE
+    TB_EDIT, TB_COPYIMG, TB_ZOOMOUT, TB_ZOOMIN, TB_OPAQUE, TB_CLOSE,
+    TB_MS_MOSAIC, TB_MS_BLUR, TB_MS_BLACK   // 马赛克样式二级菜单
 };
 
 struct TbBtn { int id; RECT r; };
@@ -73,3 +78,19 @@ void StartTextEntry(HWND owner, POINT screenPos, int fontSizePx, Gdiplus::ARGB c
                     std::function<void(const std::wstring&)> onCommit);
 void CancelTextEntry();
 bool TextEntryActive();
+
+// ---------------- 马赛克样式二级菜单 ----------------
+struct MosaicFlyout {
+    RECT bar{};
+    bool visible = false;
+
+    void Layout(const RECT& anchorBtn, const RECT& clip, float scale);
+    void Draw(HDC dc, const Editor& ed, float scale) const;
+    int  Hit(int x, int y) const;          // 命中返回 TB_MS_*，否则 0
+    void Hide() { visible = false; }
+};
+
+// 粒度 HUD：光标旁短暂显示当前样式与粒度（滚轮调节时）
+void DrawSizeHud(Gdiplus::Graphics& g, POINT pt, const Editor& ed, float scale);
+// 马赛克按钮右下角 ▾ 区域（用于展开二级菜单）
+RECT MosaicCaretZone(const Toolbar& tb);
