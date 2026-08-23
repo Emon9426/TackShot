@@ -1,0 +1,69 @@
+// editor.h — 标注对象模型 + 绘制 + 工具条
+#pragma once
+#include "common.h"
+#include <functional>
+
+enum class Tool { None, Rect, Ellipse, Line, Arrow, Pen, Text, Mosaic, Highlight };
+
+struct Shape {
+    Tool        tool = Tool::Rect;
+    Gdiplus::ARGB color = 0xFFEF4444;
+    float       penW = 4.f;
+    POINT       a{}, b{};              // 画布坐标系（选区/贴图本地坐标）
+    std::vector<POINT> pts;            // 画笔轨迹
+    std::wstring text;
+    int         fontSize = 26;
+};
+
+struct Editor {
+    std::vector<Shape> shapes, redo;
+    Tool         cur = Tool::None;
+    Gdiplus::Color color{ 0xFF, 0xEF, 0x44, 0x44 };
+    int          widthIdx = 1;         // 0/1/2 → 细/中/粗
+    Shape        draft;
+    bool         drafting = false;
+
+    void Push(const Shape& s) { shapes.push_back(s); redo.clear(); }
+    bool Undo() { if (shapes.empty()) return false; redo.push_back(shapes.back()); shapes.pop_back(); return true; }
+    bool Redo() { if (redo.empty()) return false; shapes.push_back(redo.back()); redo.pop_back(); return true; }
+};
+
+int  PenWidth(int idx);                                  // 2/4/7
+int  FontSizeFor(int idx);                               // 18/26/36
+void DrawShape(Gdiplus::Graphics& g, const Shape& s,
+               Gdiplus::Bitmap* base, POINT baseOff);
+void DrawShapes(Gdiplus::Graphics& g, const std::vector<Shape>& v,
+                Gdiplus::Bitmap* base, POINT baseOff);
+bool ToolFromKey(UINT vk, Tool& t);                      // 工具快捷键 R/O/L/A/B/T/M/H
+
+// ---------------- 工具条 ----------------
+enum TbId {
+    TB_NONE = 0,
+    TB_OK, TB_PIN, TB_SAVE, TB_CANCEL,
+    TB_RECT, TB_ELLIPSE, TB_LINE, TB_ARROW, TB_PEN, TB_TEXT, TB_MOSAIC, TB_HIGHLIGHT,
+    TB_UNDO, TB_REDO,
+    TB_C0, TB_C1, TB_C2, TB_C3, TB_C4, TB_C5,
+    TB_W0, TB_W1, TB_W2,
+    TB_EDIT, TB_COPYIMG, TB_ZOOMOUT, TB_ZOOMIN, TB_OPAQUE, TB_CLOSE
+};
+
+struct TbBtn { int id; RECT r; };
+
+enum class TbMode { Editor, PinHover, PinEdit };
+
+struct Toolbar {
+    std::vector<TbBtn> btns;
+    RECT bar{};
+    int  zoomPct = 100;      // PinHover 模式显示的百分比
+    float scale = 1.0f;      // DPI 缩放（96 基准），Layout 时设置
+
+    void Layout(const RECT& host, const RECT& scr, TbMode mode, float dpiScale = 1.0f);
+    void Draw(HDC dc, const Editor* ed, int hover, TbMode mode) const;
+    int  Hit(int x, int y) const;
+};
+
+// ---------------- 文字输入弹窗（顶层 EDIT，天然支持 IME） ----------------
+void StartTextEntry(HWND owner, POINT screenPos, int fontSizePx, Gdiplus::ARGB color,
+                    std::function<void(const std::wstring&)> onCommit);
+void CancelTextEntry();
+bool TextEntryActive();

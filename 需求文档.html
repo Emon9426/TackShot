@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>钉图 TackShot · 轻量级 Windows 截图工具 需求规格说明书 V1.5</title>
+<style>
+  :root{
+    --accent:#2563eb; --accent-soft:#eff6ff; --text:#1f2937; --muted:#6b7280;
+    --line:#e5e7eb; --p0:#dc2626; --p1:#d97706; --p2:#64748b;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family:"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+    line-height:1.75; color:var(--text); background:#eef2f7; margin:0; padding:28px 12px;
+    font-size:15px;
+  }
+  .doc{
+    max-width:1000px; margin:0 auto; background:#fff; padding:48px 56px;
+    box-shadow:0 2px 18px rgba(0,0,0,.09); border-radius:10px;
+  }
+  header.doc-head{text-align:center; border-bottom:1px solid var(--line); padding-bottom:24px; margin-bottom:28px;}
+  header.doc-head h1{font-size:26px; margin:0 0 6px; color:#111827;}
+  header.doc-head .sub{color:var(--muted); font-size:15px;}
+  h2{font-size:21px; border-left:5px solid var(--accent); padding-left:12px; margin:48px 0 6px; color:#111827;}
+  h2 .en{font-size:13px; color:var(--muted); font-weight:normal; margin-left:8px;}
+  h3{font-size:16.5px; margin:30px 0 4px; color:#0f172a;}
+  p{margin:8px 0;}
+  ul,ol{margin:8px 0; padding-left:26px;}
+  li{margin:4px 0;}
+  table{width:100%; border-collapse:collapse; margin:12px 0 18px; font-size:13.5px;}
+  th,td{border:1px solid var(--line); padding:7px 11px; text-align:left; vertical-align:top;}
+  th{background:#f1f5f9; color:#0f172a; white-space:nowrap;}
+  tbody tr:nth-child(even) td{background:#fafbfc;}
+  td.id{white-space:nowrap; font-family:Consolas,monospace; font-size:12.5px; color:#334155;}
+  .badge{display:inline-block; padding:0 9px; border-radius:999px; font-size:12px; font-weight:600; color:#fff; white-space:nowrap;}
+  .b0{background:var(--p0);} .b1{background:var(--p1);} .b2{background:var(--p2);}
+  kbd{
+    display:inline-block; border:1px solid #cbd5e1; border-bottom-width:2px; border-radius:5px;
+    background:#f8fafc; padding:0 7px; font-family:Consolas,"Courier New",monospace; font-size:12.5px;
+  }
+  .toc{background:var(--accent-soft); border:1px solid #bfdbfe; border-radius:8px; padding:18px 26px; margin:22px 0 8px;}
+  .toc .toc-title{font-weight:700; margin-bottom:8px; color:#1d4ed8;}
+  .toc ul{list-style:none; padding:0; margin:0; columns:2; column-gap:36px;}
+  .toc a{color:#1d4ed8; text-decoration:none;}
+  .toc a:hover{text-decoration:underline;}
+  .note{background:#fffbeb; border-left:4px solid #f59e0b; padding:10px 16px; border-radius:0 6px 6px 0; margin:12px 0; font-size:14px;}
+  .warn{background:#fef2f2; border-left:4px solid #ef4444; padding:10px 16px; border-radius:0 6px 6px 0; margin:12px 0; font-size:14px;}
+  .ok{background:#f0fdf4; border-left:4px solid #22c55e; padding:10px 16px; border-radius:0 6px 6px 0; margin:12px 0; font-size:14px;}
+  .metrics{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin:14px 0;}
+  .metric{border:1px solid var(--line); border-radius:8px; padding:12px 16px; background:#fafbfc;}
+  .metric .v{font-size:20px; font-weight:700; color:var(--accent);}
+  .metric .k{font-size:12.5px; color:var(--muted);}
+  code{background:#f1f5f9; border-radius:4px; padding:1px 6px; font-family:Consolas,monospace; font-size:13px;}
+  .flow{background:#f8fafc; border:1px dashed #cbd5e1; border-radius:8px; padding:14px 20px; margin:12px 0; font-size:14px;}
+  footer{margin-top:48px; border-top:1px solid var(--line); padding-top:16px; color:var(--muted); font-size:12.5px; text-align:center;}
+  a{color:#1d4ed8;}
+  @media print{
+    body{background:#fff; padding:0;}
+    .doc{box-shadow:none; border-radius:0; padding:12px; max-width:none;}
+    .toc ul{columns:2;}
+    h2{page-break-after:avoid;}
+    table{page-break-inside:avoid;}
+  }
+  @media (max-width:720px){
+    .doc{padding:24px 18px;}
+    .toc ul{columns:1;}
+  }
+</style>
+<style>
+  /* ---- RTM 状态标记（第 13 章）---- */
+  .st{display:inline-block;padding:0 8px;border-radius:999px;font-size:12px;white-space:nowrap;}
+  .st-t{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;}
+  .st-d{background:#dbeafe;color:#1d4ed8;}
+  .st-c{background:#dcfce7;color:#15803d;}
+  .st-r{background:#ede9fe;color:#6d28d9;}
+  .st-x{background:#fee2e2;color:#b91c1c;text-decoration:line-through;}
+  /* ---- UI 设计稿示意（第 5 章）---- */
+  .mock{border:1px solid var(--line);border-radius:10px;padding:14px;background:#f8fafc;margin:12px 0;overflow-x:auto;}
+  .mock .cap{font-size:12px;color:var(--muted);margin-top:8px;}
+  .screen{position:relative;height:290px;background:#334155;border-radius:6px;overflow:hidden;}
+  .screen .win{position:absolute;background:#cbd5e1;border-radius:4px;opacity:.55;}
+  .sel{position:absolute;border:1.5px solid #3b82f6;box-shadow:0 0 0 9999px rgba(0,0,0,.45);}
+  .sel .h{position:absolute;width:8px;height:8px;background:#3b82f6;border:1.5px solid #fff;border-radius:2px;}
+  .chip{position:absolute;background:#0f172a;color:#e2e8f0;font-size:12px;padding:2px 8px;border-radius:4px;font-family:Consolas,monospace;z-index:2;}
+  .tb{display:inline-flex;align-items:center;gap:2px;background:#1e2530;border:1px solid #334155;border-radius:8px;padding:7px 10px;color:#e2e8f0;font-size:13px;box-shadow:0 6px 18px rgba(0,0,0,.25);flex-wrap:wrap;}
+  .tb .grp{display:inline-flex;align-items:center;gap:2px;padding:0 8px;border-right:1px solid #334155;}
+  .tb .grp:last-child{border-right:none;padding-right:2px;}
+  .tbtn{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;padding:0 8px;border-radius:6px;cursor:default;font-size:14px;}
+  .tbtn:hover{background:#334155;}
+  .tbtn.active{background:#2563eb;color:#fff;}
+  .tbtn.ok{color:#4ade80;} .tbtn.no{color:#f87171;}
+  .tbtn.dis{opacity:.35;}
+  .sw{width:15px;height:15px;border-radius:50%;display:inline-block;border:1px solid rgba(255,255,255,.4);margin:0 1px;}
+  .pin{max-width:320px;border:1px solid #94a3b8;border-radius:4px;box-shadow:0 10px 26px rgba(0,0,0,.28);overflow:hidden;}
+  .pin .img{height:150px;background:linear-gradient(135deg,#bfdbfe 0%,#f1f5f9 55%,#fde68a 100%);position:relative;}
+  .pin .ph{position:absolute;left:12px;right:12px;bottom:12px;height:10px;background:rgba(15,23,42,.22);border-radius:3px;}
+  .pin .tag{position:absolute;top:8px;right:8px;background:rgba(15,23,42,.75);color:#e2e8f0;font-size:11px;border-radius:4px;padding:1px 7px;z-index:2;}
+  .tray{width:280px;background:#fff;border:1px solid var(--line);border-radius:9px;box-shadow:0 10px 30px rgba(0,0,0,.12);overflow:hidden;font-size:13.5px;}
+  .tray .r{display:flex;justify-content:space-between;padding:9px 16px;align-items:center;}
+  .tray .r:hover{background:#eff6ff;}
+  .tray .r .k{color:var(--muted);font-size:12px;font-family:Consolas,monospace;}
+  .tray .sep{border-top:1px solid var(--line);margin:4px 0;}
+  .tray .dis{color:#cbd5e1;}
+  .set{display:flex;border:1px solid var(--line);border-radius:9px;background:#fff;overflow:hidden;min-height:320px;}
+  .set .nav{width:132px;background:#f1f5f9;padding:10px 0;border-right:1px solid var(--line);flex-shrink:0;}
+  .set .nav div{padding:9px 16px;font-size:13.5px;color:#475569;}
+  .set .nav div.active{background:#fff;color:var(--accent);font-weight:600;border-left:3px solid var(--accent);}
+  .set .bd{flex:1;padding:16px 22px;min-width:0;}
+  .frow{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px dashed var(--line);font-size:13.5px;gap:12px;flex-wrap:wrap;}
+  .frow .op{color:var(--accent);font-size:13px;cursor:default;}
+  .bubble{display:inline-block;background:#0f172a;color:#e2e8f0;border-radius:9px;padding:10px 16px;font-size:13px;box-shadow:0 8px 20px rgba(0,0,0,.25);max-width:420px;}
+  .bubble b{color:#60a5fa;}
+</style>
+</head>
+<body>
+<div class="doc">
+
+<header class="doc-head">
+  <h1>轻量级 Windows 截图工具 · 需求规格说明书</h1>
+  <div class="sub">产品名称：钉图 TackShot（2026-08-23 定名，原代号 ScreenShort 弃用；备选名 SnapTack，见 14.2 Q1）</div>
+  <table>
+    <tr><th style="width:120px">文档版本</th><td>V1.5（草案 · 待评审）</td><th style="width:120px">发布日期</th><td>2026-08-23</td></tr>
+    <tr><th>文档状态</th><td>初稿，供评审与开发估算使用</td><th>编制方式</th><td>基于用户原始需求分析、完善并结构化</td></tr>
+    <tr><th>目标平台</th><td>Windows 10 (1809+) / Windows 11，x64</td><th>分发形式</th><td>ZIP 压缩包（绿色免安装）</td></tr>
+  </table>
+  <p style="font-size:12.5px;color:var(--muted);text-align:center;margin:10px 0 0;">修订记录：V1.0（2026-08-23）初稿 · V1.1（2026-08-23）新增 4.9 功能需求跟踪总表（RTM）与第 5 章 UI 界面设计 · V1.2（2026-08-23）定名「钉图 TackShot」；默认完成动作改为「复制并贴图」；新增贴图悬浮菜单与就地编辑（FR-4.10 / FR-4.11 新增、FR-4.8 升级 P0、新增 5.7 UI-7）· V1.3（2026-08-23）开放问题全部定案：MIT 开源（Q2）、技术栈定 C++ 方案 A（Q3）、x64 首发零依赖 + ARM64 可选（Q4）、GitHub Releases + HTML 图文手册（Q5）、范围外功能不排期（Q6）；功能清单独立成章（原 4.9 → 第 13 章）· V1.4（2026-08-23）UI 优化：工具条按钮加大（工具 44 / 动作 46 基准）并全 UI 按显示器 DPI 等比缩放；选区控制点、坐标标签同步放大 · V1.5（2026-08-23）新增 FR-1.11 选区白色高亮、FR-3.14 工具条悬停提示；工具条整体缩小至 1/3 并升级彩色图标（待用户许可后实施）</p>
+</header>
+
+<nav class="toc">
+  <div class="toc-title">目 录</div>
+  <ul>
+    <li>1. <a href="#s1">引言</a></li>
+    <li>2. <a href="#s2">原始需求分析与完善说明</a></li>
+    <li>3. <a href="#s3">总体描述</a></li>
+    <li>4. <a href="#s4">功能需求</a></li>
+    <li>5. <a href="#s5">UI 界面设计</a></li>
+    <li>6. <a href="#s6">非功能需求</a></li>
+    <li>7. <a href="#s7">技术选型建议</a></li>
+    <li>8. <a href="#s8">开源合规与版权保护</a></li>
+    <li>9. <a href="#s9">竞品参考</a></li>
+    <li>10. <a href="#s10">里程碑与交付物</a></li>
+    <li>11. <a href="#s11">验收标准</a></li>
+    <li>12. <a href="#s12">风险与对策</a></li>
+    <li>13. <a href="#s13">功能清单 · 需求跟踪总表（RTM）</a></li>
+    <li>14. <a href="#s14">附录</a></li>
+  </ul>
+</nav>
+
+<!-- ============================================================ -->
+<h2 id="s1">1. 引言 <span class="en">Introduction</span></h2>
+
+<h3>1.1 编写目的</h3>
+<p>本文档将用户提出的四条原始需求拆解、量化并补充为一份可评审、可开发、可验收的软件需求规格说明书（SRS），作为后续设计、开发、测试与发布的基线依据。</p>
+
+<h3>1.2 项目背景</h3>
+<p>Windows 自带截图工具（Win+Shift+S）功能有限，不支持截图后贴图置顶；主流第三方工具中，Snipaste 闭源且商用需付费，ShareX/Greenshot 功能齐全但基于 .NET，常驻内存偏高、体积偏大。市场存在一款<strong>开源、免安装、低资源占用、带编辑与贴图功能</strong>的轻量截图工具的空缺，本项目由此立项。</p>
+
+<h3>1.3 产品目标（核心价值）</h3>
+<ol>
+  <li><strong>轻量无感</strong>：解压即用、不写注册表、空闲时低内存低占用，用户"感觉不到它的存在"。</li>
+  <li><strong>高效截图</strong>：全局热键一键唤起，框选、编辑、贴图一气呵成，全程键盘可操作。</li>
+  <li><strong>贴图置顶</strong>：截图可像便签一样"钉"在屏幕最前端，可缩放、可调透明度，方便对照参考。</li>
+  <li><strong>合法合规</strong>：全部依赖与资源均来自许可证明确的开源项目，发布物附带完整第三方声明，无法律风险。</li>
+</ol>
+
+<h3>1.4 范围</h3>
+<table>
+  <tr><th style="width:50%">范围内（In Scope）</th><th>范围外（Out of Scope；已确认暂不排期，2026-08-23）</th></tr>
+  <tr>
+    <td>区域/全屏/活动窗口/延时截图、多显示器与高 DPI 适配、截图后编辑（矩形、箭头、画笔、文字、马赛克等）、贴图置顶、剪贴板与文件输出、全局热键、托盘驻留、设置界面、便携配置</td>
+    <td>OCR 文字识别、滚动长截图、屏幕录制/录屏 GIF、云同步与图床上传、跨平台（macOS/Linux）、浏览器插件</td>
+  </tr>
+</table>
+
+<h3>1.5 读者对象</h3>
+<p>需求评审人员、开发工程师、测试工程师，以及发布/合规负责人。</p>
+
+<!-- ============================================================ -->
+<h2 id="s2">2. 原始需求分析与完善说明 <span class="en">Requirements Analysis</span></h2>
+
+<h3>2.1 原始需求解读</h3>
+<table>
+  <tr><th style="width:70px">编号</th><th>原始需求</th><th style="width:45%">解读与拆解</th></tr>
+  <tr>
+    <td class="id">R1</td>
+    <td>轻量级，不需要安装，下载压缩包即可运行；后台驻留内存占用小，不影响电脑性能。</td>
+    <td>绿色便携分发（无安装器、无运行时依赖、配置随目录走）；空闲内存与 CPU 指标需量化（见第 6 章）。</td>
+  </tr>
+  <tr>
+    <td class="id">R2</td>
+    <td>能够使用快捷键截图。</td>
+    <td>系统级全局热键，任意前台应用下可触发；需可自定义、可检测冲突。</td>
+  </tr>
+  <tr>
+    <td class="id">R3</td>
+    <td>截图后能够在图片上编辑（框选、马赛克等）；能够让图片直接固定显示在屏幕最前端。</td>
+    <td>两部分：① 内置轻量图片编辑器（标注工具集 + 撤销重做）；② 贴图窗口（Always-on-Top 无边框窗口，可拖动/缩放/调透明度）。</td>
+  </tr>
+  <tr>
+    <td class="id">R4</td>
+    <td>注意版权保护，所有功能均使用开源引用，不造成法律风险。</td>
+    <td>依赖许可证白名单制度、资源（字体/图标）合规、第三方声明清单（SBOM + NOTICES）、软件命名商标排查（见第 8 章）。</td>
+  </tr>
+</table>
+
+<h3>2.2 需求完善与新增点（相对原始需求的增量）</h3>
+<p>以下内容为分析后<strong>建议补充</strong>的需求，原始 4 条未明确提及，但属于此类工具的必要或高频期望：</p>
+<table>
+  <tr><th style="width:190px">补充类别</th><th>新增内容与理由</th></tr>
+  <tr><td>多显示器 / 高 DPI</td><td>现代 Windows 环境普遍多屏且 125%/150%/200% 缩放混合，不支持会导致截图错位、模糊，属"隐形必做"项。</td></tr>
+  <tr><td>取消与容错</td><td>框选/编辑中 <kbd>Esc</kbd> 取消、右键取消、热键误触的退出路径；热键被占用时提示并引导更换。</td></tr>
+  <tr><td>撤销 / 重做</td><td>编辑器必备，没有撤销的标注工具不可用。</td></tr>
+  <tr><td>输出通道</td><td>除保存文件外，<strong>复制到剪贴板</strong>是截图最高频的去向，必须支持；另需另存为、自动命名、目录配置。</td></tr>
+  <tr><td>贴图操作集</td><td>贴图若只能"显示"价值有限，补充：滚轮缩放、透明度调节、多张贴图共存、一键关闭。</td></tr>
+  <tr><td>托盘与自启动</td><td>后台驻留需要托盘入口（菜单、退出）；开机自启动作为可选项（默认关闭，保持绿色理念）。</td></tr>
+  <tr><td>单实例</td><td>防止重复启动产生多个驻留进程。</td></tr>
+  <tr><td>隐私承诺</td><td>默认完全离线、无遥测、无上传——既是卖点，也是合规要求（规避个人信息保护法规风险）。</td></tr>
+  <tr><td>稳定性</td><td>长期驻留软件需内存泄漏排查机制与本地日志、崩溃转储。</td></tr>
+  <tr><td>界面语言</td><td>首版简体中文，架构预留多语言（i18n）能力。</td></tr>
+</table>
+
+<h3>2.3 关键使用场景（User Stories）</h3>
+<ul>
+  <li><strong>场景 A · 对照参考</strong>：开发者在写文档时按下 <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>A</kbd> 框选一段代码，按 <kbd>Enter</kbd> 确认——图片<strong>自动复制到剪贴板并钉在屏幕一角置顶显示</strong>；边看边写，需要补充标注时把鼠标悬停在贴图上唤出悬浮菜单进入编辑（见 5.7），用完按 <kbd>Esc</kbd> 关闭。</li>
+  <li><strong>场景 B · 打码分享</strong>：用户截图含敏感信息的界面，用马赛克工具涂抹账号/姓名后确认——图片已在剪贴板，直接粘贴进聊天窗口发送；若发现漏打的敏感信息，悬停贴图进入就地编辑补打码，编辑结果自动同步回剪贴板。</li>
+  <li><strong>场景 C · 免安装携带</strong>：用户把 ZIP 解压到 U 盘，插到任意一台 Win10/Win11 电脑双击即用，退出后不在对方电脑留下任何痕迹（除非主动开启开机自启）。</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="s3">3. 总体描述 <span class="en">General Description</span></h2>
+
+<h3>3.1 产品定位</h3>
+<p>一款开源、绿色、常驻后台的 Windows 桌面截图工具，对标 Snipaste 的核心体验（截图 + 贴图），但以开源许可证发布、以更低资源占用为目标。</p>
+
+<h3>3.2 用户画像</h3>
+<table>
+  <tr><th>用户群</th><th>典型诉求</th></tr>
+  <tr><td>办公人员</td><td>快速截图、简单标注（箭头/文字/马赛克）、发送给同事</td></tr>
+  <tr><td>开发/测试工程师</td><td>贴图对照、精确到像素的框选、复制剪贴板贴入缺陷单</td></tr>
+  <tr><td>设计/内容创作者</td><td>多屏取材、贴图拼稿、高 DPI 下截图清晰</td></tr>
+  <tr><td>学生</td><td>网课截图、资料打码、便携携带</td></tr>
+</table>
+
+<h3>3.3 运行环境</h3>
+<ul>
+  <li>操作系统：Windows 10 1809 及以上、Windows 11（x64）；ARM64 为可选项（见开放问题）。</li>
+  <li>无需预装运行时：不得要求用户安装 .NET / VC++ 运行库等任何前置组件。</li>
+  <li>权限：普通用户权限即可运行；不支持（也不承诺）在 UAC 安全桌面、锁屏界面下截图。</li>
+</ul>
+
+<h3>3.4 设计与实现约束</h3>
+<ul>
+  <li><strong>绿色便携</strong>：默认所有配置保存在 exe 同目录（<code>config.json</code>），不写注册表（仅用户主动开启"开机自启"时写入 HKCU Run，且提供清除入口）。</li>
+  <li><strong>离线优先</strong>：核心功能零网络请求；程序本身不内置任何自动上传行为。</li>
+  <li><strong>开源合规</strong>：第三方代码与资源的许可证必须落在白名单内（第 8 章）。</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="s4">4. 功能需求 <span class="en">Functional Requirements</span></h2>
+
+<div class="note"><strong>优先级定义：</strong>
+<span class="badge b0">P0</span> 首版必须实现（MVP 范围）；
+<span class="badge b1">P1</span> 首版应尽量实现，可裁剪；
+<span class="badge b2">P2</span> 可选项，进入后续版本 Backlog。</div>
+
+<h3>FR-1 截图捕获</h3>
+<table>
+  <tr><th style="width:76px">编号</th><th style="width:170px">需求</th><th>描述</th><th style="width:64px">优先级</th></tr>
+  <tr><td class="id">FR-1.1</td><td>区域截图（默认）</td><td>热键触发后冻结当前屏幕画面并显示遮罩，鼠标拖拽框选目标区域；松开后进入编辑状态。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-1.2</td><td>全屏截图</td><td>一键截取当前显示器（或所有显示器）完整画面，可直接进入编辑或按设置直接输出。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-1.3</td><td>活动窗口截图</td><td>自动识别光标下的顶层窗口边界（高亮描边提示），点击即截取该窗口（不含阴影）。</td><td><span class="badge b1">P1</span></td></tr>
+  <tr><td class="id">FR-1.4</td><td>延时截图</td><td>支持 1–10 秒倒计时后触发区域/全屏截图，用于截取悬停菜单等瞬态界面。</td><td><span class="badge b1">P1</span></td></tr>
+  <tr><td class="id">FR-1.5</td><td>上次区域重截</td><td>对上一次框选区域原位重新截取一张。</td><td><span class="badge b2">P2</span></td></tr>
+  <tr><td class="id">FR-1.6</td><td>多显示器支持</td><td>多屏环境下遮罩覆盖所有屏幕；框选可跨屏；贴图可放置于任意屏幕。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-1.7</td><td>高 DPI 支持</td><td>按 Per-Monitor V2 声明 DPI 感知，100%–300% 缩放及混合 DPI 多屏下截图不模糊、坐标不错位。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-1.8</td><td>选区信息显示</td><td>框选时实时显示选区像素坐标与宽高（如 <code>320, 240 · 640×360</code>）。</td><td><span class="badge b1">P1</span></td></tr>
+  <tr><td class="id">FR-1.9</td><td>选区调整</td><td>松开鼠标后选区周围显示 8 个控制点，可继续拖动微调边界与位置。</td><td><span class="badge b1">P1</span></td></tr>
+  <tr><td class="id">FR-1.10</td><td>取消截图</td><td>框选或编辑过程中，<kbd>Esc</kbd> 或右键取消本次截图，恢复原界面焦点。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-1.11</td><td>选区白色高亮</td><td>拖动框选过程中，选区以白色半透明（约 25%）覆盖高亮，与黑色半透明背景形成鲜明对比，实时指示截图范围；松开鼠标进入编辑后恢复显示清晰原图。</td><td><span class="badge b0">P0</span></td></tr>
+</table>
+
+<h3>FR-2 全局热键</h3>
+<table>
+  <tr><th style="width:76px">编号</th><th style="width:170px">需求</th><th>描述</th><th style="width:64px">优先级</th></tr>
+  <tr><td class="id">FR-2.1</td><td>默认热键方案</td><td>开箱可用（见下表），默认方案避开系统保留组合。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-2.2</td><td>热键自定义</td><td>设置界面提供"按下即录入"式热键编辑，覆盖截图各功能入口。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-2.3</td><td>冲突检测</td><td>启动与设置保存时检测热键是否被其他程序占用；被占用时明确提示（含功能名称建议），不允许静默失效。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-2.4</td><td>功能独立热键</td><td>区域/全屏/活动窗口/贴图/延时截图分别可绑定独立热键。</td><td><span class="badge b1">P1</span></td></tr>
+  <tr><td class="id">FR-2.5</td><td>管理员窗口说明</td><td>以普通权限运行时无法对"以管理员身份运行"的窗口截图/热键失效的场景，在文档中说明；提供"以管理员身份运行本程序"的引导（可选 P2）。</td><td><span class="badge b2">P2</span></td></tr>
+</table>
+<p><strong>默认热键方案（首版建议）：</strong></p>
+<table>
+  <tr><th>动作</th><th>默认热键</th><th>说明</th></tr>
+  <tr><td>区域截图</td><td><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>A</kbd></td><td>沿用大众习惯（与 QQ 截图一致），若被占用则提示更换</td></tr>
+  <tr><td>全屏截图</td><td><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>F</kbd></td><td>F = Full screen</td></tr>
+  <tr><td>贴图（固定剪贴板图片到屏幕）</td><td><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>P</kbd></td><td>P = Pin，可直接把剪贴板中的图片钉到屏幕</td></tr>
+  <tr><td>确认 / 取消</td><td><kbd>Enter</kbd> / <kbd>Esc</kbd></td><td>编辑器内的键盘操作约定</td></tr>
+</table>
+<div class="note">系统组合 <kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> 为 Windows 截图工具保留，本项目不注册、不覆盖；<kbd>PrtSc</kbd> 键的接管作为 P2 可选项。</div>
+
+<h3>FR-3 图片编辑器</h3>
+<p>编辑器以浮层工具条形式出现在选区边缘，所见即所得，确认前不落盘。</p>
+<table>
+  <tr><th style="width:76px">编号</th><th style="width:170px">工具/需求</th><th>描述</th><th style="width:64px">优先级</th></tr>
+  <tr><td class="id">FR-3.1</td><td>矩形框</td><td>绘制描边矩形，颜色、线宽可调。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-3.2</td><td>箭头</td><td>带箭头的指示线，用于标注重点。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-3.3</td><td>自由画笔</td><td>自由手绘曲线。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-3.4</td><td>文字</td><td>点击输入文字，字号、颜色可调；输入法（IME）正常可用。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-3.5</td><td>马赛克</td><td>矩形/涂抹式像素化模糊，用于遮盖敏感信息；马赛克粒度可调（P2）。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-3.6</td><td>高亮</td><td>半透明色块或荧光笔效果，突出局部内容。</td><td><span class="badge b1">P1</span></td></tr>
+  <tr><td class="id">FR-3.7</td><td>椭圆 / 直线</td><td>基础图形工具。</td><td><span class="badge b1">P1</span></td></tr>
+  <tr><td class="id">FR-3.8</td><td>颜色与线宽</td><td>预设色板（红/黄/绿/蓝/黑/白）+ 线宽三档快捷切换；屏幕取色器（P2）。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-3.9</td><td>撤销 / 重做</td><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd>，至少 30 步。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-3.10</td><td>对象编辑</td><td>已绘制的标注对象可被选中、拖动、删除（<kbd>Delete</kbd>）。首版可降级为"笔画级撤销"。</td><td><span class="badge b1">P1</span></td></tr>
+  <tr><td class="id">FR-3.11</td><td>完成动作</td><td>工具条提供：<strong>✓ 确认</strong>（默认：复制到剪贴板 + 贴图置顶，见 FR-5.6）、<strong>另存为…</strong>、<strong>仅复制</strong>、<strong>✗ 取消</strong>。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-3.12</td><td>键盘约定</td><td><kbd>Enter</kbd> = 确认，<kbd>Esc</kbd> = 取消；编辑期间不改变系统剪贴板以外的任何状态。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-3.13</td><td>工具快捷键</td><td>常用工具单键切换（如 R 矩形、A 箭头、B 画笔、T 文字、M 马赛克）。</td><td><span class="badge b1">P1</span></td></tr>
+  <tr><td class="id">FR-3.14</td><td>工具条悬停提示</td><td>鼠标悬停工具条按钮约 300ms，在按钮旁显示功能名称与快捷键（如"矩形 (R)"）；覆盖截图编辑工具条、贴图悬浮菜单与就地编辑工具条。</td><td><span class="badge b0">P0</span></td></tr>
+</table>
+
+<h3>FR-4 贴图（固定显示在屏幕最前端）</h3>
+<table>
+  <tr><th style="width:76px">编号</th><th style="width:170px">需求</th><th>描述</th><th style="width:64px">优先级</th></tr>
+  <tr><td class="id">FR-4.1</td><td>一键贴图</td><td><strong>截图确认后默认自动贴图</strong>（与复制同时进行，见 FR-5.6）；编辑器中也可手动点"贴图"按钮，或对剪贴板图片使用贴图热键；生成无边框置顶窗口显示该图。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-4.2</td><td>窗口置顶</td><td>贴图窗口 Always-on-Top，始终位于其他窗口之上（可在设置中全局关闭置顶）。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-4.3</td><td>拖动</td><td>按住鼠标左键任意拖动贴图位置。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-4.4</td><td>滚轮缩放</td><td>以鼠标位置为中心缩放（10%–800%），图像采用高质量插值不闪变。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-4.5</td><td>透明度调节</td><td><kbd>Ctrl</kbd> + 滚轮调节贴图不透明度（20%–100%）。</td><td><span class="badge b1">P1</span></td></tr>
+  <tr><td class="id">FR-4.6</td><td>关闭贴图</td><td><kbd>Esc</kbd> 或双击贴图关闭；关闭不写剪贴板。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-4.7</td><td>多贴图共存</td><td>可同时钉住多张贴图，各自独立缩放/透明度/位置。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-4.8</td><td>贴图就地编辑</td><td>通过悬浮菜单进入编辑态：贴图边框高亮并出现编辑工具条，可直接在贴图上继续标注（矩形/箭头/文字/马赛克等，与编辑器同一套工具）；✓ 完成后更新贴图并把编辑后的图片同步到剪贴板，Esc 取消保留原画面。详见 5.7 UI-7。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-4.9</td><td>鼠标穿透</td><td>可切换为点击穿透模式（贴图仅作视觉参考，不拦截鼠标）。</td><td><span class="badge b2">P2</span></td></tr>
+  <tr><td class="id">FR-4.10</td><td>悬浮菜单</td><td>鼠标悬停贴图约 300ms 后浮现半透明工具条菜单：编辑 / 复制 / 保存 / 缩放 / 透明度 / 关闭（详见 5.7 UI-7）；鼠标移出约 500ms 自动隐藏，防止误触。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-4.11</td><td>编辑后同步剪贴板</td><td>贴图上完成编辑后，自动将编辑后的最新图片重新写入剪贴板，保证"贴图上看到的 = 粘贴出去的"。</td><td><span class="badge b1">P1</span></td></tr>
+</table>
+
+<h3>FR-5 输出与文件管理</h3>
+<table>
+  <tr><th style="width:76px">编号</th><th style="width:170px">需求</th><th>描述</th><th style="width:64px">优先级</th></tr>
+  <tr><td class="id">FR-5.1</td><td>复制到剪贴板</td><td>确认后即以标准 CF_DIB/位图格式写入系统剪贴板，任意应用可直接粘贴；默认与贴图同时进行（复制并贴图）。贴图上再次编辑后自动重新写入（FR-4.11）。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-5.2</td><td>保存文件</td><td>PNG（默认，无损）与 JPEG（质量 60–100 可调）两种格式。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-5.3</td><td>另存为</td><td>弹出系统保存对话框，自选路径与文件名。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-5.4</td><td>自动命名</td><td>默认按时间戳命名（如 <code>20260823_153012.png</code>），模板可配置。</td><td><span class="badge b1">P1</span></td></tr>
+  <tr><td class="id">FR-5.5</td><td>保存目录</td><td>默认"图片\TackShot"（按系统已知文件夹解析），可更改；文件名冲突时自动追加序号。</td><td><span class="badge b1">P1</span></td></tr>
+  <tr><td class="id">FR-5.6</td><td>完成动作可配置</td><td>确认截图后的默认行为可选：<strong>复制并贴图（默认，V1.2 起）</strong> / 仅复制 / 复制并保存 / 仅保存 / 询问。</td><td><span class="badge b1">P1</span></td></tr>
+  <tr><td class="id">FR-5.7</td><td>截图历史</td><td>本会话内的截图历史列表（托盘菜单查看，可重新贴图/另存）。</td><td><span class="badge b2">P2</span></td></tr>
+</table>
+
+<h3>FR-6 系统集成与驻留</h3>
+<table>
+  <tr><th style="width:76px">编号</th><th style="width:170px">需求</th><th>描述</th><th style="width:64px">优先级</th></tr>
+  <tr><td class="id">FR-6.1</td><td>托盘常驻</td><td>启动后最小化到系统托盘图标；悬停提示当前版本与默认热键。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-6.2</td><td>托盘菜单</td><td>区域截图 / 全屏截图 / 贴图 / 设置 / 开机自启（勾选）/ 关于 / 退出；双击托盘图标触发区域截图。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-6.3</td><td>单实例</td><td>重复启动时激活已有实例（弹托盘气泡提示），不产生第二个进程。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-6.4</td><td>开机自启</td><td>默认关闭；开启后写入 HKCU Run 注册表项并在设置中提供关闭/清理入口；自启时静默驻留托盘。</td><td><span class="badge b1">P1</span></td></tr>
+  <tr><td class="id">FR-6.5</td><td>便携配置</td><td>全部用户配置存于 exe 同目录 <code>config.json</code>；删除目录即完全卸载。可加命令行参数切换到用户目录模式（P2）。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-6.6</td><td>退出清理</td><td>退出时释放全部热键、关闭全部贴图窗口、不留后台进程。</td><td><span class="badge b0">P0</span></td></tr>
+</table>
+
+<h3>FR-7 设置界面</h3>
+<table>
+  <tr><th style="width:76px">编号</th><th style="width:170px">需求</th><th>描述</th><th style="width:64px">优先级</th></tr>
+  <tr><td class="id">FR-7.1</td><td>热键设置页</td><td>各功能热键的查看与录入式修改，含冲突检测提示。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-7.2</td><td>输出设置页</td><td>默认完成动作、文件格式与质量、保存目录、命名模板。</td><td><span class="badge b1">P1</span></td></tr>
+  <tr><td class="id">FR-7.3</td><td>通用设置页</td><td>界面语言（首版简体中文，框架预留 i18n）、开机自启、贴图行为（默认透明度、置顶开关）。</td><td><span class="badge b1">P1</span></td></tr>
+  <tr><td class="id">FR-7.4</td><td>恢复默认</td><td>一键恢复全部设置为出厂值。</td><td><span class="badge b2">P2</span></td></tr>
+</table>
+
+<h3>4.8 核心交互流程（主链路）</h3>
+<div class="flow">
+  热键触发 → 冻结屏幕快照并盖遮罩（多屏全覆盖） → 拖拽框选（显示坐标/尺寸，可窗口吸附） → 松开出现工具条 → 选择工具编辑（可撤销/重做） → <strong>✓ 确认</strong>（默认：复制到剪贴板 + 贴图置顶） / <strong>另存为</strong> / <strong>仅复制</strong> / <strong>✗ 取消</strong> → 贴图常驻屏幕（悬停可唤出悬浮菜单继续编辑，见 5.7），会话结束焦点归还原应用
+</div>
+
+<!-- ============================================================ -->
+<h2 id="s5">5. UI 界面设计 <span class="en">UI Design</span></h2>
+
+<p>本章定义软件全部界面的布局、视觉与交互规范。以下设计稿为 HTML/CSS 还原的示意图，最终实现以本章规范为准。</p>
+
+<h3>5.1 设计原则</h3>
+<ul>
+  <li><strong>轻盈、聚焦、不打扰</strong>：截图是全屏沉浸操作，界面元素低侵入、按需出现，用完即走。</li>
+  <li><strong>键盘优先</strong>：主链路全程可键盘完成（热键 → 框选 → Enter / Esc）。</li>
+  <li><strong>深色浮层</strong>：截图遮罩与编辑工具条固定深色，与被截内容形成稳定对比，任何桌面背景下均可读。</li>
+  <li><strong>矢量绘制</strong>：界面全部用 Direct2D/DirectWrite 矢量绘制（图标取 Feather Icons 线条路径），无位图资源，天然适配高 DPI 且不增加包体。</li>
+  <li><strong>系统字体</strong>：界面通过系统 API 调用 Segoe UI / 微软雅黑，不随包分发字体文件（合规要求，见 8.3）。</li>
+</ul>
+
+<h3>5.2 视觉规范</h3>
+<table>
+  <tr><th style="width:130px">项目</th><th>规范</th></tr>
+  <tr><td>功能主色</td><td>#2563EB —— 选区边框、工具选中态、主按钮、链接</td></tr>
+  <tr><td>确认 / 取消</td><td>确认 #16A34A；取消与删除 #DC2626</td></tr>
+  <tr><td>截图遮罩</td><td>rgba(0,0,0,40%)，选区内透出原图</td></tr>
+  <tr><td>浮层面板</td><td>底色 #1E2530、描边 #334155、文字 #E2E8F0（编辑工具条、气泡提示）</td></tr>
+  <tr><td>常规界面</td><td>设置窗口与托盘菜单跟随系统亮 / 暗模式</td></tr>
+  <tr><td>字体字号</td><td>系统字体；正文 13px、辅助信息 12px、标题 14px（均随 DPI 缩放）</td></tr>
+  <tr><td>图标</td><td>Feather Icons（ISC 许可）线条风格，2px 描边（按 DPI 等比绘制）</td></tr>
+  <tr><td>DPI 自适应</td><td>全部 UI 尺寸以 96 DPI 为基准，随显示器缩放系数等比放大（100%–300%）。工具条尺寸（V1.5，用户要求缩小至 V1.4 的 1/3）：<strong>工具/动作按钮 16px、色板与线宽 12px、面板高 20px 基准</strong>；已知权衡：点击区变小，识别与操作由 FR-3.14 悬停提示辅助；选区控制点维持 10px 基准</td></tr>
+  <tr><td>图标风格</td><td><strong>彩色填充 + 粗线条点缀色</strong>（V1.5）：每个工具固定识别色（确认绿 / 取消红 / 贴图蓝 / 保存琥珀 / 马赛克灰蓝等），实心图形为主、2px 加粗描边点缀；因 1/3 尺寸下文字标签不可读，功能名由悬停提示承担</td></tr>
+  <tr><td>圆角 / 间距</td><td>圆角 6px；间距以 8px 为基准</td></tr>
+  <tr><td>可访问性</td><td>文字对比度 ≥ 4.5:1；控件支持 Tab 聚焦与悬停提示（tooltip）</td></tr>
+</table>
+
+<h3>5.3 界面清单</h3>
+<table>
+  <tr><th style="width:70px">编号</th><th style="width:190px">界面</th><th>触发方式</th><th style="width:150px">对应需求</th></tr>
+  <tr><td class="id">UI-1</td><td>截图遮罩 / 框选层</td><td>截图热键、托盘菜单</td><td>FR-1.1 – FR-1.10</td></tr>
+  <tr><td class="id">UI-2</td><td>编辑器工具条</td><td>框选松开后出现在选区旁</td><td>FR-3.x</td></tr>
+  <tr><td class="id">UI-3</td><td>贴图窗口</td><td>截图确认后默认自动贴图 / 贴图热键</td><td>FR-4.x</td></tr>
+  <tr><td class="id">UI-4</td><td>托盘图标与菜单</td><td>常驻后台，点击托盘</td><td>FR-6.1 – FR-6.2</td></tr>
+  <tr><td class="id">UI-5</td><td>设置窗口</td><td>托盘菜单 → 设置</td><td>FR-7.x</td></tr>
+  <tr><td class="id">UI-6</td><td>气泡与提示反馈</td><td>各类事件反馈</td><td>见 5.10</td></tr>
+  <tr><td class="id">UI-7</td><td>贴图悬浮菜单与就地编辑</td><td>鼠标悬停贴图</td><td>FR-4.8 / FR-4.10 / FR-4.11</td></tr>
+</table>
+
+<h3>5.4 UI-1 · 截图遮罩 / 框选层（主界面）</h3>
+<div class="mock">
+  <div class="screen">
+    <div class="win" style="left:6%;top:10%;width:34%;height:55%;"></div>
+    <div class="win" style="left:12%;top:70%;width:20%;height:16%;"></div>
+    <div class="win" style="right:8%;top:16%;width:30%;height:64%;"></div>
+    <div class="sel" style="left:34%;top:24%;width:34%;height:46%;">
+      <span class="h" style="left:-5px;top:-5px;"></span>
+      <span class="h" style="right:-5px;top:-5px;"></span>
+      <span class="h" style="left:-5px;bottom:-5px;"></span>
+      <span class="h" style="right:-5px;bottom:-5px;"></span>
+      <span class="h" style="left:50%;top:-5px;margin-left:-4px;"></span>
+      <span class="h" style="left:50%;bottom:-5px;margin-left:-4px;"></span>
+      <span class="h" style="top:50%;left:-5px;margin-top:-4px;"></span>
+      <span class="h" style="top:50%;right:-5px;margin-top:-4px;"></span>
+    </div>
+    <span class="chip" style="left:34%;top:14%;">320, 240 · 640×360</span>
+    <span class="chip" style="right:2.5%;bottom:2.5%;">十字光标 ✜　｜　右键取消</span>
+  </div>
+  <div class="cap">示意图：选区外 40% 黑遮罩，选区内透出原图；蓝色 1.5px 边框 + 8 个控制点可微调；左上信息条实时显示选区坐标与尺寸。</div>
+</div>
+<ul>
+  <li>进入截图后光标变为十字；悬停到某窗口时窗口描边高亮（吸附提示，对应 FR-1.3）。</li>
+  <li>松开鼠标后选区边缘出现 8 个控制点，可继续拖动调整大小或拖动选区内部整体移动（FR-1.9）。</li>
+  <li>确认选区后编辑工具条（UI-2）出现在选区下方；若贴近屏幕底边则自动翻转到选区上方。</li>
+  <li>多显示器时遮罩覆盖全部屏幕，可跨屏框选（FR-1.6）。</li>
+</ul>
+
+<h3>5.5 UI-2 · 编辑器工具条</h3>
+<div class="mock">
+  <div class="tb">
+    <span class="grp">
+      <span class="tbtn ok" title="确认（Enter）">✓</span>
+      <span class="tbtn" title="贴图">📌</span>
+      <span class="tbtn" title="另存为">⭳</span>
+      <span class="tbtn no" title="取消（Esc）">✕</span>
+    </span>
+    <span class="grp">
+      <span class="tbtn active" title="矩形（R）">▭</span>
+      <span class="tbtn" title="椭圆（O）">◯</span>
+      <span class="tbtn" title="箭头（A）">↗</span>
+      <span class="tbtn" title="画笔（B）">✎</span>
+      <span class="tbtn" title="文字（T）">T</span>
+      <span class="tbtn" title="马赛克（M）">▨</span>
+      <span class="tbtn" title="高亮（H）">◍</span>
+    </span>
+    <span class="grp">
+      <span class="tbtn dis" title="撤销（Ctrl+Z）">↶</span>
+      <span class="tbtn dis" title="重做（Ctrl+Y）">↷</span>
+    </span>
+    <span class="grp">
+      <span class="sw" style="background:#ef4444;box-shadow:0 0 0 2px #2563eb;"></span>
+      <span class="sw" style="background:#f59e0b;"></span>
+      <span class="sw" style="background:#22c55e;"></span>
+      <span class="sw" style="background:#3b82f6;"></span>
+      <span class="sw" style="background:#ffffff;"></span>
+      <span class="sw" style="background:#111827;"></span>
+    </span>
+    <span class="grp" style="font-size:12px;color:#94a3b8;">细 · 中 · 粗</span>
+  </div>
+  <div class="cap">示意图：左侧动作组（确认 / 贴图 / 另存 / 取消）→ 绘制工具组 → 撤销重做 → 色板与线宽。当前选中工具以主色高亮（示例中为矩形、红色）。</div>
+</div>
+<table>
+  <tr><th style="width:120px">控件状态</th><th>表现</th></tr>
+  <tr><td>默认</td><td>图标 60% 白，悬停显示 tooltip（工具名 + 快捷键）</td></tr>
+  <tr><td>悬停</td><td>底色提亮为 #334155</td></tr>
+  <tr><td>选中（当前工具）</td><td>主色 #2563EB 底 + 白色图标</td></tr>
+  <tr><td>禁用</td><td>35% 透明度（如无可撤销时 ↶ 置灰）</td></tr>
+</table>
+
+<div class="note"><strong>V1.5 调整（本节设计稿为放大示意）：</strong>工具条整体尺寸缩小至 V1.4 的 1/3（工具/动作按钮 16px 基准，随 DPI 缩放）；图标改为彩色填充+粗线条点缀色；新增悬停约 300ms 显示"功能名 (快捷键)"提示（FR-3.14）；文字标签方案因小尺寸不可读被悬停提示取代。</div>
+
+<h3>5.6 UI-3 · 贴图窗口</h3>
+<div class="mock" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">
+  <div style="flex:0 0 auto;">
+    <div class="pin">
+      <div class="img">
+        <span class="tag">100%</span>
+        <div class="ph"></div>
+        <div class="ph" style="width:65%;bottom:30px;"></div>
+      </div>
+    </div>
+    <div class="cap">贴图窗口：无边框、1px 描边 #94A3B8、投影轻微；<br>悬停时右上角显示缩放比例角标。</div>
+  </div>
+  <table style="flex:1;min-width:280px;margin:0;">
+    <tr><th style="width:150px">操作（手势）</th><th>行为</th></tr>
+    <tr><td>左键拖动</td><td>移动贴图位置</td></tr>
+    <tr><td>滚轮</td><td>以鼠标为中心缩放（10%–800%）</td></tr>
+    <tr><td><kbd>Ctrl</kbd> + 滚轮</td><td>调节不透明度（20%–100%）</td></tr>
+    <tr><td>双击 / <kbd>Esc</kbd></td><td>关闭贴图（不改写剪贴板）</td></tr>
+    <tr><td>悬停约 300ms</td><td>唤出悬浮菜单（编辑 / 复制 / 保存 / 缩放 / 透明度 / 关闭，见 5.7 UI-7）</td></tr>
+    <tr><td>右键菜单</td><td>与悬浮菜单同构（P2 备选入口）</td></tr>
+  </table>
+</div>
+
+<h3>5.7 UI-7 · 贴图悬浮菜单与就地编辑</h3>
+<div class="ok"><strong>默认行为（V1.2 起）：</strong>截图按 <kbd>Enter</kbd> 确认后，无需再选去向——图片<strong>自动复制到剪贴板</strong>，同时<strong>自动贴图置顶</strong>（默认完成动作，可在 设置 → 输出 改回传统行为，FR-5.6）。贴图平时安静置顶不打扰，鼠标悬停时浮现悬浮菜单，可编辑、复制、保存或关闭。</div>
+<p><strong>状态流转：</strong>常驻态（安静置顶） → 悬停 300ms → 悬停态（菜单浮现） → 点「编辑」 → 编辑态（就地标注） → ✓ / <kbd>Esc</kbd> → 回到常驻态。</p>
+<div class="mock" style="display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap;">
+  <div style="flex:0 0 auto;">
+    <div class="pin">
+      <div class="img">
+        <div class="tb" style="position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:3;opacity:.92;padding:4px 6px;flex-wrap:nowrap;">
+          <span class="grp" style="padding:0 2px;">
+            <span class="tbtn" title="编辑（就地标注）" style="min-width:26px;height:26px;font-size:12.5px;">✏</span>
+            <span class="tbtn" title="复制到剪贴板" style="min-width:26px;height:26px;font-size:12.5px;">⧉</span>
+            <span class="tbtn" title="保存（下拉可选另存为）" style="min-width:26px;height:26px;font-size:12.5px;">⭳</span>
+            <span class="tbtn" title="缩小（等效滚轮）" style="min-width:22px;height:26px;font-size:12.5px;">−</span>
+            <span style="font-size:11.5px;color:#94a3b8;align-self:center;min-width:34px;text-align:center;">100%</span>
+            <span class="tbtn" title="放大（等效滚轮）" style="min-width:22px;height:26px;font-size:12.5px;">＋</span>
+            <span class="tbtn" title="透明度循环 100→80→60→40→20%" style="min-width:26px;height:26px;font-size:12.5px;">◐</span>
+            <span class="tbtn no" title="关闭贴图" style="min-width:26px;height:26px;font-size:12.5px;">✕</span>
+          </span>
+        </div>
+        <div class="ph" style="bottom:12px;"></div>
+        <div class="ph" style="width:65%;bottom:30px;"></div>
+      </div>
+    </div>
+    <div class="cap">① 悬停态：顶部内侧居中浮现半透明菜单，不遮挡图片主体。</div>
+  </div>
+  <div style="flex:0 0 auto;">
+    <div class="tb" style="margin-bottom:8px;">
+      <span class="grp">
+        <span class="tbtn ok" title="完成：更新贴图并同步剪贴板">✓</span>
+        <span class="tbtn no" title="退出编辑（Esc，保留原画面）">✕</span>
+      </span>
+      <span class="grp">
+        <span class="tbtn active" title="矩形">▭</span>
+        <span class="tbtn" title="箭头">↗</span>
+        <span class="tbtn" title="画笔">✎</span>
+        <span class="tbtn" title="文字">T</span>
+        <span class="tbtn" title="马赛克">▨</span>
+      </span>
+      <span class="grp">
+        <span class="tbtn dis" title="撤销">↶</span>
+        <span class="tbtn dis" title="重做">↷</span>
+      </span>
+      <span class="grp">
+        <span class="sw" style="background:#ef4444;box-shadow:0 0 0 2px #2563eb;"></span>
+        <span class="sw" style="background:#22c55e;"></span>
+        <span class="sw" style="background:#3b82f6;"></span>
+        <span class="sw" style="background:#ffffff;"></span>
+      </span>
+    </div>
+    <div class="pin" style="border:1.5px solid #3b82f6;">
+      <div class="img">
+        <span class="tag" style="background:#2563eb;">编辑中 · 100%</span>
+        <div class="ph" style="bottom:12px;"></div>
+        <div class="ph" style="width:65%;bottom:30px;"></div>
+      </div>
+    </div>
+    <div class="cap">② 编辑态：边框主色高亮，上方出现编辑工具条（与 UI-2 同一套组件）。</div>
+  </div>
+</div>
+<table>
+  <tr><th style="width:110px">菜单项</th><th>行为</th><th style="width:130px">对应需求</th></tr>
+  <tr><td>✏ 编辑</td><td>进入就地编辑态（规则见下）</td><td>FR-4.8</td></tr>
+  <tr><td>⧉ 复制</td><td>把贴图当前内容重新写入剪贴板（编辑后已自动同步，通常无需手点）</td><td>FR-4.11 / FR-5.1</td></tr>
+  <tr><td>⭳ 保存</td><td>按默认设置保存文件；下拉二级项「另存为…」</td><td>FR-5.2 / FR-5.3</td></tr>
+  <tr><td>− / ＋</td><td>缩放（等效滚轮，以图片中心为基准），中间实时显示当前比例</td><td>FR-4.4</td></tr>
+  <tr><td>◐ 透明度</td><td>点击循环 100→80→60→40→20%；<kbd>Ctrl</kbd>+滚轮连续微调</td><td>FR-4.5</td></tr>
+  <tr><td>✕ 关闭</td><td>关闭贴图，不改写剪贴板</td><td>FR-4.6</td></tr>
+</table>
+<p><strong>就地编辑规则：</strong></p>
+<ul>
+  <li>进入编辑态：贴图边框主色高亮，上方出现编辑工具条（与 UI-2 完全同构：图形 / 文字 / 马赛克工具、撤销重做、色板线宽），直接在贴图上绘制标注；</li>
+  <li>✓ 完成：更新贴图内容，并把编辑后的图片<strong>自动重新写入剪贴板</strong>（FR-4.11，保证"贴图上看到的 = 粘贴出去的"）；</li>
+  <li><kbd>Esc</kbd>：退出编辑，保留编辑前画面；编辑期间贴图仍可拖动、缩放，工具条不触发自动隐藏。</li>
+</ul>
+<p><strong>防误触与显示规则：</strong></p>
+<ul>
+  <li>菜单浮现延迟约 300ms、鼠标移出后约 500ms 隐藏；按下鼠标进行中的操作不触发隐藏；</li>
+  <li>菜单不遮挡图片主体：贴图足够大时显示于顶部内侧居中；贴图过小（约小于 120×120）时改为显示在图片上方外侧；</li>
+  <li>多张贴图共存时，仅鼠标所在的贴图显示菜单，互不影响（FR-4.7）；</li>
+  <li>键盘可达：贴图获得焦点后 <kbd>Tab</kbd> 循环菜单项，<kbd>Enter</kbd> 执行。</li>
+</ul>
+
+<h3>5.8 UI-4 · 托盘图标与菜单</h3>
+<div class="mock" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">
+  <div class="tray" style="flex:0 0 auto;">
+    <div class="r"><span>区域截图</span><span class="k">Ctrl+Alt+A</span></div>
+    <div class="r"><span>全屏截图</span><span class="k">Ctrl+Alt+F</span></div>
+    <div class="r"><span>贴图（剪贴板）</span><span class="k">Ctrl+Alt+P</span></div>
+    <div class="sep"></div>
+    <div class="r"><span class="dis">截图历史（暂无）</span></div>
+    <div class="r"><span>设置…</span></div>
+    <div class="r"><span>开机自启动</span><span>✓</span></div>
+    <div class="sep"></div>
+    <div class="r"><span>关于 钉图 TackShot</span></div>
+    <div class="r"><span>退出</span></div>
+  </div>
+  <ul style="flex:1;min-width:260px;margin:0;">
+    <li>托盘图标：剪刀造型线条图标，亮暗模式自适应；悬停 tooltip 显示「钉图 TackShot v1.0 · Ctrl+Alt+A 截图」。</li>
+    <li>双击托盘图标 = 触发区域截图（FR-6.2）。</li>
+    <li>「截图历史」无内容时灰显占位，不做空弹窗。</li>
+    <li>菜单项顺序固定，高频项（截图三兄弟）置顶。</li>
+  </ul>
+</div>
+
+<h3>5.9 UI-5 · 设置窗口</h3>
+<div class="mock">
+  <div class="set">
+    <div class="nav">
+      <div class="active">热键</div>
+      <div>输出</div>
+      <div>通用</div>
+      <div>关于</div>
+    </div>
+    <div class="bd">
+      <div class="frow"><span>区域截图</span><span><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>A</kbd>　<span class="op">修改</span></span></div>
+      <div class="frow"><span>全屏截图</span><span><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F</kbd>　<span class="op">修改</span></span></div>
+      <div class="frow"><span>贴图（剪贴板）</span><span><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>P</kbd>　<span class="op">修改</span></span></div>
+      <div class="frow"><span>延时截图</span><span style="color:var(--muted);">未设置　<span class="op">设置</span></span></div>
+      <div class="frow" style="color:#b91c1c;border-bottom:none;"><span style="font-size:12.5px;">⚠ 冲突提示示例：<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>A</kbd> 已被「QQ」占用，请更换热键</span></div>
+    </div>
+  </div>
+  <div class="cap">示意图（热键页）：点击「修改」进入按下即录入状态；冲突项整行红字提示。窗口约 520×380，可缩放，右下角「保存 / 取消」。</div>
+</div>
+<table>
+  <tr><th style="width:90px">页签</th><th>内容</th><th style="width:130px">对应需求</th></tr>
+  <tr><td>热键</td><td>各功能热键的录入式修改与冲突提示</td><td>FR-7.1 / FR-2.x</td></tr>
+  <tr><td>输出</td><td>默认完成动作（默认：复制并贴图）、格式与 JPEG 质量、保存目录、命名模板</td><td>FR-7.2 / FR-5.x</td></tr>
+  <tr><td>通用</td><td>界面语言、开机自启、贴图默认行为（置顶 / 默认透明度）、完成气泡开关</td><td>FR-7.3 / FR-6.4</td></tr>
+  <tr><td>关于</td><td>版本、开源许可证与第三方声明入口、日志目录、项目主页</td><td>第 8 章 / NFR-6.2</td></tr>
+</table>
+
+<h3>5.10 UI-6 · 气泡与提示反馈</h3>
+<table>
+  <tr><th style="width:130px">场景</th><th>形式</th><th>示例文案</th><th style="width:70px">时长</th></tr>
+  <tr><td>启动就绪</td><td>托盘气泡</td><td>钉图 TackShot 已就绪：<b>Ctrl+Alt+A</b> 开始截图</td><td>3 秒</td></tr>
+  <tr><td>热键冲突</td><td>气泡 + 设置页红字</td><td>Ctrl+Alt+A 已被「QQ」占用，请在设置中更换</td><td>常驻至处理</td></tr>
+  <tr><td>截图完成</td><td>工具条 ✓ 变实后消失 + 气泡（可关闭）</td><td>已复制到剪贴板 · 已保存 20260823_153012.png</td><td>2 秒</td></tr>
+  <tr><td>保存失败</td><td>红色气泡</td><td>保存失败：目标目录不可写</td><td>5 秒</td></tr>
+  <tr><td>历史为空</td><td>菜单项灰显</td><td>（暂无截图历史）</td><td>—</td></tr>
+</table>
+<ul>
+  <li>规则：同一时刻至多显示 1 条气泡；鼠标悬停时暂停自动关闭倒计时。</li>
+  <li>气泡为深色浮层样式（同 5.2 视觉规范），不打断用户当前焦点。</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="s6">6. 非功能需求 <span class="en">Non-Functional Requirements</span></h2>
+
+<h3>6.1 性能指标速览（验收线）</h3>
+<div class="metrics">
+  <div class="metric"><div class="v">≤ 50 MB</div><div class="k">空闲驻留工作集（目标 ≤ 30 MB）</div></div>
+  <div class="metric"><div class="v">≤ 300 ms</div><div class="k">热键触发 → 框选界面就绪（常驻态）</div></div>
+  <div class="metric"><div class="v">≤ 800 ms</div><div class="k">冷启动（双击 exe → 可截图）</div></div>
+  <div class="metric"><div class="v">≤ 15 MB</div><div class="k">ZIP 分发包体积（目标 ≤ 10 MB）</div></div>
+  <div class="metric"><div class="v">≈ 0%</div><div class="k">空闲 CPU 占用（事件驱动，无轮询）</div></div>
+  <div class="metric"><div class="v">60 fps</div><div class="k">编辑器与贴图渲染帧率</div></div>
+</div>
+
+<h3>6.2 详细非功能需求</h3>
+<table>
+  <tr><th style="width:76px">编号</th><th style="width:130px">类别</th><th>需求描述</th></tr>
+  <tr><td class="id">NFR-1.1</td><td>内存</td><td>空闲驻留工作集 ≤ 50 MB（目标 ≤ 30 MB）；连续 100 次截图并关闭后，工作集回落到基线水平（无泄漏增长趋势）。</td></tr>
+  <tr><td class="id">NFR-1.2</td><td>响应</td><td>常驻状态下热键到框选就绪 ≤ 300 ms；贴图窗口创建到显示 ≤ 200 ms。</td></tr>
+  <tr><td class="id">NFR-1.3</td><td>CPU</td><td>空闲时 0% 占用（事件驱动模型，禁用周期性空转定时器）；截图与编辑期间 CPU 峰值不超过单核 50% 持续 1 秒。</td></tr>
+  <tr><td class="id">NFR-2.1</td><td>分发体积</td><td>ZIP 包 ≤ 15 MB（目标 ≤ 10 MB）；解压后总文件数 ≤ 10 个，主体为单一可执行文件。</td></tr>
+  <tr><td class="id">NFR-2.2</td><td>零依赖</td><td>不要求用户安装任何运行库：已定 C++ 实现，静态链接 CRT，单一可执行文件；Windows 10 1809+ / Win11 x64 解压即用（ARM64 原生构建为发布可选项，x64 模拟保底）。</td></tr>
+  <tr><td class="id">NFR-3.1</td><td>系统兼容</td><td>Windows 10 1809+ / Windows 11 x64 全量通过；ARM64（x64 模拟）至少可运行。</td></tr>
+  <tr><td class="id">NFR-3.2</td><td>显示兼容</td><td>1–3 台显示器、100%–300% DPI、混合 DPI、横竖屏组合场景截图与贴图正确。</td></tr>
+  <tr><td class="id">NFR-4.1</td><td>可靠性</td><td>72 小时驻留稳定性测试无崩溃；崩溃时自动生成本地 minidump 与日志（仅本地保存）。</td></tr>
+  <tr><td class="id">NFR-4.2</td><td>容错</td><td>配置文件损坏时自动备份并重建默认配置，不崩溃、不丢失程序可用性。</td></tr>
+  <tr><td class="id">NFR-5.1</td><td>隐私</td><td>默认零网络请求；无遥测、无广告、无数据上传。若未来加入更新检查，必须默认关闭且显式用户授权。</td></tr>
+  <tr><td class="id">NFR-5.2</td><td>安全</td><td>不以管理员权限运行为默认；不加载未经签名校验的插件（首版无插件系统）。</td></tr>
+  <tr><td class="id">NFR-6.1</td><td>可维护性</td><td>模块分层：热键/托盘、屏幕捕获、编辑器、贴图窗口、配置与输出五个模块边界清晰；代码开源并附构建文档。</td></tr>
+  <tr><td class="id">NFR-6.2</td><td>可观测</td><td>本地日志（按大小滚动），托盘"关于"页提供一键打开日志目录用于问题诊断。</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="s7">7. 技术选型建议 <span class="en">Technical Proposal</span></h2>
+
+<h3>7.1 候选方案对比</h3>
+<table>
+  <tr>
+    <th style="width:52px">方案</th><th>技术栈</th><th>空闲内存（估）</th><th>包体积（估）</th><th>开发效率</th><th>评估</th>
+  </tr>
+  <tr>
+    <td class="id">A ★推荐</td>
+    <td>C++20 + Win32 API + Direct2D/DirectComposition（WIC 编解码）</td>
+    <td>10–30 MB</td><td>1–3 MB</td><td>低（周期较长）</td>
+    <td><strong>最贴合"轻量 + 低内存"目标</strong>；捕获/渲染全用系统组件，第三方依赖近乎为零，版权面最小。</td>
+  </tr>
+  <tr>
+    <td class="id">B 备选</td>
+    <td>Rust + windows-rs + egui/iced（或纯 Win32）</td>
+    <td>20–50 MB</td><td>3–8 MB</td><td>中</td>
+    <td>同样无运行时依赖且内存安全；UI 生态成熟度略逊，开发量与 A 相当。</td>
+  </tr>
+  <tr>
+    <td class="id">C</td>
+    <td>C# / .NET 8 + Avalonia UI + NativeAOT 自包含单文件</td>
+    <td>60–120 MB</td><td>15–30 MB</td><td>高</td>
+    <td>开发最快、UI 最易做精致，但内存与体积难以满足 6.1 指标（需放宽验收线）；注意 WPF/WinForms 不支持 NativeAOT。</td>
+  </tr>
+  <tr>
+    <td class="id">D</td>
+    <td>C++ + Qt6（LGPL，动态链接）</td>
+    <td>40–80 MB</td><td>20–35 MB</td><td>中高</td>
+    <td>Flameshot 同路线；体积偏大，且引入 LGPL 合规操作成本（须动态链接并提供重链接途径），与"轻量/最小版权面"目标冲突。</td>
+  </tr>
+</table>
+
+<div class="ok"><strong>已定（2026-08-23，关闭 Q3）：</strong>采用 <strong>方案 A：C++20 + Win32 + Direct2D</strong>——零运行时依赖、空闲内存 10–30MB、静态链接 CRT 单一可执行文件，完美满足"解压即用、不装任何依赖库"（NFR-2.2）；高 DPI / 多屏 / 窗口捕获等核心技术风险在 M1 里程碑先行 PoC 验证。方案 C 保留存档，不再启用。</div>
+
+<h3>7.2 推荐架构分层（逻辑视图）</h3>
+<table>
+  <tr><th style="width:180px">模块</th><th>职责</th><th>关键系统 API（方案 A）</th></tr>
+  <tr><td>驻留层</td><td>托盘、单实例、开机自启、生命周期</td><td>Shell_NotifyIcon、CreateMutex、HKCU Run</td></tr>
+  <tr><td>热键层</td><td>全局热键注册与分发</td><td>RegisterHotKey</td></tr>
+  <tr><td>捕获层</td><td>屏幕快照、窗口识别、DPI/多屏处理</td><td>DXGI Desktop Duplication / GDI+BitBlt、DwmGetWindowAttribute、GetDpiForMonitor</td></tr>
+  <tr><td>编辑层</td><td>矢量标注对象模型、撤销栈、渲染</td><td>Direct2D / DirectWrite（系统组件）</td></tr>
+  <tr><td>贴图层</td><td>无边框置顶分层窗口、缩放/透明、悬浮菜单与就地编辑态</td><td>WS_EX_LAYERED + WS_EX_TOPMOST、UpdateLayeredWindow / DComp</td></tr>
+  <tr><td>输出层</td><td>剪贴板、文件编码、命名规则</td><td>CF_DIB/SetClipboardData、WIC（PNG/JPEG 编码）</td></tr>
+  <tr><td>基础层</td><td>配置、日志、i18n 框架</td><td>JSON 配置、滚动日志</td></tr>
+</table>
+
+<h3>7.3 候选第三方开源组件（按推荐方案，均为宽松许可证）</h3>
+<table>
+  <tr><th>用途</th><th>候选组件</th><th>许可证</th><th>说明</th></tr>
+  <tr><td>JSON 配置解析</td><td>nlohmann/json</td><td>MIT</td><td>头文件库，零部署成本</td></tr>
+  <tr><td>日志</td><td>spdlog</td><td>MIT</td><td>高性能，按大小滚动</td></tr>
+  <tr><td>UI 图标</td><td>Feather Icons / Tabler Icons</td><td>ISC / MIT</td><td>线性风格，与轻量定位匹配</td></tr>
+  <tr><td>内置字体（如需要）</td><td>思源黑体（Source Han Sans）/ Noto Sans SC</td><td>OFL-1.1</td><td><strong>禁止</strong>将微软雅黑等系统专有字体文件随包分发（详见 8.3）</td></tr>
+  <tr><td>PNG/JPEG 编码</td><td>Windows WIC（系统组件）</td><td>随系统授权</td><td>无需自带编解码库；如需自有实现可选 stb_image_write（公有领域/MIT）</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="s8">8. 开源合规与版权保护 <span class="en">Open-Source Compliance</span></h2>
+
+<h3>8.1 总体策略（两条路线，二选一并全项目贯彻）</h3>
+<table>
+  <tr><th style="width:90px">路线</th><th>内容</th><th>适用</th></tr>
+  <tr>
+    <td><strong>路线一</strong><br>（未采用）</td>
+    <td>本项目自身以 <strong>GPL-3.0</strong> 开源发布。此时可合法地<strong>阅读、参考甚至复用</strong> Flameshot、ShareX、Greenshot 等同为 GPL 的项目代码（需保留版权声明），衍生作品继续以 GPL-3.0 开源。</td>
+    <td>计划开源、希望最大化借鉴既有成熟实现</td>
+  </tr>
+  <tr>
+    <td><strong>路线二<br>（✅ 已定）</strong></td>
+    <td>保留私有版权或以宽松协议开源。此时<strong>只允许使用 MIT / Apache-2.0 / BSD / ISC / zlib / 0BSD 等宽松许可证组件</strong>；对 GPL/AGPL 项目只"看行为、不抄实现"（干净室式参考），绝不复制其代码。<strong>本项目采用此路线：以 MIT 开源（2026-08-23 定案）。</strong></td>
+    <td>已选定（MIT 开源）</td>
+  </tr>
+</table>
+
+<h3>8.2 第三方依赖许可证策略</h3>
+<table>
+  <tr><th style="width:120px">级别</th><th>许可证</th><th>规则</th></tr>
+  <tr><td><strong>✅ 白名单</strong></td><td>MIT、Apache-2.0、BSD-2/3-Clause、ISC、zlib、0BSD/Unlicense、OFL-1.1（字体）、CC0（资源）</td><td>可自由使用（含闭源分发），保留版权与许可声明即可。</td></tr>
+  <tr><td><strong>⚠️ 谨慎使用</strong></td><td>LGPL-2.1/3.0、MPL-2.0</td><td>LGPL 必须动态链接、不得静态编译进主程序，须提供对象文件/可重链接途径并声明来源；MPL 以文件为隔离单位修改需开源该文件。使用前需逐项评估，默认不引入。</td></tr>
+  <tr><td><strong>⛔ 禁止</strong></td><td>GPL-2.0/3.0、AGPL（在路线二下）、SSPL、无许可证代码、来源不明的代码片段、商业控件、专有 SDK</td><td>路线二下引入 GPL/AGPL 将强制整个程序开源；无许可证 = 默认保留所有权利，一律不得使用。</td></tr>
+</table>
+<div class="warn"><strong>工程红线：</strong>禁止从任何来源（博客、AI 生成、Stack Overflow）粘贴无法确认许可证的代码段；所有第三方代码必须通过正式依赖引入并登记，不接受"手工拷贝进仓库"。</div>
+
+<h3>8.3 资源文件合规（容易被忽视的高风险点）</h3>
+<ul>
+  <li><strong>字体</strong>：微软雅黑、宋体等系统字体的<strong>调用</strong>（程序运行时请求系统渲染）没有问题，但把字体文件打进发行包属于再分发，微软字体（微软雅黑等）许可不允许随软件分发。若需内置字体，只能使用 OFL 字体（思源黑体、Noto Sans SC 等）。</li>
+  <li><strong>图标/图片</strong>：全部使用 ISC/MIT/Apache-2.0/CC0 授权的图标库（Feather、Tabler、Material Symbols 等）；禁止使用从网络下载的来源不明素材。</li>
+  <li><strong>音频/其他资产</strong>：首版无；未来如加入提示音，须使用 CC0 或自有创作。</li>
+</ul>
+
+<h3>8.4 流程管控（写入开发规范与 CI）</h3>
+<ol>
+  <li><strong>依赖登记</strong>：新增任何依赖必须登记到 <code>THIRD-PARTY-NOTICES.txt</code> 与依赖清单（SBOM），注明名称、版本、许可证、来源地址。</li>
+  <li><strong>CI 许可证扫描</strong>：构建流水线集成许可证检查（如 scancode-toolkit 或语言生态对应工具），白名单外依赖直接构建失败。</li>
+  <li><strong>发布物检查</strong>：每次发布 ZIP 前核对：LICENSE 文件、THIRD-PARTY-NOTICES、源码仓库（若路线一）同步。</li>
+  <li><strong>代码评审规则</strong>：评审必查项——无许可证不明代码、无专有资源、GPL 项目代码未被复制（路线二）。</li>
+</ol>
+
+<h3>8.5 命名与商标</h3>
+<ul>
+  <li>产品名正式发布前进行商标/名称检索，避免与 Snipaste、ShareX、Snip & Sketch 等现有产品名称或商标构成混淆性近似。</li>
+  <li>文档与宣传中提及竞品名称仅作客观比较，不贬损、不暗示关联或背书。</li>
+</ul>
+
+<h3>8.6 隐私与免责</h3>
+<ul>
+  <li>软件默认完全离线，不收集、不上传任何用户数据（含截图内容）；随附 EULA/使用说明中明确：用户对所截取内容的合法性（第三方版权、个人信息等）自行负责。</li>
+  <li>不集成任何需要网络鉴权的第三方服务，从源头规避数据合规风险。</li>
+</ul>
+
+<h3>8.7 本项目许可证（已定案）</h3>
+<div class="ok"><strong>已定（2026-08-23，关闭 Q2）：本项目以 MIT 许可证开源。</strong>执行要点：① 仓库根目录随附 LICENSE（MIT）；② 依赖仅限白名单宽松许可证（MIT / Apache-2.0 / BSD / ISC / zlib / 0BSD / OFL）；③ GPL 系项目（Flameshot / ShareX / Greenshot）代码<strong>一律不得复制</strong>，仅可干净室式参考其交互行为；④ THIRD-PARTY-NOTICES 完整登记，随 GitHub Releases 一并发布。</div>
+
+<!-- ============================================================ -->
+<h2 id="s9">9. 竞品参考 <span class="en">Competitive Analysis</span></h2>
+<table>
+  <tr>
+    <th style="width:120px">产品</th><th>许可证 / 授权</th><th>技术</th><th>贴图</th><th>编辑</th><th>轻量度</th><th>对本项目的启示</th>
+  </tr>
+  <tr>
+    <td><strong>Snipaste</strong></td><td>闭源免费（个人）；2.0+ 商用需付费</td><td>C++ / Qt</td><td>✔（标杆）</td><td>✔ 丰富</td><td>高</td>
+    <td>贴图交互的标杆（滚轮缩放、Ctrl+滚轮透明度），直接对齐其核心体验；其闭源/商用收费正是本项目的差异化机会</td>
+  </tr>
+  <tr>
+    <td><strong>Flameshot</strong></td><td>GPL-3.0</td><td>C++ / Qt</td><td>✔</td><td>✔ 丰富</td><td>中（Qt 体积/内存偏大）</td>
+    <td>开源同类的最佳参考：编辑器工具集与交互；GPL 代码不可复用（已定 MIT），仅干净室式参考行为</td>
+  </tr>
+  <tr>
+    <td><strong>ShareX</strong></td><td>GPL-3.0</td><td>C# / .NET</td><td>—（无原生贴图）</td><td>✔ 极丰富</td><td>低（常驻内存上百 MB 级）</td>
+    <td>功能全面性的参照；同时是"过重"的反面教材，本项目明确不追功能大而全</td>
+  </tr>
+  <tr>
+    <td><strong>Greenshot</strong></td><td>GPL-3.0</td><td>C# / .NET</td><td>—</td><td>✔ 基础</td><td>中</td>
+    <td>办公场景标注工作流参考（区域高亮、放大镜）</td>
+  </tr>
+  <tr>
+    <td><strong>Windows 截图工具</strong></td><td>系统组件</td><td>—</td><td>—</td><td>基础标注</td><td>—</td>
+    <td>体验基线：至少要比 Win+Shift+S + 便签的组合高效，才有存在价值</td>
+  </tr>
+</table>
+<p style="font-size:12.5px;color:var(--muted)">注：竞品信息为编写时公开资料整理，以各官方站点为准。</p>
+
+<!-- ============================================================ -->
+<h2 id="s10">10. 里程碑与交付物 <span class="en">Milestones</span></h2>
+<p>按 1–2 名工程师投入估算：</p>
+<table>
+  <tr><th style="width:70px">阶段</th><th style="width:220px">内容</th><th>周期</th><th style="width:40%">退出标准</th></tr>
+  <tr><td class="id">M0</td><td>需求评审（技术选型与许可证均已定案）</td><td>0.5 周</td><td>开放问题 Q1–Q6 已全部定案（2026-08-23，见 14.2）；本文档评审通过后即进入 M1</td></tr>
+  <tr><td class="id">M1</td><td>技术 PoC：热键注册、屏幕捕获、高 DPI/多屏、置顶分层窗口</td><td>2 周</td><td>在 150%/200% 混合 DPI 双屏上截图不模糊、贴图正常置顶</td></tr>
+  <tr><td class="id">M2</td><td>MVP：区域/全屏截图 + P0 编辑工具 + 撤销 + 剪贴板/保存输出</td><td>4 周</td><td>P0 功能全部可用，主链路走通</td></tr>
+  <tr><td class="id">M3</td><td>Beta：贴图增强、设置界面、托盘完善、开机自启、单实例</td><td>3 周</td><td>P1 功能完成或明确裁剪，可用作日常自用版本</td></tr>
+  <tr><td class="id">M4</td><td>v1.0：性能调优、内存泄漏排查、合规审查（SBOM/NOTICES/CI 扫描）、打包发布</td><td>2 周</td><td>第 11 章验收标准全部通过，公开发布</td></tr>
+</table>
+<p><strong>总周期约 11–12 周。</strong>各阶段交付物：M1 PoC 源码与结论报告；M2/M3 可运行构建；M4 发布：<strong>GitHub Releases</strong>（ZIP + SHA-256 校验）、源码仓库（MIT LICENSE）、THIRD-PARTY-NOTICES、<strong>HTML 版图文并茂用户手册</strong>（用户手册.html，覆盖全部 P0/P1 功能操作说明，Q5 定案）。</p>
+
+<!-- ============================================================ -->
+<h2 id="s11">11. 验收标准 <span class="en">Acceptance Criteria</span></h2>
+<table>
+  <tr><th style="width:110px">维度</th><th>标准</th></tr>
+  <tr><td>功能</td><td>P0 需求 100% 实现并通过测试；P1 实现率 ≥ 80%（未实现项列入发布说明）。</td></tr>
+  <tr><td>性能</td><td>第 6.1 节六项指标在参考机（见测试计划）上实测达标并留存记录。</td></tr>
+  <tr><td>便携性</td><td>全新 Windows 11 x64 虚拟机：解压 ZIP → 双击 → 截图 → 编辑 → 贴图 → 退出全流程通过，且退出后系统无残留进程/热键。</td></tr>
+  <tr><td>稳定性</td><td>连续 200 次截图循环工作集无持续增长；72 小时驻留无崩溃。</td></tr>
+  <tr><td>兼容性</td><td>Win10 1809 / Win11 22H2+、双屏混合 DPI、100%–300% 缩放组合矩阵通过。</td></tr>
+  <tr><td>合规</td><td>依赖清单 100% 落在许可证白名单；THIRD-PARTY-NOTICES 与实际二进制一致；CI 许可证扫描通过；发布包不含任何专有字体/图标。</td></tr>
+  <tr><td>发布</td><td>GitHub Releases 提供 ZIP 与 SHA-256 校验；随附 HTML 版图文用户手册（覆盖全部 P0/P1 功能）；Windows 11 x64 全新环境解压即用、零依赖验证通过。</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="s12">12. 风险与对策 <span class="en">Risks</span></h2>
+<table>
+  <tr><th>风险</th><th style="width:70px">概率</th><th style="width:70px">影响</th><th>对策</th></tr>
+  <tr><td>高 DPI / 混合多屏适配复杂，坐标换算错误</td><td>高</td><td>高</td><td>M1 前置专项 PoC；建立 DPI/多屏自动化测试矩阵</td></tr>
+  <tr><td>热键被 QQ/微信等常用软件占用</td><td>高</td><td>中</td><td>冲突检测 + 气泡提示引导更换；默认热键避开常见占用并允许改键</td></tr>
+  <tr><td>DRM 受保护内容 / UAC 安全桌面截取黑屏或失败</td><td>中</td><td>低</td><td>系统级限制，产品文档明确说明，不做规避（规避反而有法律风险）</td></tr>
+  <tr><td>无代码签名导致 SmartScreen/杀软误报</td><td>高</td><td>中</td><td>发布页提供 SHA-256 校验与"仍要运行"指引；后续视预算购买代码签名证书</td></tr>
+  <tr><td>GPL 代码被误引入（路线二场景）</td><td>中</td><td>高</td><td>8.4 节流程：依赖白名单 + CI 扫描 + 评审红线</td></tr>
+  <tr><td>编辑器功能蔓延导致周期失控</td><td>中</td><td>中</td><td>严格按 P0/P1 圈定范围，P2 一律进 Backlog；每里程碑范围冻结</td></tr>
+  <tr><td>C++ 方案开发周期长于预期</td><td>中</td><td>中</td><td>M2 中点设置检查点：若进度落后超 30%，评估切换方案 C 并放宽性能验收线（需评审批准）</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="s13">13. 功能清单 · 需求跟踪总表（RTM · 唯一跟踪基线） <span class="en">Feature List &amp; RTM</span></h2>
+
+<p>本章为<strong>独立、完整的功能清单</strong>，汇总全部功能需求（FR）及其优先级、状态与目标里程碑，是需求状态的唯一权威记录；第 4 章为各模块的详细描述，两者编号一一对应。维护规则与状态图例如下。</p>
+
+<div class="note">
+  <strong>维护规则：</strong>本表是本项目需求状态的<strong>唯一权威记录</strong>。任何需求的<strong>新增</strong>、<strong>状态变更</strong>（待开发 → 开发中 → 已完成 → 已发布）、<strong>裁剪</strong>，都必须<strong>先更新本表</strong>并追加表下「变更记录」，再进行对应的开发或文档修改。新增需求编号规则：既有模块内追加（如 FR-3.14），新模块使用新编号（如 FR-8.x）。本维护规则已写入项目持久记忆，跨会话持续生效。
+</div>
+<p>
+  状态图例：<span class="st st-t">待开发</span>　<span class="st st-d">开发中</span>　<span class="st st-c">已完成</span>　<span class="st st-r">已发布</span>　<span class="st st-x">已裁剪</span>
+  　｜　里程碑：M2 = MVP、M3 = Beta、远期 = Backlog
+</p>
+<table>
+  <tr><th style="width:70px">编号</th><th style="width:88px">模块</th><th>功能</th><th style="width:56px">优先级</th><th style="width:72px">状态</th><th style="width:78px">目标里程碑</th><th>备注</th></tr>
+  <tr><td class="id">FR-1.1</td><td>截图捕获</td><td>区域截图（默认）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-1.2</td><td>截图捕获</td><td>全屏截图</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-1.3</td><td>截图捕获</td><td>活动窗口截图</td><td><span class="badge b1">P1</span></td><td><span class="st st-t">待开发</span></td><td>M3</td><td>—</td></tr>
+  <tr><td class="id">FR-1.4</td><td>截图捕获</td><td>延时截图（1–10 秒）</td><td><span class="badge b1">P1</span></td><td><span class="st st-t">待开发</span></td><td>M3</td><td>—</td></tr>
+  <tr><td class="id">FR-1.5</td><td>截图捕获</td><td>上次区域重截</td><td><span class="badge b2">P2</span></td><td><span class="st st-t">待开发</span></td><td>远期</td><td>—</td></tr>
+  <tr><td class="id">FR-1.6</td><td>截图捕获</td><td>多显示器支持</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>M1 PoC 验证</td></tr>
+  <tr><td class="id">FR-1.7</td><td>截图捕获</td><td>高 DPI（Per-Monitor V2）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>M1 PoC 验证</td></tr>
+  <tr><td class="id">FR-1.8</td><td>截图捕获</td><td>选区坐标 / 尺寸显示</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
+  <tr><td class="id">FR-1.9</td><td>截图捕获</td><td>选区 8 控制点调整</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
+  <tr><td class="id">FR-1.10</td><td>截图捕获</td><td>取消截图（Esc / 右键）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-1.11</td><td>截图捕获</td><td>拖动选区白色半透明高亮</td><td><span class="badge b0">P0</span></td><td><span class="st st-t">待开发</span></td><td>M2</td><td>V1.5 新增</td></tr>
+  <tr><td class="id">FR-2.1</td><td>全局热键</td><td>默认热键方案</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-2.2</td><td>全局热键</td><td>热键自定义</td><td><span class="badge b0">P0</span></td><td><span class="st st-d">开发中</span></td><td>M3</td><td>config.json 改键已可用；录入式设置 UI 待 M3</td></tr>
+  <tr><td class="id">FR-2.3</td><td>全局热键</td><td>热键冲突检测与提示</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-2.4</td><td>全局热键</td><td>功能独立热键</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
+  <tr><td class="id">FR-2.5</td><td>全局热键</td><td>管理员窗口说明 / 提权引导</td><td><span class="badge b2">P2</span></td><td><span class="st st-t">待开发</span></td><td>远期</td><td>—</td></tr>
+  <tr><td class="id">FR-3.1</td><td>编辑器</td><td>矩形框</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-3.2</td><td>编辑器</td><td>箭头</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-3.3</td><td>编辑器</td><td>自由画笔</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-3.4</td><td>编辑器</td><td>文字（支持 IME 输入法）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-3.5</td><td>编辑器</td><td>马赛克（像素化涂抹）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>粒度可调为 P2</td></tr>
+  <tr><td class="id">FR-3.6</td><td>编辑器</td><td>高亮（半透明色块 / 荧光笔）</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
+  <tr><td class="id">FR-3.7</td><td>编辑器</td><td>椭圆 / 直线</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
+  <tr><td class="id">FR-3.8</td><td>编辑器</td><td>颜色与线宽切换</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>屏幕取色器为 P2</td></tr>
+  <tr><td class="id">FR-3.9</td><td>编辑器</td><td>撤销 / 重做（≥ 30 步）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-3.10</td><td>编辑器</td><td>对象选中 / 移动 / 删除</td><td><span class="badge b1">P1</span></td><td><span class="st st-t">待开发</span></td><td>M3</td><td>可降级为笔画级撤销</td></tr>
+  <tr><td class="id">FR-3.11</td><td>编辑器</td><td>完成动作（确认 / 另存 / 仅复制 / 取消）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>默认＝复制并贴图（V1.2 变更）</td></tr>
+  <tr><td class="id">FR-3.12</td><td>编辑器</td><td>键盘约定（Enter / Esc）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-3.13</td><td>编辑器</td><td>工具快捷键（R / A / B / T / M…）</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
+  <tr><td class="id">FR-3.14</td><td>编辑器</td><td>工具条悬停提示（名称+快捷键）</td><td><span class="badge b0">P0</span></td><td><span class="st st-t">待开发</span></td><td>M2</td><td>V1.5 新增</td></tr>
+  <tr><td class="id">FR-4.1</td><td>贴图</td><td>一键贴图</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>确认后默认自动贴图（V1.2）</td></tr>
+  <tr><td class="id">FR-4.2</td><td>贴图</td><td>窗口置顶（Topmost）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-4.3</td><td>贴图</td><td>拖动移动</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-4.4</td><td>贴图</td><td>滚轮缩放（10%–800%）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-4.5</td><td>贴图</td><td>透明度调节（Ctrl+滚轮）</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
+  <tr><td class="id">FR-4.6</td><td>贴图</td><td>关闭贴图（Esc / 双击）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-4.7</td><td>贴图</td><td>多贴图共存</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-4.8</td><td>贴图</td><td>贴图就地编辑（悬浮菜单进入）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>V1.2 由 P2「贴图再编辑」升级</td></tr>
+  <tr><td class="id">FR-4.9</td><td>贴图</td><td>鼠标穿透模式</td><td><span class="badge b2">P2</span></td><td><span class="st st-t">待开发</span></td><td>远期</td><td>—</td></tr>
+  <tr><td class="id">FR-4.10</td><td>贴图</td><td>悬浮菜单（悬停浮现）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>V1.2 新增</td></tr>
+  <tr><td class="id">FR-4.11</td><td>贴图</td><td>编辑后同步剪贴板</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>V1.2 新增</td></tr>
+  <tr><td class="id">FR-5.1</td><td>输出</td><td>复制到剪贴板</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-5.2</td><td>输出</td><td>保存 PNG / JPEG</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-5.3</td><td>输出</td><td>另存为对话框</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-5.4</td><td>输出</td><td>自动命名（时间戳模板）</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
+  <tr><td class="id">FR-5.5</td><td>输出</td><td>保存目录配置 / 重名加序号</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
+  <tr><td class="id">FR-5.6</td><td>输出</td><td>完成动作可配置</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>默认改为复制并贴图（V1.2）</td></tr>
+  <tr><td class="id">FR-5.7</td><td>输出</td><td>截图历史列表</td><td><span class="badge b2">P2</span></td><td><span class="st st-t">待开发</span></td><td>远期</td><td>—</td></tr>
+  <tr><td class="id">FR-6.1</td><td>系统集成</td><td>托盘常驻</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-6.2</td><td>系统集成</td><td>托盘菜单 / 双击截图</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-6.3</td><td>系统集成</td><td>单实例检测</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-6.4</td><td>系统集成</td><td>开机自启（默认关闭）</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
+  <tr><td class="id">FR-6.5</td><td>系统集成</td><td>便携配置（config.json）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-6.6</td><td>系统集成</td><td>退出清理（热键 / 贴图 / 进程）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-7.1</td><td>设置</td><td>热键设置页</td><td><span class="badge b0">P0</span></td><td><span class="st st-t">待开发</span></td><td>M3</td><td>P0 项；M2 先以配置文件过渡</td></tr>
+  <tr><td class="id">FR-7.2</td><td>设置</td><td>输出设置页</td><td><span class="badge b1">P1</span></td><td><span class="st st-t">待开发</span></td><td>M3</td><td>—</td></tr>
+  <tr><td class="id">FR-7.3</td><td>设置</td><td>通用设置页</td><td><span class="badge b1">P1</span></td><td><span class="st st-t">待开发</span></td><td>M3</td><td>—</td></tr>
+  <tr><td class="id">FR-7.4</td><td>设置</td><td>恢复默认设置</td><td><span class="badge b2">P2</span></td><td><span class="st st-t">待开发</span></td><td>远期</td><td>—</td></tr>
+</table>
+<p><strong>变更记录：</strong></p>
+<table>
+  <tr><th style="width:110px">日期</th><th style="width:72px">操作</th><th>内容</th></tr>
+  <tr><td>2026-08-23</td><td>建表</td><td>导入 FR-1 ～ FR-7 全部 54 条需求，状态均为「待开发」</td></tr>
+  <tr><td>2026-08-23</td><td>变更</td><td>产品更名：ScreenShort → 钉图 TackShot（开放问题 Q1 关闭）</td></tr>
+  <tr><td>2026-08-23</td><td>变更</td><td>默认完成动作改为「复制到剪贴板 + 贴图置顶」（影响 FR-3.11 / FR-4.1 / FR-5.1 / FR-5.6 及 4.8 主链路）</td></tr>
+  <tr><td>2026-08-23</td><td>新增/升级</td><td>新增 FR-4.10 贴图悬浮菜单（P0）、FR-4.11 编辑后同步剪贴板（P1）；FR-4.8 由 P2「贴图再编辑」升级为 P0「贴图就地编辑」</td></tr>
+
+  <tr><td>2026-08-23</td><td>开发</td><td>启动 M1+M2 开发（C++20 / Win32 / GDI+ 作为 Direct2D 前的过渡渲染层）：45 条需求置为「开发中」</td></tr>
+  <tr><td>2026-08-23</td><td>完成</td><td>核心链路 MVP（v0.1）完成并构建通过（GCC 16.2 / MinGW-w64，静态单一 exe 3.1MB）：44 条需求置「已完成」。自测范围＝构建 + /test 冒烟（PNG 保存、剪贴板、贴图创建、热键注册）+ 空闲内存实测 11.8MB（验收线 ≤50MB）；交互细节待人工验收。FR-3.10 对象编辑、活动窗口/延时截图、设置界面等留待 M3</td></tr>
+  <tr><td>2026-08-23</td><td>缺陷修复</td><td>修复贴图不可见缺陷：分层窗口中 SetLayeredWindowAttributes 会使 UpdateLayeredWindow 位图失效，改为 BLENDFUNCTION.SourceConstantAlpha 承载不透明度（状态不变，仍为已完成）；/test 增加"贴图窗口可见性"断言；新增 /capture 自动化入口</td></tr>
+  <tr><td>2026-08-23</td><td>UI 优化</td><td>工具条按钮加大（工具 44px / 动作按钮 46px / 色板 28px，96 基准），全部 UI 按显示器 DPI 等比缩放（解决高分屏下按钮偏小问题）；选区控制点放大至 10px 基准并加大命中半径</td></tr>
+  <tr><td>2026-08-23</td><td>新增</td><td>V1.5 需求确认（用户已答复澄清问题）：新增 FR-1.11（拖动选区白色半透明高亮，松开恢复原图清晰显示）、FR-3.14（工具条悬停提示：功能名+快捷键）；待用户许可后实施</td></tr>
+  <tr><td>2026-08-23</td><td>规格变更</td><td>工具条整体缩小至 V1.4 的 1/3（工具/动作按钮 16px、色板/线宽 12px、面板高 20px 基准，仍随 DPI 缩放）；图标升级为彩色填充+粗线条点缀色；因小尺寸下文字标签不可读，功能名改由悬停提示（FR-3.14）承担；FR-4.8/4.10 贴图就地编辑交互维持现状（用户确认"先试试现状"）</td></tr></table>
+
+<h2 id="s14">14. 附录 <span class="en">Appendix</span></h2>
+
+<h3>14.1 术语表</h3>
+<table>
+  <tr><th style="width:150px">术语</th><th>含义</th></tr>
+  <tr><td>贴图 / Pin</td><td>将图片以无边框置顶窗口固定显示在屏幕上的功能</td></tr>
+  <tr><td>置顶 / Topmost</td><td>窗口属性，始终显示于其他窗口之上</td></tr>
+  <tr><td>绿色（便携）软件</td><td>免安装、解压即用、卸载即删目录、不向系统写入持久化残留的软件</td></tr>
+  <tr><td>工作集 / Working Set</td><td>进程当前占用的物理内存量，本文内存指标均指工作集</td></tr>
+  <tr><td>全局热键 / Hotkey</td><td>无论当前前台应用为何，均可触发的系统级快捷键</td></tr>
+  <tr><td>DPI 感知 / Per-Monitor V2</td><td>Windows 高分屏缩放适配声明，决定多屏混合缩放下渲染与坐标正确性</td></tr>
+  <tr><td>SBOM</td><td>软件物料清单：软件所含全部第三方组件及其版本、许可证的清单</td></tr>
+  <tr><td>Copyleft / 传染性</td><td>GPL 类许可证要求衍生作品以相同许可证开源的特性</td></tr>
+</table>
+
+<h3>14.2 开放问题（已全部定案）</h3>
+<table>
+  <tr><th style="width:50px">编号</th><th>问题</th><th style="width:44px">影响</th></tr>
+  <tr><td class="id">Q1</td><td><del>产品正式名称待定</del> —— <strong>已定（2026-08-23）：定名「钉图 TackShot」</strong>。经检索：PinSnap 已被 Pinterest 下载工具占用、SnapPin 与 PixPin 过于近似，均弃用；TackShot 未发现同名软件（备选 SnapTack）。发布前仍需正式商标注册检索；代码目录名 10_ScreenShort 不受影响。</td><td>品牌/法律</td></tr>
+  <tr><td class="id">Q2</td><td><del>开源与否及许可证路线</del> —— <strong>已定：项目开源，采用 MIT 许可证</strong>（路线二；GPL 代码不可复制，见 8.7）。</td><td>合规/架构</td></tr>
+  <tr><td class="id">Q3</td><td><del>技术选型 A / C</del> —— <strong>已定：方案 A（C++20 + Win32 + Direct2D）</strong>，零依赖、最低内存，满足"解压即用"（见 7.1）。</td><td>架构/工期</td></tr>
+  <tr><td class="id">Q4</td><td><del>ARM64 原生构建？</del> —— <strong>已定：x64 首发并确保 Windows 11 正常运行；解压即用、零依赖</strong>；ARM64 原生构建列为发布可选项（x64 模拟保底）。</td><td>兼容性</td></tr>
+  <tr><td class="id">Q5</td><td><del>分发渠道与手册？</del> —— <strong>已定：GitHub Releases 发布；随附 HTML 版图文并茂用户手册</strong>（M4 交付物，含 P0/P1 全部功能操作说明）。</td><td>发布</td></tr>
+  <tr><td class="id">Q6</td><td><del>范围外功能排期？</del> —— <strong>已定：暂不需要</strong>；OCR / 长截图 / 录屏维持范围外、不排期。</td><td>规划</td></tr>
+</table>
+
+<h3>14.3 参考资料</h3>
+<ul>
+  <li>Greenshot 官网（GPL 授权说明）：<a href="https://greenshot.org" target="_blank" rel="noopener">https://greenshot.org</a></li>
+  <li>Snipaste 官网（授权与商用政策）：<a href="https://www.snipaste.com" target="_blank" rel="noopener">https://www.snipaste.com</a> · <a href="https://www.snipaste.com/eula.html" target="_blank" rel="noopener">EULA</a></li>
+  <li>Flameshot 官网（GPL-3.0）：<a href="https://flameshot.org" target="_blank" rel="noopener">https://flameshot.org</a></li>
+  <li>ShareX 官网（GPL-3.0）：<a href="https://getsharex.com" target="_blank" rel="noopener">https://getsharex.com</a></li>
+  <li>开源倡议组织许可证文本：<a href="https://opensource.org/licenses" target="_blank" rel="noopener">opensource.org/licenses</a></li>
+</ul>
+
+<footer>
+  钉图 TackShot · 需求规格说明书 V1.5（草案） · 2026-08-23 · 本文档基于用户原始需求分析完善生成，供评审使用
+</footer>
+
+</div>
+</body>
+</html>

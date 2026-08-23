@@ -1,0 +1,12 @@
+tools/
+dist/
+build/
+.mimosa/
+*.log
+*.log.*
+config.json
+*.o
+*.exe
+*.7z
+*.7z.exe
+test_out.*
