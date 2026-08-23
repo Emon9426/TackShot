@@ -79,13 +79,15 @@ void RenderTo(HDC hdc) {
     SolidBrush dim(Color(118, 0, 0, 0));
     g.FillRectangle(&dim, 0, 0, s.vw, s.vh);
 
-    if (s.selValid) {
+    // 框选拖动中（含首次拖动，此时 selValid 尚为 false）也必须实时渲染选区（FR-1.11）
+    bool draggingSel = (s.lbtn && s.mode == 0);
+    if (s.selValid || draggingSel) {
         RECT sl = Local(s.sel);
         int w = sl.right - sl.left, h = sl.bottom - sl.top;
         POINT off{ s.sel.left - s.vx, s.sel.top - s.vy };
         g.DrawImage(s.base, Rect(sl.left, sl.top, w, h),
                     off.x, off.y, w, h, UnitPixel);
-        if (s.phase == 0 && s.lbtn && s.mode == 0) {   // 拖动框选中：白色半透明高亮（FR-1.11）
+        if (draggingSel) {   // 拖动框选中：白色半透明高亮，与黑色遮罩强对比（FR-1.11）
             SolidBrush veil(Color(64, 255, 255, 255));
             g.FillRectangle(&veil, sl.left, sl.top, w, h);
         }
@@ -134,6 +136,28 @@ void RenderTo(HDC hdc) {
             cp = LocalPt(cp);
             DrawTooltip(g, cp, RECT{ 0, 0, s.vw, s.vh }, TbName(s.hover),
                         DpiScale(s.wnd));
+        }
+    }
+
+    // 调试转储：设置环境变量 TACKSHOT_DEBUG_SHOT=1 时，把每帧渲染结果落盘（自动化验证用）
+    if (GetEnvironmentVariableW(L"TACKSHOT_DEBUG_SHOT", nullptr, 0) && s.back && s.backBits) {
+        DWORD hdrlen = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+        DWORD rowsz = (DWORD)s.vw * 4;
+        std::vector<BYTE> buf(hdrlen + rowsz * s.vh);
+        BITMAPFILEHEADER* fh = (BITMAPFILEHEADER*)buf.data();
+        BITMAPINFOHEADER* ih = (BITMAPINFOHEADER*)(buf.data() + sizeof(BITMAPFILEHEADER));
+        fh->bfType = 0x4D42; fh->bfOffBits = hdrlen; fh->bfSize = (DWORD)buf.size();
+        ih->biSize = sizeof(BITMAPINFOHEADER);
+        ih->biWidth = s.vw; ih->biHeight = -s.vh;   // top-down
+        ih->biPlanes = 1; ih->biBitCount = 32; ih->biCompression = BI_RGB;
+        memcpy(buf.data() + hdrlen, s.backBits, (size_t)rowsz * s.vh);
+        HANDLE df = CreateFileW((g_exeDir + L"\\dragframe.bmp").c_str(),
+                                GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
+                                FILE_ATTRIBUTE_NORMAL, NULL);
+        if (df != INVALID_HANDLE_VALUE) {
+            DWORD wr = 0;
+            WriteFile(df, buf.data(), (DWORD)buf.size(), &wr, NULL);
+            CloseHandle(df);
         }
     }
 
