@@ -1,20 +1,31 @@
 package tackshot;
 
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.JWindow;
 import javax.swing.Timer;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import java.awt.AWTException;
-import java.awt.CheckboxMenuItem;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Frame;
-import java.awt.MenuItem;
-import java.awt.PopupMenu;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.MouseInfo;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.SystemTray;
 import java.awt.Toolkit;
 import java.awt.TrayIcon;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.RandomAccessFile;
@@ -24,7 +35,7 @@ import java.util.Map;
 
 /** 钉图 TackShot V2.0（Java 版）入口：单实例 / 托盘 / 热键 / 输出分发 / 冒烟测试。 */
 public final class Main {
-    public static final String VERSION = "钉图 TackShot v2.0.3";
+    public static final String VERSION = "钉图 TackShot v2.2";
     public static Cfg cfg = new Cfg();
     public static String exeDir = ".";
     public static String exePath = "";
@@ -140,55 +151,119 @@ public final class Main {
 
     // ---------------- 托盘 ----------------
 
+    /** 承载托盘弹出菜单的置顶窗（菜单保持轻量级，绘制走本窗 Java2D 路径）。 */
+    private static JWindow trayHost;
+
     private static void setupTray() {
         if (!SystemTray.isSupported()) {
             Log.write("警告：系统不支持托盘");
             return;
         }
-        PopupMenu pm = new PopupMenu();
-        MenuItem mRegion = new MenuItem("区域截图\tCtrl+Alt+A");
-        mRegion.addActionListener(e -> Capture.startRegion());
-        MenuItem mFull = new MenuItem("全屏截图\tCtrl+Alt+F");
-        mFull.addActionListener(e -> Capture.startFullscreen());
-        MenuItem mPin = new MenuItem("贴图（剪贴板）\tCtrl+Alt+P");
-        mPin.addActionListener(e -> pinFromClipboard());
-        pm.add(mRegion);
-        pm.add(mFull);
-        pm.add(mPin);
-        pm.addSeparator();
-        MenuItem mSettings = new MenuItem("设置…（M3 提供）");
-        mSettings.setEnabled(false);
-        pm.add(mSettings);
-        CheckboxMenuItem mAuto = new CheckboxMenuItem("开机自启动", Nat.autoRunEnabled());
+        try {
+            // FR-6.8 V2.0.4：不设 AWT 原生 PopupMenu（其自绘文本在英文系统即使 setFont 仍方框），
+            // 右键呼出 Swing 自绘菜单（与悬浮提示同一 Java2D 渲染路径，实测正常）
+            tray = new TrayIcon(Icon.appIcon(), VERSION + " · Ctrl+Alt+A 截图");
+            tray.setImageAutoSize(true);
+            tray.addActionListener(e -> Capture.startRegion());        // 双击＝区域截图
+            tray.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    if (e.isPopupTrigger()) showTrayMenu();
+                }
+
+                @Override
+                public void mouseReleased(MouseEvent e) {
+                    if (e.isPopupTrigger()) showTrayMenu();
+                }
+            });
+            SystemTray.getSystemTray().add(tray);
+        } catch (AWTException e) {
+            Log.write("警告：托盘图标创建失败");
+        }
+    }
+
+    /** 在托盘图标上方弹出 Swing 菜单；承载窗与菜单等尺寸使弹出保持轻量（不脱离本窗置顶层）。 */
+    private static void showTrayMenu() {
+        if (trayHost != null) return;    // 已打开
+        JPopupMenu m = buildTrayMenu();
+        Dimension ps = m.getPreferredSize();
+        Point p = MouseInfo.getPointerInfo().getLocation();
+        Rectangle scr = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
+        for (GraphicsDevice gd : GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices()) {
+            if (gd.getDefaultConfiguration().getBounds().contains(p)) {
+                scr = gd.getDefaultConfiguration().getBounds();
+                break;
+            }
+        }
+        int x = p.x - ps.width + 24;     // 右缘对齐托盘图标
+        x = Math.max(scr.x + 4, Math.min(x, scr.x + scr.width - ps.width - 4));
+        int y = p.y - ps.height - 12;    // 任务栏通常在下方：菜单悬于图标上方
+        if (y < scr.y + 4) y = p.y + 12;
+        y = Math.max(scr.y + 4, Math.min(y, scr.y + scr.height - ps.height - 4));
+        JWindow host = new JWindow();
+        host.setAlwaysOnTop(true);
+        host.setBounds(x, y, ps.width, ps.height);
+        host.setVisible(true);
+        host.requestFocus();             // 承接 Esc / 方向键
+        trayHost = host;
+        m.addPopupMenuListener(new PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {}
+
+            @Override
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+                host.dispose();          // 选中项 / Esc / 点击外部统一在此清理
+                if (trayHost == host) trayHost = null;
+            }
+
+            @Override
+            public void popupMenuCanceled(PopupMenuEvent e) {}
+        });
+        m.show(host, 0, 0);
+    }
+
+    private static JPopupMenu buildTrayMenu() {
+        float ms = Toolkit.getDefaultToolkit().getScreenResolution() / 96f;
+        Font f = new Font(Tb.UI_FAMILY, Font.PLAIN, (int) (12f * ms + 0.5f));
+        JPopupMenu m = new JPopupMenu();
+        JMenuItem mi;
+        mi = new JMenuItem("区域截图  Ctrl+Alt+A");
+        mi.setFont(f);
+        mi.addActionListener(e -> Capture.startRegion());
+        m.add(mi);
+        mi = new JMenuItem("全屏截图  Ctrl+Alt+F");
+        mi.setFont(f);
+        mi.addActionListener(e -> Capture.startFullscreen());
+        m.add(mi);
+        mi = new JMenuItem("贴图（剪贴板）  Ctrl+Alt+P");
+        mi.setFont(f);
+        mi.addActionListener(e -> pinFromClipboard());
+        m.add(mi);
+        m.addSeparator();
+        mi = new JMenuItem("设置…");
+        mi.setFont(f);
+        mi.addActionListener(e -> Settings.showDialog());
+        m.add(mi);
+        JCheckBoxMenuItem mAuto = new JCheckBoxMenuItem("开机自启动", Nat.autoRunEnabled());
+        mAuto.setFont(f);
         mAuto.addItemListener(e -> Nat.setAutoRun(mAuto.getState()));
-        pm.add(mAuto);
-        pm.addSeparator();
-        MenuItem mAbout = new MenuItem("关于 钉图 TackShot");
-        mAbout.addActionListener(e -> JOptionPane.showMessageDialog(hidden,
+        m.add(mAuto);
+        m.addSeparator();
+        mi = new JMenuItem("关于 钉图 TackShot");
+        mi.setFont(f);
+        mi.addActionListener(e -> JOptionPane.showMessageDialog(hidden,
                 VERSION + "（Java 版）\n轻量级开源截图 · 贴图工具\n\n"
                         + "许可证：MIT（见 LICENSE 与 THIRD-PARTY-NOTICES）\n"
                         + "默认热键：Ctrl+Alt+A 区域 / Ctrl+Alt+F 全屏 / Ctrl+Alt+P 贴图\n\n"
                         + "本软件完全离线运行，不收集任何数据。",
                 "关于", JOptionPane.INFORMATION_MESSAGE));
-        pm.add(mAbout);
-        MenuItem mExit = new MenuItem("退出");
-        mExit.addActionListener(e -> quit());
-        pm.add(mExit);
-        // FR-6.8：AWT 托盘菜单由 AWT 自绘（GDI 直排文本，无字体链回退），英文系统默认菜单字体
-        // （Segoe UI）无中文字形 → 全部方框；显式指定探测到的 CJK 字体族（随 DPI 缩放）
-        float ms = Toolkit.getDefaultToolkit().getScreenResolution() / 96f;
-        Font menuFont = new Font(Tb.UI_FAMILY, Font.PLAIN, (int) (12f * ms + 0.5f));
-        for (MenuItem mi : new MenuItem[]{mRegion, mFull, mPin, mSettings, mAuto, mAbout, mExit})
-            mi.setFont(menuFont);
-        pm.setFont(menuFont);
-        try {
-            tray = new TrayIcon(Icon.appIcon(), "钉图 TackShot v2.0.3 · Ctrl+Alt+A 截图", pm);
-            tray.setImageAutoSize(true);
-            tray.addActionListener(e -> Capture.startRegion());
-            SystemTray.getSystemTray().add(tray);
-        } catch (AWTException e) {
-            Log.write("警告：托盘图标创建失败");
-        }
+        m.add(mi);
+        mi = new JMenuItem("退出");
+        mi.setFont(f);
+        mi.addActionListener(e -> quit());
+        m.add(mi);
+        m.pack();
+        return m;
     }
 
     static void balloon(String title, String text) {
@@ -232,6 +307,11 @@ public final class Main {
     static void quit() {
         if (hotkeys != null) hotkeys.shutdown();
         Pin.closeAll();
+        if (trayHost != null) {
+            JWindow h = trayHost;
+            trayHost = null;
+            h.dispose();
+        }
         if (tray != null) SystemTray.getSystemTray().remove(tray);
         cfg.save();
         Log.write("==== 退出 ====");

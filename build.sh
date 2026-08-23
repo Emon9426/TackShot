@@ -41,7 +41,7 @@ mkdir -p release/TackShot/lib release/TackShot/img
 cp dist/TackShot.jar release/TackShot/
 cp lib/*.jar release/TackShot/lib/
 cp start.bat README.md LICENSE THIRD-PARTY-NOTICES.txt release/TackShot/
-cp img/*.svg release/TackShot/img/ 2>/dev/null || true
+cp img/*.svg img/*.png release/TackShot/img/ 2>/dev/null || true
 
 echo "[5/5] 生成 SHA256SUMS 与 zip ..."
 (cd release/TackShot && sha256sum TackShot.jar lib/*.jar start.bat README.md LICENSE > SHA256SUMS.txt)

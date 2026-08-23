@@ -68,6 +68,11 @@ final class Pin {
     private int resizing = -1;
     private int rsL, rsT, rsR, rsB;
     private Point dragWinOrigin, dragStart;   // 手动拖动（等价 HTCAPTION）
+    // 选择工具对象编辑状态（FR-3.10）：坐标为贴图图像坐标
+    private boolean objDrag, objDirty;
+    private int objHandle = -1;
+    private Point objStart;
+    private Rectangle objB0;
     private Timer hoverT, hideT, tipT, animT, hudT;
     private final Cursor cross = Icon.crossCursor();
 
@@ -238,6 +243,8 @@ final class Pin {
             g.scale((float) zoomX, (float) zoomY);
             Edit.drawShapes(g, ed.shapes, img, 0, 0);
             if (shapeDrag) Edit.drawShape(g, ed.draft, img, 0, 0);
+            if (ed.selected != null && ed.cur == Edit.Tool.Select)
+                Edit.drawSelection(g, ed.selected, (float) zoomX);
             g.setTransform(save);
         }
 
@@ -510,13 +517,13 @@ final class Pin {
 
     // ---------------- 动作 ----------------
 
-    /** 悬浮菜单"保存"：自动保存 + 复制剪贴板 + 关闭贴图（V2.0 交付语义）。 */
-    private void savePinAndClose() {
+    /** 悬浮菜单/编辑工具条"保存"共用：自动保存 + 复制剪贴板 + 关闭贴图（V2.1 合并两条路径）。 */
+    private void saveImageAndClose(BufferedImage image) {
         String dir = Main.cfg.outputDir.isEmpty() ? Out.defaultSaveDir() : Main.cfg.outputDir;
         boolean jpeg = Main.cfg.format.equals("jpeg");
         String path = Out.buildSavePath(dir, jpeg ? "jpg" : "png");
-        boolean saved = Out.save(img, path, jpeg, Main.cfg.jpegQuality);
-        boolean copied = Clip.toClipboard(wnd, img);
+        boolean saved = Out.save(image, path, jpeg, Main.cfg.jpegQuality);
+        boolean copied = Clip.toClipboard(wnd, image);
         String msg = saved
                 ? (copied ? "已复制到剪贴板 · 已保存 " + path : "已保存 " + path)
                 : (copied ? "已复制到剪贴板 · 自动保存失败" : "保存失败：无法写入目标文件");
@@ -525,16 +532,26 @@ final class Pin {
         close();
     }
 
-    /** 就地编辑完成：合成新图（V2.0.3 起不写剪贴板，FR-4.11 已裁剪，复制走悬浮菜单『复制』）。 */
-    private void applyEdit() {
-        if (TextInput.active()) TextInput.cancel();
+    /** 悬浮菜单"保存"：自动保存 + 复制剪贴板 + 关闭贴图（V2.0 交付语义）。 */
+    private void savePinAndClose() {
+        saveImageAndClose(img);
+    }
+
+    /** 当前贴图+编辑标注的合成图。 */
+    private BufferedImage composeEdited() {
         BufferedImage out = new BufferedImage(iw, ih, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = out.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.drawImage(img, 0, 0, iw, ih, null);
         Edit.drawShapes(g, ed.shapes, img, 0, 0);
         g.dispose();
-        img = out;
+        return out;
+    }
+
+    /** 就地编辑完成：合成新图（V2.0.3 起不写剪贴板，FR-4.11 已裁剪，复制走『复制』按钮）。 */
+    private void applyEdit() {
+        if (TextInput.active()) TextInput.cancel();
+        img = composeEdited();
         Main.balloon("钉图 TackShot", "贴图已更新（复制请点悬浮菜单『复制』）");
         editing = false;
         shapeDrag = false;
@@ -549,8 +566,7 @@ final class Pin {
                 hover = 0;
                 hoverT.stop();
                 hideT.stop();
-                ed.shapes.clear();
-                ed.redo.clear();
+                ed.reset();
                 ed.cur = Edit.Tool.None;
                 ed.widthIdx = 1;
                 view.requestFocusInWindow();
@@ -597,10 +613,24 @@ final class Pin {
             case Tb.TB_OK:
                 applyEdit();
                 return;
+            case Tb.TB_COPYIMG: {          // 编辑态"复制"（V2.1）：输出含标注合成图并关闭贴图
+                BufferedImage out = composeEdited();
+                boolean copied = Clip.toClipboard(wnd, out);
+                String msg = copied ? "已复制到剪贴板（含编辑）" : "复制到剪贴板失败";
+                Main.balloon("钉图 TackShot", msg);
+                Log.write("输出完成：" + msg);
+                close();
+                return;
+            }
+            case Tb.TB_SAVE:               // 编辑态"保存"（V2.1）：自动保存+复制并关闭贴图
+                saveImageAndClose(composeEdited());
+                return;
             case Tb.TB_CANCEL:
                 editing = false;
                 shapeDrag = false;
+                ed.selected = null;
                 break;
+            case Tb.TB_SELECT: ed.cur = Edit.Tool.Select; break;
             case Tb.TB_RECT: ed.cur = Edit.Tool.Rect; break;
             case Tb.TB_ELLIPSE: ed.cur = Edit.Tool.Ellipse; break;
             case Tb.TB_LINE: ed.cur = Edit.Tool.Line; break;
@@ -614,12 +644,14 @@ final class Pin {
             case Tb.TB_C0: case Tb.TB_C1: case Tb.TB_C2:
             case Tb.TB_C3: case Tb.TB_C4: case Tb.TB_C5:
                 ed.color = Tb.PALETTE[id - Tb.TB_C0];
+                Edit.applyColor(ed, ed.color);
                 break;
-            case Tb.TB_W0: ed.widthIdx = 0; break;
-            case Tb.TB_W1: ed.widthIdx = 1; break;
-            case Tb.TB_W2: ed.widthIdx = 2; break;
+            case Tb.TB_W0: ed.widthIdx = 0; Edit.applyWidth(ed, 0); break;
+            case Tb.TB_W1: ed.widthIdx = 1; Edit.applyWidth(ed, 1); break;
+            case Tb.TB_W2: ed.widthIdx = 2; Edit.applyWidth(ed, 2); break;
             default: break;
         }
+        if (ed.cur != Edit.Tool.Select) ed.selected = null;
         render();
     }
 
@@ -690,14 +722,56 @@ final class Pin {
         else if (rz == 2 || rz == 6) hc = Cursor.getPredefinedCursor(Cursor.NE_RESIZE_CURSOR);
         else if (rz == 1 || rz == 5) hc = Cursor.getPredefinedCursor(Cursor.N_RESIZE_CURSOR);
         else if (rz == 3 || rz == 7) hc = Cursor.getPredefinedCursor(Cursor.W_RESIZE_CURSOR);
-        else if (editing && ed.cur != Edit.Tool.None) hc = cross;
+        else if (editing && ed.cur == Edit.Tool.Select) {
+            Point ip = imgPt(x, y);
+            int hd = ed.selected != null
+                    ? Edit.handleAt(ed.selected, ip.x, ip.y, (int) (9 / Math.max(0.05, zoomX)) + 2) : -1;
+            if (hd == 8 || hd == 9) hc = Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR);
+            else if (hd >= 0) hc = cursorForHandle(hd);
+            else if (Edit.hitShape(ed.shapes, ip.x, ip.y) >= 0)
+                hc = Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR);
+        } else if (editing && ed.cur != Edit.Tool.None) hc = cross;
         else if (y > topZone) hc = Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR);
         view.setCursor(hc);
         if (!menuVisible && !editing && y > topZone) hoverT.restart();
     }
 
+    private static Cursor cursorForHandle(int hd) {
+        switch (hd) {
+            case 0: case 4: return Cursor.getPredefinedCursor(Cursor.NW_RESIZE_CURSOR);
+            case 2: case 6: return Cursor.getPredefinedCursor(Cursor.NE_RESIZE_CURSOR);
+            case 1: case 5: return Cursor.getPredefinedCursor(Cursor.N_RESIZE_CURSOR);
+            default: return Cursor.getPredefinedCursor(Cursor.W_RESIZE_CURSOR);
+        }
+    }
+
+    /** 选择工具拖动（FR-3.10）：移动整体或拖控制点；首次产生修改时才快照（懒撤销）。 */
+    private void dragObject(Point cp) {
+        if (ed.selected == null) return;
+        int dx = cp.x - objStart.x, dy = cp.y - objStart.y;
+        if (objDrag) {
+            if (!objDirty && (dx != 0 || dy != 0)) {
+                ed.beginOp();
+                objDirty = true;
+            }
+            if (objDirty) Edit.translate(ed.selected, dx, dy);
+            objStart = cp;
+        } else if (objHandle >= 0) {
+            if (!objDirty) {
+                ed.beginOp();
+                objDirty = true;
+            }
+            Edit.applyHandle(ed.selected, objHandle, objB0, cp.x, cp.y);
+        }
+    }
+
     private void onDrag(int x, int y) {
         if (wnd == null) return;
+        if (objDrag || objHandle >= 0) {   // 选择工具对象拖动/缩放（FR-3.10）
+            dragObject(imgPt(x, y));
+            render();
+            return;
+        }
         if (resizing >= 0) {
             doResize(MouseInfo.getPointerInfo().getLocation());
             return;
@@ -794,6 +868,29 @@ final class Pin {
                     return;
                 }
                 Point ip = imgPt(x, y);
+                if (ed.cur == Edit.Tool.Select) {   // 选择工具（FR-3.10）
+                    int tol = (int) (9 / Math.max(0.05, zoomX)) + 2;
+                    if (ed.selected != null) {
+                        int hd = Edit.handleAt(ed.selected, ip.x, ip.y, tol);
+                        if (hd >= 0) {
+                            objHandle = hd;
+                            objStart = ip;
+                            objB0 = Edit.bounds(ed.selected);
+                            return;
+                        }
+                    }
+                    int idx = Edit.hitShape(ed.shapes, ip.x, ip.y);
+                    if (idx >= 0) {
+                        ed.selected = ed.shapes.get(idx);
+                        objDrag = true;
+                        objStart = ip;
+                        objB0 = Edit.bounds(ed.selected);
+                    } else {
+                        ed.selected = null;
+                    }
+                    render();
+                    return;
+                }
                 if (ed.cur == Edit.Tool.Text) {
                     final int col = ed.color;
                     final int fs = Edit.fontSizeFor(ed.widthIdx);
@@ -853,6 +950,9 @@ final class Pin {
     }
 
     private void onReleased(MouseEvent e) {
+        objDrag = false;          // 对象拖动结束（纯点击未修改则不留撤销快照）
+        objHandle = -1;
+        objDirty = false;
         if (resizing >= 0) {
             resizing = -1;
             return;
@@ -952,6 +1052,13 @@ final class Pin {
             return;
         }
         if (editing) {
+            if ((kc == KeyEvent.VK_DELETE || kc == KeyEvent.VK_BACK_SPACE) && ed.selected != null) {
+                ed.beginOp();
+                ed.shapes.remove(ed.selected);
+                ed.selected = null;
+                render();
+                return;
+            }
             if (kc == KeyEvent.VK_Z && e.isControlDown()) {
                 if (e.isShiftDown()) ed.redoOp();
                 else ed.undo();

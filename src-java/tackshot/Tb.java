@@ -32,7 +32,7 @@ final class Tb {
             TB_EDIT = 24, TB_COPYIMG = 25, TB_ZOOMOUT = 26, TB_ZOOMIN = 27,
             TB_OPAQUE = 28, TB_CLOSE = 29,
             TB_MS_MOSAIC = 30, TB_MS_BLUR = 31, TB_MS_BLACK = 32,
-            TB_TOP = 33;
+            TB_TOP = 33, TB_SELECT = 34;
 
     static final int[] PALETTE = {
             0xFFEF4444, 0xFFF59E0B, 0xFF22C55E, 0xFF3B82F6, 0xFFFFFFFF, 0xFF111827 };
@@ -71,8 +71,8 @@ final class Tb {
     static String name(int id) {
         switch (id) {
             case TB_OK: return "确认 (Enter)";
-            case TB_PIN: return "贴图";
-            case TB_SAVE: return "另存为…";
+            case TB_PIN: return "钉住";
+            case TB_SAVE: return "保存（自动保存 + 复制剪贴板）";
             case TB_CANCEL: return "取消 (Esc)";
             case TB_RECT: return "矩形 (R)";
             case TB_ELLIPSE: return "椭圆 (O)";
@@ -94,11 +94,12 @@ final class Tb {
             case TB_W1: return "中线";
             case TB_W2: return "粗线";
             case TB_EDIT: return "编辑";
-            case TB_COPYIMG: return "复制";
+            case TB_COPYIMG: return "复制（写入剪贴板）";
             case TB_ZOOMOUT: return "缩小（也可滚轮）";
             case TB_ZOOMIN: return "放大（也可滚轮）";
             case TB_OPAQUE: return "透明度（左键循环 0/25/75%，右键精确调节）";
             case TB_TOP: return "置顶开关（当前高亮=始终最前，点击切换为允许被遮挡）";
+            case TB_SELECT: return "选择/移动对象 (V)：点击选中标注，拖动移动，控制点缩放，Delete 删除";
             case TB_CLOSE: return "关闭（Esc / 双击）";
             case TB_MS_MOSAIC: return "方格马赛克";
             case TB_MS_BLUR: return "高斯模糊";
@@ -117,7 +118,8 @@ final class Tb {
     static int[][] itemsFor(int mode) {
         if (mode == MODE_EDITOR) {
             return new int[][]{
-                    {TB_OK, 19}, {TB_PIN, 19}, {TB_SAVE, 19}, {TB_CANCEL, 19},
+                    {TB_OK, 19}, {TB_PIN, 19}, {TB_COPYIMG, 19}, {TB_SAVE, 19}, {TB_CANCEL, 19},
+                    {TB_SELECT, 19},
                     {TB_RECT, 19}, {TB_ELLIPSE, 19}, {TB_LINE, 19}, {TB_ARROW, 19}, {TB_PEN, 19},
                     {TB_TEXT, 19}, {TB_MOSAIC, 19}, {TB_HIGHLIGHT, 19},
                     {TB_UNDO, 19}, {TB_REDO, 19},
@@ -126,7 +128,8 @@ final class Tb {
         }
         if (mode == MODE_PIN_EDIT) {
             return new int[][]{
-                    {TB_OK, 19}, {TB_CANCEL, 19},
+                    {TB_OK, 19}, {TB_COPYIMG, 19}, {TB_SAVE, 19}, {TB_CANCEL, 19},
+                    {TB_SELECT, 19},
                     {TB_RECT, 19}, {TB_ELLIPSE, 19}, {TB_LINE, 19}, {TB_ARROW, 19}, {TB_PEN, 19},
                     {TB_TEXT, 19}, {TB_MOSAIC, 19}, {TB_HIGHLIGHT, 19},
                     {TB_UNDO, 19}, {TB_REDO, 19},
@@ -240,7 +243,8 @@ final class Tb {
                 }
                 boolean active = false;
                 if (ed != null) {
-                    if (b.id == TB_RECT) active = curTool == Edit.Tool.Rect;
+                    if (b.id == TB_SELECT) active = curTool == Edit.Tool.Select;
+                    else if (b.id == TB_RECT) active = curTool == Edit.Tool.Rect;
                     else if (b.id == TB_ELLIPSE) active = curTool == Edit.Tool.Ellipse;
                     else if (b.id == TB_LINE) active = curTool == Edit.Tool.Line;
                     else if (b.id == TB_ARROW) active = curTool == Edit.Tool.Arrow;
@@ -302,30 +306,64 @@ final class Tb {
                 line(g, new Color(34, 197, 94), pwT, mx - w * 0.06f, bm, rt, tp);
                 break;
             case TB_PIN: {
-                line(g, new Color(148, 163, 184), pw * 0.8f, mx, my + h * 0.05f, mx + w * 0.14f, bm);
-                g.setColor(new Color(59, 130, 246));
-                g.fill(new Ellipse2D.Float(mx - w * 0.2f, tp, w * 0.44f, h * 0.44f));
-                g.setColor(Color.WHITE);
-                g.setStroke(new BasicStroke(pw * 0.45f));
-                g.draw(new Ellipse2D.Float(mx - w * 0.2f, tp, w * 0.44f, h * 0.44f));
+                // 钉子（V2.2）：顶帽 + 钉身 + 尖端
+                line(g, new Color(59, 130, 246), pw * 1.7f, mx - w * 0.26f, tp + h * 0.08f,
+                        mx + w * 0.26f, tp + h * 0.08f);
+                line(g, new Color(148, 163, 184), pw * 0.9f, mx, tp + h * 0.08f, mx, bm - h * 0.24f);
+                GeneralPath tip = new GeneralPath();
+                tip.moveTo(mx - w * 0.11f, bm - h * 0.26f);
+                tip.lineTo(mx, bm);
+                tip.lineTo(mx + w * 0.11f, bm - h * 0.26f);
+                tip.closePath();
+                g.setColor(new Color(148, 163, 184));
+                g.fill(tip);
                 break;
             }
             case TB_SAVE: {
-                line(g, new Color(245, 158, 11), pw, mx, tp, mx, my + h * 0.04f);
-                GeneralPath tri = new GeneralPath();
-                tri.moveTo(mx - w * 0.14f, my - h * 0.02f);
-                tri.lineTo(mx, my + h * 0.12f);
-                tri.lineTo(mx + w * 0.14f, my - h * 0.02f);
-                tri.closePath();
-                g.setColor(new Color(245, 158, 11));
-                g.fill(tri);
-                line(g, new Color(148, 163, 184), pw * 0.7f, l, bm, rt, bm);
+                // 软盘（V2.2）：切角主体 + 金属滑片 + 标签
+                GeneralPath body = new GeneralPath();
+                body.moveTo(l + w * 0.06f, tp + h * 0.06f);
+                body.lineTo(rt - w * 0.16f, tp + h * 0.06f);
+                body.lineTo(rt - w * 0.06f, tp + h * 0.18f);
+                body.lineTo(rt - w * 0.06f, bm - h * 0.06f);
+                body.lineTo(l + w * 0.06f, bm - h * 0.06f);
+                body.closePath();
+                g.setColor(new Color(100, 116, 139));
+                g.fill(body);
+                g.setColor(new Color(71, 85, 105));
+                g.setStroke(new BasicStroke(pw * 0.5f));
+                g.draw(body);
+                g.setColor(new Color(226, 232, 240));
+                g.fill(new Rectangle2D.Float(l + w * 0.30f, tp + h * 0.10f, w * 0.28f, h * 0.20f));
+                g.setColor(new Color(241, 245, 249));
+                g.fill(new Rectangle2D.Float(l + w * 0.16f, bm - h * 0.38f, w * 0.58f, h * 0.26f));
+                g.setColor(new Color(148, 163, 184));
+                g.setStroke(new BasicStroke(pw * 0.4f));
+                g.draw(new Rectangle2D.Float(l + w * 0.16f, bm - h * 0.38f, w * 0.58f, h * 0.26f));
                 break;
             }
             case TB_CANCEL:
                 line(g, new Color(239, 68, 68), pwT, l, tp, rt, bm);
                 line(g, new Color(239, 68, 68), pwT, l, bm, rt, tp);
                 break;
+            case TB_SELECT: {
+                // 鼠标箭头（选择工具，FR-3.10）：白芯深描边
+                GeneralPath a = new GeneralPath();
+                a.moveTo(l + w * 0.32f, tp + h * 0.02f);
+                a.lineTo(l + w * 0.32f, bm - h * 0.18f);
+                a.lineTo(l + w * 0.44f, bm - h * 0.30f);
+                a.lineTo(l + w * 0.54f, bm - h * 0.04f);
+                a.lineTo(l + w * 0.64f, bm - h * 0.10f);
+                a.lineTo(l + w * 0.54f, bm - h * 0.34f);
+                a.lineTo(l + w * 0.70f, bm - h * 0.36f);
+                a.closePath();
+                g.setColor(Color.WHITE);
+                g.fill(a);
+                g.setColor(new Color(17, 24, 39));
+                g.setStroke(new BasicStroke(pw * 0.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g.draw(a);
+                break;
+            }
             case TB_RECT:
                 g.setColor(new Color(59, 130, 246));
                 g.setStroke(new BasicStroke(pw));

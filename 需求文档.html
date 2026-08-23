@@ -312,8 +312,8 @@
   <tr><td class="id">FR-3.7</td><td>椭圆 / 直线</td><td>基础图形工具。</td><td><span class="badge b1">P1</span></td></tr>
   <tr><td class="id">FR-3.8</td><td>颜色与线宽</td><td>预设色板（红/黄/绿/蓝/黑/白）+ 线宽三档快捷切换；屏幕取色器（P2）。</td><td><span class="badge b0">P0</span></td></tr>
   <tr><td class="id">FR-3.9</td><td>撤销 / 重做</td><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd>，至少 30 步。</td><td><span class="badge b0">P0</span></td></tr>
-  <tr><td class="id">FR-3.10</td><td>对象编辑</td><td>已绘制的标注对象可被选中、拖动、删除（<kbd>Delete</kbd>）。首版可降级为"笔画级撤销"。</td><td><span class="badge b1">P1</span></td></tr>
-  <tr><td class="id">FR-3.11</td><td>完成动作</td><td>工具条提供：<strong>✓ 确认</strong>（默认：贴图置顶；V2.0.3 起确认不写剪贴板，见 FR-5.6）、<strong>另存为…</strong>、<strong>仅复制</strong>、<strong>✗ 取消</strong>。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-3.10</td><td>对象编辑</td><td>编辑工具条新增<strong>选择工具</strong>（鼠标箭头图标，快捷键 <kbd>V</kbd>）：八类已绘标注（矩形/椭圆/马赛克/高亮/直线/箭头/画笔/文字）点击选中（虚线框+控制点），拖动移动；控制点缩放——矩形/椭圆/马赛克/高亮/画笔为包围盒 8 向等比重构，直线/箭头拖两端端点，文字拖角按比例改字号（马赛克按新区域实时重生成）；<kbd>Delete</kbd> 删除选中对象；选中后色板/线宽直接改该对象属性；移动/缩放/删除/改属性均可 Ctrl+Z 快照式撤销（V2.2，语义经用户逐项确认）。</td><td><span class="badge b1">P1</span></td></tr>
+  <tr><td class="id">FR-3.11</td><td>完成动作</td><td>工具条提供：<strong>✓ 确认</strong>（默认：贴图；不写剪贴板，见 FR-5.6）、<strong>贴图</strong>、<strong>复制</strong>（V2.1：当前选区+标注合成图入剪贴板并结束会话，不落盘）、<strong>保存</strong>（自动保存+复制+结束会话）、<strong>✗ 取消</strong>。</td><td><span class="badge b0">P0</span></td></tr>
   <tr><td class="id">FR-3.12</td><td>键盘约定</td><td><kbd>Enter</kbd> = 确认，<kbd>Esc</kbd> = 取消；编辑期间不改变系统剪贴板以外的任何状态。</td><td><span class="badge b0">P0</span></td></tr>
   <tr><td class="id">FR-3.13</td><td>工具快捷键</td><td>常用工具单键切换（如 R 矩形、A 箭头、B 画笔、T 文字、M 马赛克）。</td><td><span class="badge b1">P1</span></td></tr>
   <tr><td class="id">FR-3.14</td><td>工具条悬停提示</td><td>鼠标悬停工具条按钮约 300ms，在按钮旁显示功能名称与快捷键（如"矩形 (R)"）；覆盖截图编辑工具条、贴图悬浮菜单与就地编辑工具条。</td><td><span class="badge b0">P0</span></td></tr>
@@ -322,14 +322,14 @@
 <h3>FR-4 贴图（固定显示在屏幕最前端）</h3>
 <table>
   <tr><th style="width:76px">编号</th><th style="width:170px">需求</th><th>描述</th><th style="width:64px">优先级</th></tr>
-  <tr><td class="id">FR-4.1</td><td>一键贴图</td><td><strong>截图确认后默认自动贴图</strong>（V2.0.3 起确认只贴图、不写剪贴板，见 FR-5.6）；贴图中心锚定确认时刻的鼠标位置并夹紧工作区（V1.6）；编辑器中也可手动点"贴图"按钮，或对剪贴板图片使用贴图热键；生成无边框置顶窗口显示该图。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-4.1</td><td>一键贴图</td><td><strong>截图确认后默认自动贴图</strong>（V2.0.3 起确认只贴图、不写剪贴板，见 FR-5.6）；贴图中心锚定确认时刻的鼠标位置并夹紧工作区（V1.6）；编辑器中也可手动点"钉住"按钮（V2.2 前称"贴图"），或对剪贴板图片使用贴图热键；生成无边框置顶窗口显示该图。</td><td><span class="badge b0">P0</span></td></tr>
   <tr><td class="id">FR-4.2</td><td>窗口置顶</td><td>贴图窗口 Always-on-Top，始终位于其他窗口之上；除未来设置中的全局开关外，悬浮菜单提供<strong>『置顶』按钮逐贴图开/关</strong>（V2.1）：按钮高亮＝始终最前，再点一次＝取消置顶、允许被其他窗口遮挡。贴图带 <strong>2px 黑色边框</strong>明确标示"此处为截图"（V1.8，编辑态为蓝色高亮）。</td><td><span class="badge b0">P0</span></td></tr>
   <tr><td class="id">FR-4.3</td><td>拖动</td><td>按住鼠标左键任意拖动贴图位置。</td><td><span class="badge b0">P0</span></td></tr>
   <tr><td class="id">FR-4.4</td><td>滚轮缩放</td><td>以鼠标位置为中心缩放（10%–800%），图像采用高质量插值不闪变。</td><td><span class="badge b0">P0</span></td></tr>
   <tr><td class="id">FR-4.5</td><td>透明度调节</td><td><kbd>Ctrl</kbd> + 滚轮调节贴图不透明度（20%–100%）。</td><td><span class="badge b1">P1</span></td></tr>
   <tr><td class="id">FR-4.6</td><td>关闭贴图</td><td><kbd>Esc</kbd> 或双击贴图关闭；关闭不写剪贴板。</td><td><span class="badge b0">P0</span></td></tr>
   <tr><td class="id">FR-4.7</td><td>多贴图共存</td><td>可同时钉住多张贴图，各自独立缩放/透明度/位置。</td><td><span class="badge b0">P0</span></td></tr>
-  <tr><td class="id">FR-4.8</td><td>贴图就地编辑</td><td>通过悬浮菜单进入编辑态：贴图边框高亮并出现编辑工具条，可直接在贴图上继续标注（矩形/箭头/文字/马赛克等，与编辑器同一套工具）；✓ 完成后更新贴图并把编辑后的图片同步到剪贴板，Esc 取消保留原画面。详见 5.7 UI-7。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-4.8</td><td>贴图就地编辑</td><td>通过悬浮菜单进入编辑态：贴图边框高亮并出现编辑工具条，可直接在贴图上继续标注（矩形/箭头/文字/马赛克等，与编辑器同一套工具）；✓ 完成后仅更新贴图（V2.0.3 起不写剪贴板）；V2.1 编辑工具条新增『保存』『复制』（输出含标注的合成图并关闭贴图，语义同悬浮菜单）；Esc 取消保留原画面。详见 5.7 UI-7。</td><td><span class="badge b0">P0</span></td></tr>
   <tr><td class="id">FR-4.9</td><td>鼠标穿透</td><td>可切换为点击穿透模式（贴图仅作视觉参考，不拦截鼠标）。</td><td><span class="badge b2">P2</span></td></tr>
   <tr><td class="id">FR-4.10</td><td>悬浮菜单</td><td>鼠标悬停贴图约 300ms 后浮现半透明工具条菜单：编辑 / 复制 / 保存 / 缩放 / 置顶 / 透明度 / 关闭（详见 5.7 UI-7；置顶为 V2.1 新增，点击切换该贴图是否始终最前）；鼠标移出约 500ms 自动隐藏，防止误触。工具条悬浮于图片<strong>上方预留区</strong>，不遮挡图片内容；空白条区点击穿透（V1.10）。</td><td><span class="badge b0">P0</span></td></tr>
   <tr><td class="id">FR-4.11</td><td>编辑后同步剪贴板</td><td><del>贴图上完成编辑后，自动将编辑后的最新图片重新写入剪贴板，保证"贴图上看到的 = 粘贴出去的"。</del>（V2.0.3 裁剪：仅复制/保存按钮写剪贴板）</td><td><span class="badge b1">P1</span></td></tr>
@@ -894,7 +894,7 @@
   <tr><td class="id">FR-1.10</td><td>截图捕获</td><td>取消截图（Esc / 右键）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-1.11</td><td>截图捕获</td><td>拖动选区白色半透明高亮</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>V1.5 新增并实施</td></tr>
   <tr><td class="id">FR-2.1</td><td>全局热键</td><td>默认热键方案</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
-  <tr><td class="id">FR-2.2</td><td>全局热键</td><td>热键自定义</td><td><span class="badge b0">P0</span></td><td><span class="st st-d">开发中</span></td><td>M3</td><td>config.json 改键已可用；录入式设置 UI 待 M3</td></tr>
+  <tr><td class="id">FR-2.2</td><td>全局热键</td><td>热键自定义</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>config.json 改键可用；V2.1 设置窗体录入式改键（保存后即时重注册，冲突气泡提示）</td></tr>
   <tr><td class="id">FR-2.3</td><td>全局热键</td><td>热键冲突检测与提示</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-2.4</td><td>全局热键</td><td>功能独立热键</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
   <tr><td class="id">FR-2.5</td><td>全局热键</td><td>管理员窗口说明 / 提权引导</td><td><span class="badge b2">P2</span></td><td><span class="st st-t">待开发</span></td><td>远期</td><td>—</td></tr>
@@ -907,8 +907,8 @@
   <tr><td class="id">FR-3.7</td><td>编辑器</td><td>椭圆 / 直线</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
   <tr><td class="id">FR-3.8</td><td>编辑器</td><td>颜色与线宽切换</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>屏幕取色器为 P2</td></tr>
   <tr><td class="id">FR-3.9</td><td>编辑器</td><td>撤销 / 重做（≥ 30 步）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
-  <tr><td class="id">FR-3.10</td><td>编辑器</td><td>对象选中 / 移动 / 删除</td><td><span class="badge b1">P1</span></td><td><span class="st st-t">待开发</span></td><td>M3</td><td>可降级为笔画级撤销</td></tr>
-  <tr><td class="id">FR-3.11</td><td>编辑器</td><td>完成动作（确认 / 另存 / 仅复制 / 取消）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>默认＝复制并贴图（V1.2 变更）；V2.0.3：确认只贴图不写剪贴板</td></tr>
+  <tr><td class="id">FR-3.10</td><td>编辑器</td><td>对象选中 / 移动 / 缩放 / 删除（选择工具 V）</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>当前迭代</td><td>V2.2：八类标注全支持；文字拖角改字号；选中可改色/线宽；快照式撤销</td></tr>
+  <tr><td class="id">FR-3.11</td><td>编辑器</td><td>完成动作（确认 / 贴图 / 复制 / 保存 / 取消）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>V2.1：工具条新增『复制』（合成图入剪贴板+结束会话，不落盘）；V2.0.3：确认只贴图不写剪贴板</td></tr>
   <tr><td class="id">FR-3.12</td><td>编辑器</td><td>键盘约定（Enter / Esc）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-3.13</td><td>编辑器</td><td>工具快捷键（R / A / B / T / M…）</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
   <tr><td class="id">FR-3.14</td><td>编辑器</td><td>工具条悬停提示（名称+快捷键）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>V1.5 新增并实施</td></tr>
@@ -920,7 +920,7 @@
   <tr><td class="id">FR-4.5</td><td>贴图</td><td>透明度调节（Ctrl+滚轮）</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
   <tr><td class="id">FR-4.6</td><td>贴图</td><td>关闭贴图（Esc / 双击）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-4.7</td><td>贴图</td><td>多贴图共存</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
-  <tr><td class="id">FR-4.8</td><td>贴图</td><td>贴图就地编辑（悬浮菜单进入）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>V1.2 由 P2「贴图再编辑」升级</td></tr>
+  <tr><td class="id">FR-4.8</td><td>贴图</td><td>贴图就地编辑（悬浮菜单进入）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>V1.2 由 P2「贴图再编辑」升级；V2.1：编辑工具条新增『保存』『复制』（输出含标注合成图并关闭贴图）</td></tr>
   <tr><td class="id">FR-4.9</td><td>贴图</td><td>鼠标穿透模式</td><td><span class="badge b2">P2</span></td><td><span class="st st-t">待开发</span></td><td>远期</td><td>—</td></tr>
   <tr><td class="id">FR-4.10</td><td>贴图</td><td>悬浮菜单（悬停浮现）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>V1.2 新增；V2.0：复制/保存按钮执行后自动关闭贴图（用户决策）</td></tr>
   <tr><td class="id">FR-4.11</td><td>贴图</td><td>编辑后同步剪贴板</td><td><span class="badge b1">P1</span></td><td><span class="st st-x">已裁剪</span></td><td>—</td><td>V1.2 新增；V2.0.3 裁剪（用户决策：仅复制/保存按钮写剪贴板），编辑后需手动点『复制』</td></tr>
@@ -934,15 +934,15 @@
   <tr><td class="id">FR-5.6</td><td>输出</td><td>完成动作可配置</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>默认改为复制并贴图（V1.2）；V2.0.3：确认默认＝贴图，不再复制</td></tr>
   <tr><td class="id">FR-5.7</td><td>输出</td><td>截图历史列表</td><td><span class="badge b2">P2</span></td><td><span class="st st-t">待开发</span></td><td>远期</td><td>—</td></tr>
   <tr><td class="id">FR-6.1</td><td>系统集成</td><td>托盘常驻</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
-  <tr><td class="id">FR-6.2</td><td>系统集成</td><td>托盘菜单 / 双击截图</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-6.2</td><td>系统集成</td><td>托盘菜单 / 双击截图</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>V2.0.4：菜单改为 Swing 自绘（FR-6.8），双击截图不变</td></tr>
   <tr><td class="id">FR-6.3</td><td>系统集成</td><td>单实例检测</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-6.4</td><td>系统集成</td><td>开机自启（默认关闭）</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
   <tr><td class="id">FR-6.5</td><td>系统集成</td><td>便携配置（config.json）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-6.6</td><td>系统集成</td><td>退出清理（热键 / 贴图 / 进程）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-6.7</td><td>系统集成</td><td>无管理员权限可用：内嵌应用程序清单（asInvoker 明确声明不需提权 + Win10/11 supportedOS + PerMonitorV2 DPI）+ VERSIONINFO 版本资源；全部功能仅使用当前用户权限（HKCU/用户图片库/会话热键）；发行包含 SHA256SUMS.txt 与解锁指引；发行目录全新组装不携带运行残留</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>当前迭代</td><td>V1.14：manifest/版本资源字节级验证在 exe 中；新 zip 解压→/test 3/3 复现用户流程通过</td></tr>
-  <tr><td class="id">FR-6.8</td><td>系统集成</td><td>非中文操作系统字体兼容：英文等系统缺少中文字体时 UI 不得出现方框——托盘菜单（AWT 自绘，GDI 无字体链回退）显式指定中文字形字体；自绘 UI 字体族按已装字体探测回退（雅黑→Noto/思源→宋体等）；Swing 对话框默认字体（Segoe UI 无中文字形）替换为探测结果</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>当前迭代</td><td>V2.0.2：用户报告英文系统托盘菜单方框；字体探测可在中文系统回归（仍选雅黑）</td></tr>
-  <tr><td class="id">FR-7.1</td><td>设置</td><td>热键设置页</td><td><span class="badge b0">P0</span></td><td><span class="st st-t">待开发</span></td><td>M3</td><td>P0 项；M2 先以配置文件过渡</td></tr>
-  <tr><td class="id">FR-7.2</td><td>设置</td><td>输出设置页</td><td><span class="badge b1">P1</span></td><td><span class="st st-t">待开发</span></td><td>M3</td><td>—</td></tr>
+  <tr><td class="id">FR-6.8</td><td>系统集成</td><td>非中文操作系统字体兼容：英文等系统缺少中文字体时 UI 不得出现方框——托盘菜单（AWT 自绘，GDI 无字体链回退）显式指定中文字形字体；自绘 UI 字体族按已装字体探测回退（雅黑→Noto/思源→宋体等）；Swing 对话框默认字体（Segoe UI 无中文字形）替换为探测结果</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>当前迭代</td><td>V2.0.2：用户报告英文系统托盘菜单方框；字体探测可在中文系统回归（仍选雅黑）；V2.0.4：英文系统实测 setFont 仍方框（AWT 自绘菜单对字体的应用不可控），托盘菜单改为 Swing JPopupMenu 完全自绘（与悬浮提示同一 Java2D 路径，该机实测正常）</td></tr>
+  <tr><td class="id">FR-7.1</td><td>设置</td><td>热键设置页</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>当前迭代</td><td>V2.1：设置窗体（与保存目录合并为单窗体，托盘菜单进入），点击录入框按键捕获</td></tr>
+  <tr><td class="id">FR-7.2</td><td>设置</td><td>输出设置页</td><td><span class="badge b1">P1</span></td><td><span class="st st-d">开发中</span></td><td>M3</td><td>V2.1：默认保存目录（浏览/恢复默认）已入窗体；图片格式/JPEG 质量仍经 config.json</td></tr>
   <tr><td class="id">FR-7.3</td><td>设置</td><td>通用设置页</td><td><span class="badge b1">P1</span></td><td><span class="st st-t">待开发</span></td><td>M3</td><td>—</td></tr>
   <tr><td class="id">FR-7.4</td><td>设置</td><td>恢复默认设置</td><td><span class="badge b2">P2</span></td><td><span class="st st-t">待开发</span></td><td>远期</td><td>—</td></tr>
 </table>
@@ -986,7 +986,10 @@
   <tr><td>2026-08-23</td><td>完成</td><td><strong>V2.0 Java 重构实施完成：</strong>构建通过（javac --release 11，JDK 11/17）；/test 冒烟 3/3；脚本与像素回归：贴图残影 PASS（基线 0→菜单 1.9M→隐藏 0）、四角等比/四边单轴拖拽 ALL-PASS、窄贴图菜单完整显示 PASS（窗口 350px/帧 350px/悬浮区 alpha 1.9M）；交付语义四项 ALL-PASS（编辑器保存=落盘+复制+关闭、贴图复制/保存=相应动作+关闭）；视觉验证深色面板与中文字形正常（修复 java.awt.Color 四参构造参数序错误与 Segoe UI 无 CJK 字形问题）；修复 AWT SunAwtWindow 自带 WS_EX_NOACTIVATE 致键盘事件丢失（改用无装饰 JFrame + 显式前台）；修复 start.bat 启动（javaw 探测与 jar 定位）；C++ 版移除（src/、res/、旧 release、w64devkit 工具链）。遗留：verify_alpha 全流程脚本回归两次被会话中断，待补跑</td></tr>
   <tr><td>2026-08-23</td><td>缺陷修复+新增</td><td><strong>V2.0.1：</strong>① 修复剪贴板复制实际无效（用户报告"图片没有真的复制到剪贴板"）：Clip.java 的 CF_DIB 常量误写为 2（＝CF_BITMAP），DIB 数据以错误格式写入——本进程自读（Ctrl+Alt+P 贴图）因同错自洽而正常，Paint/微信/浏览器等外部应用全部无法粘贴；修正为 CF_DIB=8，另为 OpenClipboard 增加忙重试（剪贴板管理器竞争）。验证：独立复现程序确认修复前 AWT 跨通道读取失败、修复后成功；/test 冒烟改为"CF_DIB 回读像素一致 + AWT 跨通道可读"双断言（旧断言只查格式可用性，无法发现此缺陷）。② FR-4.2 新增贴图悬浮菜单『置顶』按钮（用户需求）：高亮=始终显示在最前，点击切换为允许被其他窗口遮挡；置顶状态关闭后点击贴图可重新唤起菜单。构建通过、/test 3/3</td></tr>
   <tr><td>2026-08-23</td><td>缺陷修复</td><td><strong>V2.0.2：</strong>修复英文操作系统托盘菜单中文显示方框（用户报告）：AWT PopupMenu/MenuItem 在 Windows 由 AWT 自绘，用菜单默认字体（英文系统＝Segoe UI）经 GDI 画字且无字体链回退，缺中文字形即全部方框——修复：① 全部托盘菜单项（含自启动勾选项）显式 setFont 为"已安装且含中文字形"的探测结果字体（随 DPI 缩放）；② Tb.UI_FAMILY 由硬编码雅黑改为启动时探测回退（Microsoft YaHei UI→YaHei→Noto Sans CJK SC/思源黑体→宋体/黑体→繁中/日文字体→任意可显示样本汉字的已装字体），自绘 UI 在无雅黑的英文系统不再依赖运气；③ Swing LAF 默认字体（Segoe UI 等无中文字形）统一替换为探测族再按 DPI 缩放，覆盖"关于/已在运行"对话框与贴图文字输入框（JTextField）。托盘气泡与悬停提示为系统原生渲染（主题字体链），不受影响</td></tr>
-  <tr><td>2026-08-23</td><td>变更</td><td><strong>V2.0.3（用户决策）：</strong>剪贴板写入时机收窄——<strong>仅点击『复制』或『保存』按钮时</strong>才写剪贴板，其余路径一律不写：① 截图确认（✓/Enter/双击/贴图按钮）不再复制：confirm_action=copy_pin（默认）→只贴图、copy_save→只自动保存、copy→按默认贴图处理；② 贴图编辑完成（✓）不再同步剪贴板（FR-4.11 裁剪，需手动点『复制』）；③ 保留写入的仅三处：编辑器『保存』、贴图悬浮菜单『保存』（均=复制+落盘+关闭）、贴图悬浮菜单『复制』（复制+关闭）。Ctrl+Alt+P 贴图热键的剪贴板读取不属于写入，不受影响。背景：用户不希望截图/贴图过程覆盖剪贴板中已有内容</td></tr></table>
+  <tr><td>2026-08-23</td><td>变更</td><td><strong>V2.0.3（用户决策）：</strong>剪贴板写入时机收窄——<strong>仅点击『复制』或『保存』按钮时</strong>才写剪贴板，其余路径一律不写：① 截图确认（✓/Enter/双击/贴图按钮）不再复制：confirm_action=copy_pin（默认）→只贴图、copy_save→只自动保存、copy→按默认贴图处理；② 贴图编辑完成（✓）不再同步剪贴板（FR-4.11 裁剪，需手动点『复制』）；③ 保留写入的仅三处：编辑器『保存』、贴图悬浮菜单『保存』（均=复制+落盘+关闭）、贴图悬浮菜单『复制』（复制+关闭）。Ctrl+Alt+P 贴图热键的剪贴板读取不属于写入，不受影响。背景：用户不希望截图/贴图过程覆盖剪贴板中已有内容</td></tr>
+  <tr><td>2026-08-24</td><td>缺陷修复</td><td><strong>V2.0.4：</strong>托盘右键菜单英文系统仍方框（用户实测：V2.0.2 的 AWT MenuItem.setFont 未生效——AWT 自绘菜单对字体应用不可控；同一台机自绘悬浮提示正常，说明 Java2D+字体探测本身工作）——托盘菜单由 AWT PopupMenu 改为 <strong>Swing JPopupMenu 完全自绘</strong>（置顶承载窗内轻量弹出，与悬浮提示同一 Java2D 渲染路径）：右键呼出、位置贴任务栏上方并夹紧屏幕、Esc/点击外部关闭、双击托盘仍为区域截图；菜单项/勾选项（开机自启动）/禁用项（设置 M3）/分隔线全部 Swing 化，字体显式取探测族</td></tr>
+  <tr><td>2026-08-24</td><td>新增</td><td><strong>V2.1（两项用户需求，交互语义经用户确认）：</strong>① 编辑界面补齐『保存』『复制』（FR-3.11/FR-4.8）——截图工具条新增『复制』（当前选区+标注合成图入剪贴板+结束会话，不落盘；『保存』维持自动保存+复制+结束）；贴图编辑态工具条新增『复制』『保存』（输出含标注合成图，复制=仅剪贴板、保存=自动保存+复制，均关闭贴图；✓ 仅应用编辑、✗ 取消保持不变）；符合 V2.0.3"仅复制/保存按钮写剪贴板"规则。② 新增设置窗体（FR-7.1 完成、FR-7.2 部分、FR-2.2 完成）：托盘菜单"设置…"启用——热键三项点击录入框按键捕获（须含 Ctrl/Alt/Win 修饰键、三者不可重复，保存后热键线程即时重注册、被占用气泡提示）、默认图片保存目录（浏览/恢复默认，空=图片库\TackShot），保存写回 config.json 立即生效</td></tr>
+  <tr><td>2026-08-24</td><td>新增+UI</td><td><strong>V2.2（交互语义经用户逐项确认）：</strong>① FR-3.10 对象编辑落地：编辑工具条（截图编辑器+贴图编辑态）新增选择工具（鼠标箭头，V 键）——八类标注全可选中和移动；矩形/椭圆/马赛克/高亮/画笔包围盒 8 向缩放、直线/箭头拖端点、文字拖角按比例改字号；Delete 删除；选中后色板/线宽直接改对象属性；撤销改为快照式（移动/缩放/删除/改属性皆可 Ctrl+Z）。② 图标重画：保存改软盘图标；钉住按钮改钉子图标、文案"贴图"→"钉住"（仅该按钮，托盘/热键等"贴图"术语不变）</td></tr></table>
 
 <h2 id="s14">14. 附录 <span class="en">Appendix</span></h2>
 

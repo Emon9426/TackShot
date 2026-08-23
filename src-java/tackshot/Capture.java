@@ -59,6 +59,11 @@ final class Capture {
     private long sizeHudUntil;
     private Timer tipT, animT, hudT;
     private final Cursor cross = Icon.crossCursor();
+    // 选择工具对象编辑状态（FR-3.10）：坐标为选区图像坐标
+    private boolean objDrag, objDirty;
+    private int objHandle = -1;
+    private Point objStart;
+    private Rectangle objB0;
 
     private Capture() {}
 
@@ -120,8 +125,7 @@ final class Capture {
         shapeDrag = false;
         hoverSince = 0;
         hintUntil = Main.nowMs() + 2800;
-        ed.shapes.clear();
-        ed.redo.clear();
+        ed.reset();
         ed.cur = Edit.Tool.None;
         ed.widthIdx = 1;
         prevFocus = Nat.getForeground();
@@ -282,6 +286,8 @@ final class Capture {
             g.translate(sl.x, sl.y);
             Edit.drawShapes(g, ed.shapes, base, sl.x, sl.y);
             if (shapeDrag) Edit.drawShape(g, ed.draft, base, sl.x, sl.y);
+            if (ed.selected != null && ed.cur == Edit.Tool.Select)
+                Edit.drawSelection(g, ed.selected, 1f);
             g.setTransform(save);
             g.setColor(new Color(59, 130, 246));
             g.setStroke(new BasicStroke(1.6f));
@@ -426,7 +432,9 @@ final class Capture {
             }
         }
             if (drag && lbtn) {
-                if (mode == 0) {
+                if (mode == -2) {
+                    dragObject(new Point(sp.x - sel.x, sp.y - sel.y));
+                } else if (mode == 0) {
                 sel = normSel(down, sp);
                 clampSel(sel);
             } else if (mode == 10) {
@@ -515,7 +523,30 @@ final class Capture {
             if (hh != 0) {
                 mode = hh;
             } else if (sel.contains(sp.x, sp.y)) {
-                if (ed.cur == Edit.Tool.Text) {
+                if (ed.cur == Edit.Tool.Select) {   // 选择工具（FR-3.10）
+                    Point cp = new Point(sp.x - sel.x, sp.y - sel.y);
+                    if (ed.selected != null) {
+                        int hd = Edit.handleAt(ed.selected, cp.x, cp.y, 9);
+                        if (hd >= 0) {
+                            objHandle = hd;
+                            objStart = cp;
+                            objB0 = Edit.bounds(ed.selected);
+                            mode = -2;
+                            return;
+                        }
+                    }
+                    int idx = Edit.hitShape(ed.shapes, cp.x, cp.y);
+                    if (idx >= 0) {
+                        ed.selected = ed.shapes.get(idx);
+                        objDrag = true;
+                        objStart = cp;
+                        objB0 = Edit.bounds(ed.selected);
+                        mode = -2;
+                    } else {
+                        ed.selected = null;
+                        mode = 1;    // 空白处：维持"拖动选区"原行为
+                    }
+                } else if (ed.cur == Edit.Tool.Text) {
                     final Point cp = new Point(sp.x - sel.x, sp.y - sel.y);
                     final int col = ed.color;
                     final int fs = Edit.fontSizeFor(ed.widthIdx);
@@ -589,6 +620,11 @@ final class Capture {
         } else if (mode >= 2) {
             clampSel(sel);
         }
+        if (mode == -2) {      // 对象拖动/缩放结束（纯点击未修改则不留撤销快照）
+            objDrag = false;
+            objHandle = -1;
+            objDirty = false;
+        }
         if (shapeDrag) {
             shapeDrag = false;
             Edit.Shape d = ed.draft;
@@ -633,7 +669,17 @@ final class Capture {
             if (flyout.visible) {
                 flyout.hide();
                 repaint();
+            } else if (ed.selected != null) {
+                ed.selected = null;
+                repaint();
             } else cancel();
+            return;
+        }
+        if ((kc == KeyEvent.VK_DELETE || kc == KeyEvent.VK_BACK_SPACE) && ed.selected != null) {
+            ed.beginOp();
+            ed.shapes.remove(ed.selected);
+            ed.selected = null;
+            repaint();
             return;
         }
         if (kc == KeyEvent.VK_ENTER) {
@@ -664,10 +710,48 @@ final class Capture {
         else if (!selValid || shapeDrag) c = cross;
         else if (hitHandle(new Point(x + vx, y + vy)) != 0)
             c = Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR);
-        else if (sel.contains(x + vx, y + vy))
-            c = ed.cur != Edit.Tool.None ? cross : Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR);
-        else c = Cursor.getDefaultCursor();
+        else if (sel.contains(x + vx, y + vy)) {
+            if (ed.cur == Edit.Tool.Select) {
+                Point cp = new Point(x + vx - sel.x, y + vy - sel.y);
+                int hd = ed.selected != null ? Edit.handleAt(ed.selected, cp.x, cp.y, 9) : -1;
+                if (hd == 8 || hd == 9) c = Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR);
+                else if (hd >= 0) c = cursorForHandle(hd);
+                else if (Edit.hitShape(ed.shapes, cp.x, cp.y) >= 0)
+                    c = Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR);
+                else c = Cursor.getDefaultCursor();
+            } else if (ed.cur != Edit.Tool.None) c = cross;
+            else c = Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR);
+        } else c = Cursor.getDefaultCursor();
         view.setCursor(c);
+    }
+
+    private static Cursor cursorForHandle(int hd) {
+        switch (hd) {
+            case 0: case 4: return Cursor.getPredefinedCursor(Cursor.NW_RESIZE_CURSOR);
+            case 2: case 6: return Cursor.getPredefinedCursor(Cursor.NE_RESIZE_CURSOR);
+            case 1: case 5: return Cursor.getPredefinedCursor(Cursor.N_RESIZE_CURSOR);
+            default: return Cursor.getPredefinedCursor(Cursor.W_RESIZE_CURSOR);
+        }
+    }
+
+    /** 选择工具拖动（FR-3.10）：移动整体或拖控制点；首次产生修改时才快照（懒撤销）。 */
+    private void dragObject(Point cp) {
+        if (ed.selected == null) return;
+        int dx = cp.x - objStart.x, dy = cp.y - objStart.y;
+        if (objDrag) {
+            if (!objDirty && (dx != 0 || dy != 0)) {
+                ed.beginOp();
+                objDirty = true;
+            }
+            if (objDirty) Edit.translate(ed.selected, dx, dy);
+            objStart = cp;
+        } else if (objHandle >= 0) {
+            if (!objDirty) {
+                ed.beginOp();
+                objDirty = true;
+            }
+            Edit.applyHandle(ed.selected, objHandle, objB0, cp.x, cp.y);
+        }
     }
 
     // ---------------- 工具条动作 ----------------
@@ -678,12 +762,16 @@ final class Capture {
             case Tb.TB_PIN:
                 confirm();
                 return;
+            case Tb.TB_COPYIMG:
+                copyAndClose();
+                return;
             case Tb.TB_SAVE:
                 saveAndClose();
                 return;
             case Tb.TB_CANCEL:
                 cancel();
                 return;
+            case Tb.TB_SELECT: ed.cur = Edit.Tool.Select; break;
             case Tb.TB_RECT: ed.cur = Edit.Tool.Rect; break;
             case Tb.TB_ELLIPSE: ed.cur = Edit.Tool.Ellipse; break;
             case Tb.TB_LINE: ed.cur = Edit.Tool.Line; break;
@@ -697,12 +785,14 @@ final class Capture {
             case Tb.TB_C0: case Tb.TB_C1: case Tb.TB_C2:
             case Tb.TB_C3: case Tb.TB_C4: case Tb.TB_C5:
                 ed.color = Tb.PALETTE[id - Tb.TB_C0];
+                Edit.applyColor(ed, ed.color);
                 break;
-            case Tb.TB_W0: ed.widthIdx = 0; break;
-            case Tb.TB_W1: ed.widthIdx = 1; break;
-            case Tb.TB_W2: ed.widthIdx = 2; break;
+            case Tb.TB_W0: ed.widthIdx = 0; Edit.applyWidth(ed, 0); break;
+            case Tb.TB_W1: ed.widthIdx = 1; Edit.applyWidth(ed, 1); break;
+            case Tb.TB_W2: ed.widthIdx = 2; Edit.applyWidth(ed, 2); break;
             default: break;
         }
+        if (ed.cur != Edit.Tool.Select) ed.selected = null;
         repaint();
     }
 
@@ -762,6 +852,18 @@ final class Capture {
         String msg = saved
                 ? (copied ? "已复制到剪贴板 · 已保存 " + path : "已保存 " + path)
                 : (copied ? "已复制到剪贴板 · 自动保存失败" : "保存失败：无法写入目标文件");
+        Main.balloon("钉图 TackShot", msg);
+        Log.write("输出完成：" + msg);
+    }
+
+    /** "复制"（V2.1）：当前选区+标注合成图入剪贴板，不落盘，结束会话。 */
+    private void copyAndClose() {
+        if (!selValid) return;
+        if (TextInput.active()) TextInput.cancel();
+        BufferedImage out = compose();
+        boolean copied = Clip.toClipboard(wnd, out);
+        endSession(true);
+        String msg = copied ? "已复制到剪贴板" : "复制到剪贴板失败";
         Main.balloon("钉图 TackShot", msg);
         Log.write("输出完成：" + msg);
     }
