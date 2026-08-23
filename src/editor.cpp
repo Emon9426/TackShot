@@ -514,7 +514,7 @@ const wchar_t* TbName(int id) {
     case TB_COPYIMG: return L"复制";
     case TB_ZOOMOUT: return L"缩小（也可滚轮）";
     case TB_ZOOMIN: return L"放大（也可滚轮）";
-    case TB_OPAQUE: return L"透明度（Ctrl+滚轮）";
+    case TB_OPAQUE: return L"透明度（左键循环 0/25/75%，右键精确调节）";
     case TB_CLOSE: return L"关闭（Esc / 双击）";
     case TB_MS_MOSAIC: return L"方格马赛克";
     case TB_MS_BLUR: return L"高斯模糊";
@@ -536,6 +536,7 @@ void DrawTooltip(Gdiplus::Graphics& g, POINT pt, const RECT& clip,
     float x = pt.x + 10 * scale;
     float y = pt.y - bh - 8 * scale;
     if (x + bw > clip.right - 4) x = pt.x - bw - 10 * scale;
+    if (x < clip.left + 4) x = clip.left + 4;   // 窄窗口：翻转后仍可能越左缘
     if (y < clip.top + 4) y = pt.y + 14 * scale;
     SolidBrush bg(Color(242, 15, 23, 42));
     g.FillRectangle(&bg, x, y, bw, bh);
@@ -602,23 +603,27 @@ int MosaicFlyout::Hit(int x, int y) const {
     return ids[idx];
 }
 
-void DrawSizeHud(Gdiplus::Graphics& g, POINT pt, const Editor& ed, float scale) {
+void DrawTextHud(Gdiplus::Graphics& g, POINT pt, const wchar_t* text, float scale) {
     using namespace Gdiplus;
-    wchar_t t[48];
-    if (ed.mosaicStyle == 2) swprintf_s(t, 48, L"纯黑涂抹");
-    else swprintf_s(t, 48, L"%s %dpx",
-                    ed.mosaicStyle == 1 ? L"模糊" : L"方格", ed.mosaicSize);
     FontFamily ff(L"Segoe UI");
     Font f(&ff, 13.f * scale, FontStyleRegular, UnitPixel);
     RectF bb; StringFormat sf;
-    g.MeasureString(t, -1, &f, PointF(0, 0), &sf, &bb);
+    g.MeasureString(text, -1, &f, PointF(0, 0), &sf, &bb);
     float x = pt.x + 14 * scale, y = pt.y - bb.Height - 10 * scale;
     SolidBrush bg(Color(243, 15, 23, 42));
     g.FillRectangle(&bg, x - 6, y - 4, bb.Width + 12, bb.Height + 8);
     Pen bp(0xFF334155, 1.f);
     g.DrawRectangle(&bp, x - 6, y - 4, bb.Width + 12, bb.Height + 8);
     SolidBrush tbc(0xFFF1F5F9);
-    g.DrawString(t, -1, &f, PointF(x, y), &tbc);
+    g.DrawString(text, -1, &f, PointF(x, y), &tbc);
+}
+
+void DrawSizeHud(Gdiplus::Graphics& g, POINT pt, const Editor& ed, float scale) {
+    wchar_t t[48];
+    if (ed.mosaicStyle == 2) swprintf_s(t, 48, L"纯黑涂抹");
+    else swprintf_s(t, 48, L"%s %dpx",
+                    ed.mosaicStyle == 1 ? L"模糊" : L"方格", ed.mosaicSize);
+    DrawTextHud(g, pt, t, scale);
 }
 
 RECT MosaicCaretZone(const Toolbar& tb) {

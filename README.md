@@ -45,7 +45,8 @@
 ![贴图](img/pin.svg)
 
 - 黑色边框明确标示"这是一张截图"；始终置顶；多张贴图共存
-- **四角拖拽等比缩放，四边拖拽单轴拉伸**；滚轮缩放；`Ctrl+滚轮` 调透明度
+- **四角拖拽等比缩放，四边拖拽单轴拉伸**；滚轮缩放
+- **透明度**：左键 ◐ 循环 0%→25%→75%→不透明；**右键 ◐** 呼出二级菜单（−/+ 步进、点击数字直接输入百分比）；`Ctrl+滚轮` ±10%；任何路径上限 95%，永不 100% 隐形
 - 悬停浮现悬浮菜单（图片上方，不遮挡内容）：编辑 · 复制 · 保存 · 缩放 · 透明度 · 关闭
 - **就地编辑**：贴图上直接补画标注，完成后自动同步回剪贴板（贴图上看到的 = 粘贴出去的）
 - 拖动移动；双击 / `Esc` 关闭
@@ -77,6 +78,15 @@
 
 - 直接下载本仓库的 **`release/TackShot` 文件夹**（或 [Releases](https://github.com/Emon9426/TackShot/releases) 中的 `TackShot-win64.zip`），解压后双击 `TackShot.exe` 即可——这个文件夹就是完整软件，删除即完全卸载。
 - 交流与反馈：**emonzhang3438@outlook.com** —— 欢迎大家提出新的需求和 Bug！
+
+## 常见问题：双击提示"Windows 无法访问指定设备、路径或文件"
+
+本程序**不需要管理员权限**（exe 已内嵌应用程序清单，明确声明以当前用户身份运行；热键、托盘、剪贴板、图片库均为当前用户权限）。若首次运行被拦截，是 Windows 对"从网络下载的未签名程序"的安全策略所致，按顺序尝试：
+
+1. 右键 `TackShot.exe` → **属性** → 勾选底部"**解除锁定**"（Unblock）→ 确定，再次双击；
+2. 弹出蓝色 SmartScreen 警告时，点"**更多信息**"→"**仍要运行**"；
+3. 杀毒软件报毒/隔离时，先用 `SHA256SUMS.txt` 核对文件哈希（PowerShell：`Get-FileHash TackShot.exe`），确认未被篡改后将整个文件夹加入信任区——本软件完全离线，绝无恶意行为，未签名引发的误报可向杀软厂商提交白名单申请；
+4. 公司/学校电脑若上述全部无效，多为 AppLocker 或软件限制策略禁止运行用户目录下的任意 exe（与本软件无关），需管理员将其加入白名单。
 
 ## 构建
 
@@ -140,7 +150,8 @@ Rectangle, ellipse, line, arrow, pen, text (IME support), mosaic, highlight; 6-c
 ![Pin](img/pin.svg)
 
 - Black border clearly marks the screenshot; always on top; multiple pins coexist
-- **Drag a corner to resize proportionally, drag an edge to stretch one axis**; wheel zoom; `Ctrl+wheel` adjusts opacity
+- **Drag a corner to resize proportionally, drag an edge to stretch one axis**; wheel zoom
+- **Opacity**: left-click ◐ cycles opaque → 25% → 75% → opaque; **right-click ◐** opens a sub-menu (−/+ steps, click the number to type an exact percent); `Ctrl+wheel` ±10%; capped at 95% everywhere — the pin never turns fully invisible
 - Hover to reveal the floating menu (above the image, never covering it): edit, copy, save, zoom, opacity, close
 - **Edit in place** — annotate directly on the pin; when finished, the result is automatically synced back to the clipboard (what you see on the pin is what gets pasted)
 - Drag to move; double-click / `Esc` to close
@@ -171,6 +182,15 @@ TackShot is **fully offline**: no network, no uploads, no telemetry. Auto-start 
 ## Download & Run
 
 Download the **`release/TackShot` folder** from this repository (or `TackShot-win64.zip` from [Releases](https://github.com/Emon9426/TackShot/releases)), then run `TackShot.exe`. The folder is the whole app — delete it to uninstall completely.
+
+## FAQ: "Windows cannot access the specified device, path, or file"
+
+TackShot **does not require administrator rights** — the exe embeds an application manifest declaring `asInvoker`; hotkeys, tray, clipboard and the Pictures library all run at user level. If the first launch is blocked, it is Windows security policy for downloaded unsigned executables. Try in order:
+
+1. Right-click `TackShot.exe` → **Properties** → tick **Unblock** at the bottom → OK, then run again;
+2. On the blue SmartScreen warning click **More info** → **Run anyway**;
+3. If your antivirus quarantines it, verify the hash first (`Get-FileHash TackShot.exe` vs `SHA256SUMS.txt`), then add the folder to your AV trust list — the app is fully offline and contains no malicious behavior; unsigned false positives can be reported to the vendor;
+4. On corporate/school machines where none of the above works, AppLocker or Software Restriction Policies typically block *any* exe in user-writable folders (not specific to TackShot) — an administrator must whitelist it.
 
 ## Build
 

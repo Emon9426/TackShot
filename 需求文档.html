@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>钉图 TackShot · 轻量级 Windows 截图工具 需求规格说明书 V1.13</title>
+<title>钉图 TackShot · 轻量级 Windows 截图工具 需求规格说明书 V1.14</title>
 <style>
   :root{
     --accent:#2563eb; --accent-soft:#eff6ff; --text:#1f2937; --muted:#6b7280;
@@ -120,7 +120,7 @@
   <h1>轻量级 Windows 截图工具 · 需求规格说明书</h1>
   <div class="sub">产品名称：钉图 TackShot（2026-08-23 定名，原代号 ScreenShort 弃用；备选名 SnapTack，见 14.2 Q1）</div>
   <table>
-    <tr><th style="width:120px">文档版本</th><td>V1.13（草案 · 待评审）</td><th style="width:120px">发布日期</th><td>2026-08-23</td></tr>
+    <tr><th style="width:120px">文档版本</th><td>V1.14（草案 · 待评审）</td><th style="width:120px">发布日期</th><td>2026-08-23</td></tr>
     <tr><th>文档状态</th><td>初稿，供评审与开发估算使用</td><th>编制方式</th><td>基于用户原始需求分析、完善并结构化</td></tr>
     <tr><th>目标平台</th><td>Windows 10 (1809+) / Windows 11，x64</td><th>分发形式</th><td>ZIP 压缩包（绿色免安装）</td></tr>
   </table>
@@ -925,6 +925,7 @@
   <tr><td class="id">FR-4.10</td><td>贴图</td><td>悬浮菜单（悬停浮现）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>V1.2 新增</td></tr>
   <tr><td class="id">FR-4.11</td><td>贴图</td><td>编辑后同步剪贴板</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>V1.2 新增</td></tr>
   <tr><td class="id">FR-4.12</td><td>贴图</td><td>边缘/四角拖拽调整尺寸（四角等比、四边单轴）；工具条悬浮于图片上方不遮挡内容</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>当前迭代</td><td>V1.10：脚本验证四角等比/四边单轴均通过</td></tr>
+  <tr><td class="id">FR-4.13</td><td>贴图</td><td>透明度交互：默认不透明；左键点击透明度按钮循环 0%→25%→75%→0%；右键呼出二级菜单（−/+ 步进 ±10% 与百分比数字输入）；任何路径上限 95%（永不 100% 全透明，保留可见轮廓）；Ctrl+滚轮统一为 ±10%；变更即时 HUD 反馈</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>当前迭代</td><td>V1.14：三档循环与二级菜单开合经用户实测、面板渲染经帧差分像素验证；输入/滚轮夹紧路径待补脚本回归</td></tr>
   <tr><td class="id">FR-5.1</td><td>输出</td><td>复制到剪贴板</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-5.2</td><td>输出</td><td>保存 PNG / JPEG</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-5.3</td><td>输出</td><td>另存为对话框</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
@@ -938,6 +939,7 @@
   <tr><td class="id">FR-6.4</td><td>系统集成</td><td>开机自启（默认关闭）</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
   <tr><td class="id">FR-6.5</td><td>系统集成</td><td>便携配置（config.json）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-6.6</td><td>系统集成</td><td>退出清理（热键 / 贴图 / 进程）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-6.7</td><td>系统集成</td><td>无管理员权限可用：内嵌应用程序清单（asInvoker 明确声明不需提权 + Win10/11 supportedOS + PerMonitorV2 DPI）+ VERSIONINFO 版本资源；全部功能仅使用当前用户权限（HKCU/用户图片库/会话热键）；发行包含 SHA256SUMS.txt 与解锁指引；发行目录全新组装不携带运行残留</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>当前迭代</td><td>V1.14：manifest/版本资源字节级验证在 exe 中；新 zip 解压→/test 3/3 复现用户流程通过</td></tr>
   <tr><td class="id">FR-7.1</td><td>设置</td><td>热键设置页</td><td><span class="badge b0">P0</span></td><td><span class="st st-t">待开发</span></td><td>M3</td><td>P0 项；M2 先以配置文件过渡</td></tr>
   <tr><td class="id">FR-7.2</td><td>设置</td><td>输出设置页</td><td><span class="badge b1">P1</span></td><td><span class="st st-t">待开发</span></td><td>M3</td><td>—</td></tr>
   <tr><td class="id">FR-7.3</td><td>设置</td><td>通用设置页</td><td><span class="badge b1">P1</span></td><td><span class="st st-t">待开发</span></td><td>M3</td><td>—</td></tr>
@@ -973,7 +975,10 @@
   <tr><td>2026-08-23</td><td>文档/发布</td><td>README 重构：中文正文在前 + 完整英文版置于文档最下方 + 作者联系方式 emonzhang3438@outlook.com（欢迎需求与 Bug 反馈）；release/ 移出 .gitignore 纳入仓库——用户下载单个文件夹即可使用</td></tr>
   <tr><td>2026-08-23</td><td>新增/完成</td><td>FR-3.15：马赛克三种涂抹样式（方格马赛克 / 高斯模糊[块内5点均值] / 纯黑涂抹[最强隐私]），样式经 ▾角标或右键在二级菜单切换；粒度与线宽解耦，马赛克工具激活时滚轮调节 6–80px（贴图编辑态滚轮临时由缩放切换为粒度，经用户确认），光标旁 HUD 短暂显示当前样式与粒度；样式与粒度随每笔标注持久化；截图编辑器与贴图就地编辑两处同步支持</td></tr>
   <tr><td>2026-08-23</td><td>缺陷修复</td><td>贴图编辑态下入口菜单（带"编辑"按钮）违规重现：进入编辑时新增硬不变量（强制 menuVisible=false、清零 hover、击毙 TID_HOVER/TID_HIDE 全部在途定时器——旧代码不清理在途定时器存在竞态窗口）；插桩日志+脚本复现验证：完整流程（悬停→编辑→点击图片→拖动→再悬停）入口菜单零违规浮现</td></tr>
-  <tr><td>2026-08-23</td><td>缺陷修复</td><td>「编辑工具条与入口菜单重叠」真根因定位并修复（V1.12 状态互斥修复未消除用户实际症状，因残影与状态无关）：贴图渲染原以 GDI+ 全透明刷 FillRectangle 作"清屏"，但该操作是 SrcOver 混合、对全透明色等于空操作，跨状态像素永久残留——编辑条（宽）残影留于两侧、入口菜单（居中窄）绘制其上，视觉即"两菜单同屏重叠"。修复＝每帧渲染前 ZeroMemory 物理清零窗口位图（pin.cpp）；新增贴图帧转储（TACKSHOT_DEBUG_SHOT=1 → dist/pinframe.bmp）供像素级验证；回归脚本 tools/verify_pin_clear.py：悬浮区 alpha 总和 基线 0 → 菜单显示 1,103,749 → 移开隐藏后归 0（PASS，无残影）</td></tr></table>
+  <tr><td>2026-08-23</td><td>缺陷修复</td><td>「编辑工具条与入口菜单重叠」真根因定位并修复（V1.12 状态互斥修复未消除用户实际症状，因残影与状态无关）：贴图渲染原以 GDI+ 全透明刷 FillRectangle 作"清屏"，但该操作是 SrcOver 混合、对全透明色等于空操作，跨状态像素永久残留——编辑条（宽）残影留于两侧、入口菜单（居中窄）绘制其上，视觉即"两菜单同屏重叠"。修复＝每帧渲染前 ZeroMemory 物理清零窗口位图（pin.cpp）；新增贴图帧转储（TACKSHOT_DEBUG_SHOT=1 → dist/pinframe.bmp）供像素级验证；回归脚本 tools/verify_pin_clear.py：悬浮区 alpha 总和 基线 0 → 菜单显示 1,103,749 → 移开隐藏后归 0（PASS，无残影）</td></tr>
+  <tr><td>2026-08-23</td><td>新增</td><td>FR-4.13 贴图透明度交互升级（V1.14 开发中）：默认不透明；左键循环 0%→25%→75%→0%（用户明确给出的序列）；右键二级菜单 −/+ 步进与百分比输入；全路径上限 95% 永不全透明；Ctrl+滚轮统一 ±10% 语义；HUD 即时反馈。原 CycleAlpha 五档（100/80/60/40/20%）与 Ctrl+滚轮 ±17、下限 20% 不透明语义随之替换</td></tr>
+  <tr><td>2026-08-23</td><td>完成</td><td>FR-4.13 实施完成：三档循环与二级菜单展开/收合经用户实测（运行日志多轮"循环 25/75/0"），[−/值/+] 面板渲染经帧差分像素验证（宽扁贴图 1379×284 上恰为 204×52px、距右缘 451px、无裁剪）；百分比输入弹窗（顶层 EDIT，分层窗口不承载子控件）与 Ctrl+滚轮 ±10%、95% 夹紧已实现——脚本回归因会话中断未完整执行，标注待补；用户报告"右上角被裁剪的菜单"经取证为贴图内容中冻结的历史截图（截屏瞬间悬浮菜单被拍入图片），非实时 UI 缺陷；但据此修复两处真实瑕疵：二级菜单展开期间抑制 ◐ 悬停提示条（消除叠影）、提示条翻转后补左缘夹紧</td></tr>
+  <tr><td>2026-08-23</td><td>完成</td><td>FR-6.7 无管理员权限可用性落地（用户报告：无管理员电脑双击报"Windows 无法访问指定设备、路径或文件"）：取证确认仓库 zip 内 exe 完好（解压后 /test 3/3 通过）、Log 对不可写目录有容错、程序全部功能仅用户权限——报错源为下载拦截（SmartScreen/Mark-of-the-Web/杀软/AppLocker），非程序需要提权。修复与加固：① 嵌入应用程序清单 res/app.manifest（asInvoker + Win10/11 supportedOS + PerMonitorV2 DPI，已验证字节存在于 exe）；② VERSIONINFO 版本资源（产品名/版本/版权/原始文件名）；③ build.sh 发行目录全新组装（修复 zip 曾混入 tackshot.log 的污染）；④ 发行包新增 SHA256SUMS.txt 校验清单；⑤ README 中英双语新增"被拦截解锁指引"（解除锁定/SmartScreen 仍要运行/杀软信任/AppLocker 白名单）；从新 zip 解压→运行复现用户下载流程通过</td></tr></table>
 
 <h2 id="s14">14. 附录 <span class="en">Appendix</span></h2>
 
@@ -1031,7 +1036,7 @@
 </ul>
 
 <footer>
-  钉图 TackShot · 需求规格说明书 V1.13（草案） · 2026-08-23 · 本文档基于用户原始需求分析完善生成，供评审使用
+  钉图 TackShot · 需求规格说明书 V1.14（草案） · 2026-08-23 · 本文档基于用户原始需求分析完善生成，供评审使用
 </footer>
 
 </div>

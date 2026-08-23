@@ -11,6 +11,54 @@ const wchar_t* kPinCls = L"TackShotPin";
 const int BORDER = 2;      // 贴图黑色边框宽度
 const int STRIP_GAP = 6;   // 工具条与图片间距（逻辑 px）
 
+// ---- 透明度（FR-4.13）：t = 透明度百分比，0%=不透明 ----
+const int T_MAX = 95;      // 上限 95%：永不 100% 全透明，保留可见轮廓
+int TransPct(BYTE a) { return (int)(((255 - a) * 100 + 127) / 255); }
+BYTE AlphaOfT(int t) {
+    t = std::max(0, std::min(T_MAX, t));
+    return (BYTE)(255 - t * 255 / 100);
+}
+void CloseAlphaEdit();     // 前向声明（定义在下方输入弹窗段）
+
+// 透明度二级菜单：[ − ][ 75% ][ + ] 三格横排，锚在 ◐ 按钮正下方
+struct AlphaFlyout {
+    bool visible = false; RECT rc{}; float scale = 1.0f;
+    void Layout(const RECT& btn, const RECT& clip, float sc) {
+        scale = std::max(1.0f, sc);
+        int cw = (int)(34 * scale + 0.5f), ch = (int)(26 * scale + 0.5f);
+        int x = (btn.left + btn.right) / 2 - cw;    // 值格中心对准按钮中心
+        x = std::max(2, std::min(x, (int)clip.right - cw * 3 - 2));
+        rc = { x, btn.bottom + (int)(5 * scale + 0.5f), x + cw * 3,
+               btn.bottom + (int)(5 * scale + 0.5f) + ch };
+    }
+    int Hit(int x, int y) const {   // 1=− 2=值 3=+ 0=未命中
+        if (!visible || !PtInRect(&rc, { x, y })) return 0;
+        return 1 + std::min(2, std::max(0, (int)((x - rc.left) * 3 / (rc.right - rc.left))));
+    }
+    void Hide() { visible = false; }
+    void Draw(Gdiplus::Graphics& g, int tPct) const {
+        using namespace Gdiplus;
+        int w = rc.right - rc.left, h = rc.bottom - rc.top, cw = w / 3;
+        SolidBrush bg(Color(243, 30, 37, 48));      // #1E2530
+        g.FillRectangle(&bg, rc.left, rc.top, w, h);
+        SolidBrush mid(Color(70, 51, 65, 85));      // 值格底色稍亮
+        g.FillRectangle(&mid, rc.left + cw, rc.top, cw, h);
+        Pen bp(Color(255, 51, 65, 85), 1.f);
+        g.DrawRectangle(&bp, rc.left, rc.top, w - 1, h - 1);
+        FontFamily ff(L"Segoe UI");
+        Font f(&ff, 11.f * scale, FontStyleBold, UnitPixel);
+        SolidBrush tbc(Color(255, 241, 245, 249));
+        StringFormat sf;
+        sf.SetAlignment(StringAlignmentCenter);
+        sf.SetLineAlignment(StringAlignmentCenter);
+        wchar_t t[8];
+        swprintf_s(t, 8, L"%d%%", tPct);
+        g.DrawString(L"−", -1, &f, RectF((REAL)rc.left, (REAL)rc.top, (REAL)cw, (REAL)h), &sf, &tbc);
+        g.DrawString(t, -1, &f, RectF((REAL)(rc.left + cw), (REAL)rc.top, (REAL)cw, (REAL)h), &sf, &tbc);
+        g.DrawString(L"+", -1, &f, RectF((REAL)(rc.left + 2 * cw), (REAL)rc.top, (REAL)(w - 2 * cw), (REAL)h), &sf, &tbc);
+    }
+};
+
 struct PinWindow {
     HWND  wnd = nullptr;
     HBITMAP img = nullptr; void* imgBits = nullptr;
@@ -33,7 +81,9 @@ struct PinWindow {
     Toolbar menu;      // 悬浮菜单
     Toolbar bar;       // 就地编辑工具条
     MosaicFlyout flyout;   // 马赛克样式二级菜单（编辑态）
+    AlphaFlyout alphaFly;  // 透明度二级菜单（入口菜单 ◐，FR-4.13）
     ULONGLONG sizeHudUntil = 0;
+    ULONGLONG alphaHudUntil = 0;
     Editor  ed;
     int     hover = 0;
     ULONGLONG hoverSince = 0;
@@ -105,7 +155,10 @@ struct PinWindow {
             menu.Layout(strip, strip, TbMode::PinHover, sc);
             menu.Draw(winDc, nullptr, hover, TbMode::PinHover, hs);
         }
-        if (hover && hoverSince && GetTickCount64() - hoverSince > 300) {
+        // 二级菜单展开期间抑制悬停提示条（否则与 ◐ 长提示文字叠在右上角，观感错乱）
+        if (hover && hoverSince && !alphaFly.visible &&
+            !(editing && flyout.visible) &&
+            GetTickCount64() - hoverSince > 300) {
             POINT cp; GetCursorPos(&cp);
             RECT wr; GetWindowRect(wnd, &wr);
             DrawTooltip(g, { cp.x - wr.left, cp.y - wr.top },
@@ -126,6 +179,17 @@ struct PinWindow {
             POINT cp; GetCursorPos(&cp);
             RECT wr; GetWindowRect(wnd, &wr);
             DrawSizeHud(g, { cp.x - wr.left, cp.y - wr.top }, ed, sc);
+        }
+
+        // 透明度二级菜单与 HUD（FR-4.13，入口菜单态）
+        if (!editing && menuVisible && alphaFly.visible)
+            alphaFly.Draw(g, TransPct(alpha));
+        if (alphaHudUntil && GetTickCount64() < alphaHudUntil) {
+            POINT cp; GetCursorPos(&cp);
+            RECT wr; GetWindowRect(wnd, &wr);
+            wchar_t ht[24];
+            swprintf_s(ht, 24, L"透明度 %d%%", TransPct(alpha));
+            DrawTextHud(g, { cp.x - wr.left, cp.y - wr.top }, ht, sc);
         }
 
         PremultiplyBits(winBits, ww, wh);
@@ -175,9 +239,12 @@ void Prune() {
                  g_pins.end());
 }
 
+struct AlphaEdit { HWND wnd = nullptr; PinWindow* pin = nullptr; } g_alphaEdit;
+
 void Close(PinWindow* p) {
     if (p->dead || !p->wnd) return;
     if (TextEntryActive()) CancelTextEntry();
+    if (g_alphaEdit.pin == p) CloseAlphaEdit();   // 分层窗口销毁前先关输入弹窗
     DestroyWindow(p->wnd);
 }
 
@@ -243,12 +310,85 @@ void ZoomAt(PinWindow* p, double factor, POINT cursorScr) {
     p->Render();
 }
 
-void CycleAlpha(PinWindow* p) {
-    static const BYTE steps[5] = { 255, 204, 153, 102, 51 };
-    int i = 0;
-    for (; i < 5; ++i) if (steps[i] == p->alpha) break;
-    p->alpha = steps[(i + 1) % 5];
+void ShowAlphaHud(PinWindow* p) {
+    p->alphaHudUntil = GetTickCount64() + 800;
+    if (p->wnd) SetTimer(p->wnd, TID_HUD, 90, NULL);
+}
+
+void CycleAlpha(PinWindow* p) {          // FR-4.13：0% → 25% → 75% → 0%
+    int t = TransPct(p->alpha);
+    int nt = t < 12 ? 25 : (t < 50 ? 75 : 0);
+    p->alpha = AlphaOfT(nt);
+    ShowAlphaHud(p);
+    Log(L"透明度循环：%d%%", nt);
     p->Render();   // 重新走 ULW，把常量 alpha 烘进 BLENDFUNCTION
+}
+
+// ---- 透明度百分比输入弹窗（顶层 EDIT：分层窗口不能承载子控件）----
+void CloseAlphaEdit() {
+    if (g_alphaEdit.wnd) {
+        HWND h = g_alphaEdit.wnd;
+        g_alphaEdit = AlphaEdit{};
+        DestroyWindow(h);
+    }
+}
+
+void ApplyAlphaEdit() {
+    if (!g_alphaEdit.wnd || !g_alphaEdit.pin) { CloseAlphaEdit(); return; }
+    PinWindow* p = g_alphaEdit.pin;
+    wchar_t buf[8]{};
+    GetWindowTextW(g_alphaEdit.wnd, buf, 8);
+    int v = _wtoi(buf);
+    CloseAlphaEdit();
+    if (p->dead || !p->wnd) return;
+    int t = std::max(0, std::min(T_MAX, v));
+    p->alpha = AlphaOfT(t);
+    ShowAlphaHud(p);
+    if (v != t) Log(L"透明度输入：%d → 夹紧 %d%%（上限 95%%）", v, t);
+    else        Log(L"透明度输入：%d%%", t);
+    p->Render();
+}
+
+LRESULT CALLBACK AlphaEditProc(HWND h, UINT m, WPARAM w, LPARAM l,
+                               UINT_PTR, DWORD_PTR) {
+    if (m == WM_NCDESTROY) {
+        if (g_alphaEdit.wnd == h) g_alphaEdit = AlphaEdit{};
+        return DefSubclassProc(h, m, w, l);
+    }
+    if (m == WM_KEYDOWN) {
+        if (w == VK_RETURN) { ApplyAlphaEdit(); return 0; }
+        if (w == VK_ESCAPE) { CloseAlphaEdit(); return 0; }
+    }
+    if (m == WM_KILLFOCUS) { CloseAlphaEdit(); return 0; }
+    return DefSubclassProc(h, m, w, l);
+}
+
+void OpenAlphaEdit(PinWindow* p) {       // 弹在二级菜单的值格上
+    CloseAlphaEdit();
+    RECT wr; GetWindowRect(p->wnd, &wr);
+    float sc = p->alphaFly.scale;
+    int w = (int)(46 * sc + 0.5f), h = (int)(26 * sc + 0.5f);
+    int fw = p->alphaFly.rc.right - p->alphaFly.rc.left, cw = fw / 3;
+    int x = wr.left + p->alphaFly.rc.left + cw + (cw - w) / 2;
+    int y = wr.top + p->alphaFly.rc.top - (h - (p->alphaFly.rc.bottom - p->alphaFly.rc.top)) / 2;
+    wchar_t cur[8];
+    swprintf_s(cur, 8, L"%d", TransPct(p->alpha));
+    HWND e = CreateWindowExW(WS_EX_TOPMOST | WS_EX_TOOLWINDOW, L"EDIT", cur,
+                             WS_POPUP | WS_BORDER | ES_NUMBER | ES_CENTER,
+                             x, y, w, h, nullptr, nullptr,
+                             GetModuleHandleW(nullptr), nullptr);
+    if (!e) return;
+    SetWindowSubclass(e, AlphaEditProc, 1, 0);
+    SendMessageW(e, EM_SETLIMITTEXT, 2, 0);
+    HFONT f = CreateFontW(-(int)(13 * sc + 0.5f), 0, 0, 0, FW_SEMIBOLD,
+                          0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY,
+                          DEFAULT_PITCH, L"Segoe UI");
+    SendMessageW(e, WM_SETFONT, (WPARAM)f, TRUE);
+    g_alphaEdit = AlphaEdit{ e, p };
+    ShowWindow(e, SW_SHOWNORMAL);
+    SetFocus(e);
+    SendMessageW(e, EM_SETSEL, 0, -1);
+    Log(L"透明度输入框：当前 %d%%", TransPct(p->alpha));
 }
 
 void SavePin(PinWindow* p) {
@@ -364,6 +504,8 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
             POINT cl{ pt.x - wr.left, pt.y - wr.top };
             bool onBar = p->editing ? PtInRect(&p->bar.bar, cl)
                        : (p->menuVisible && PtInRect(&p->menu.bar, cl));
+            if (!p->editing && p->alphaFly.visible && PtInRect(&p->alphaFly.rc, cl))
+                onBar = true;               // 透明度二级菜单可点击
             if (onBar) return HTCLIENT;
             return HTTRANSPARENT;
         }
@@ -373,6 +515,20 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         SetFocus(wnd);
         int x = GET_X_LPARAM(lp), y = GET_Y_LPARAM(lp);
         if (!p->editing && p->menuVisible) {
+            if (p->alphaFly.visible) {      // 透明度二级菜单（FR-4.13）
+                int h = p->alphaFly.Hit(x, y);
+                if (h == 1 || h == 3) {
+                    int t = TransPct(p->alpha) + (h == 3 ? 10 : -10);
+                    p->alpha = AlphaOfT(t);
+                    ShowAlphaHud(p);
+                    Log(L"透明度步进：%d%%", TransPct(p->alpha));
+                    p->Render();
+                    break;
+                }
+                if (h == 2) { OpenAlphaEdit(p); break; }
+                p->alphaFly.Hide();         // 点在菜单外：仅关闭，继续处理本次点击
+                p->Render();
+            }
             int id = p->menu.Hit(x, y);
             if (id) { OnMenu(p, id); break; }
         }
@@ -521,7 +677,11 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
             }
         } else if (wp == TID_HIDE) {
             KillTimer(wnd, TID_HIDE);
-            if (!p->editing) { p->menuVisible = false; p->Render(); }
+            // 二级菜单/输入弹窗打开期间不自动隐藏（用户可能正移向它或在输入）
+            if (!p->editing && !p->alphaFly.visible) {
+                p->menuVisible = false;
+                p->Render();
+            }
         } else if (wp == TID_TIP) {
             KillTimer(wnd, TID_TIP);
             if (p->hover) p->Render();
@@ -532,7 +692,8 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
                 KillTimer(wnd, TID_ANIM);
         } else if (wp == TID_HUD) {
             p->Render();
-            if (!p->sizeHudUntil || GetTickCount64() > p->sizeHudUntil)
+            if ((!p->sizeHudUntil || GetTickCount64() > p->sizeHudUntil) &&
+                (!p->alphaHudUntil || GetTickCount64() > p->alphaHudUntil))
                 KillTimer(wnd, TID_HUD);
         }
         break; }
@@ -583,7 +744,28 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         } else if (p->flyout.visible) {
             p->flyout.Hide(); p->Render();
         }
-        else Close(p);
+        else {
+            int rx = GET_X_LPARAM(lp), ry = GET_Y_LPARAM(lp);
+            if (p->menuVisible && p->menu.Hit(rx, ry) == TB_OPAQUE) {
+                // 右键 ◐：透明度二级菜单（FR-4.13）
+                for (auto& b : p->menu.btns)
+                    if (b.id == TB_OPAQUE) {
+                        p->alphaFly.Layout(b.r, RECT{ 0, 0, p->ww, p->wh },
+                                           DpiScale(wnd));
+                        break;
+                    }
+                p->alphaFly.visible = !p->alphaFly.visible;
+                if (!p->alphaFly.visible) CloseAlphaEdit();
+                Log(p->alphaFly.visible ? L"透明度二级菜单：展开"
+                                        : L"透明度二级菜单：收起");
+                p->Render();
+                return 0;
+            }
+            if (p->alphaFly.visible) {
+                p->alphaFly.Hide(); CloseAlphaEdit(); p->Render(); return 0;
+            }
+            Close(p);
+        }
         return 0;
     case WM_MOUSEWHEEL: {
         if (!p) break;
@@ -598,8 +780,11 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         }
         POINT cp; GetCursorPos(&cp);
         if (GetKeyState(VK_CONTROL) & 0x8000) {
-            int a = p->alpha + (delta > 0 ? 17 : -17);
-            p->alpha = (BYTE)std::min(255, std::max(51, a));   // 20%–100%
+            // FR-4.13：Ctrl+滚轮 ±10%，与二级菜单同语义，上限 95% 永不全透明
+            int t = TransPct(p->alpha) + (delta > 0 ? -10 : 10);
+            p->alpha = AlphaOfT(t);
+            ShowAlphaHud(p);
+            Log(L"透明度滚轮：%d%%", TransPct(p->alpha));
             p->Render();
         } else {
             ZoomAt(p, delta > 0 ? 1.1 : (1.0 / 1.1), cp);
@@ -609,6 +794,9 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         if (!p) break;
         if (TextEntryActive()) break;
         if (wp == VK_ESCAPE) {
+            if (!p->editing && p->alphaFly.visible) {
+                p->alphaFly.Hide(); CloseAlphaEdit(); p->Render(); return 0;
+            }
             if (p->editing && p->flyout.visible) {
                 p->flyout.Hide(); p->Render(); return 0;
             }
@@ -627,6 +815,7 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         break; }
     case WM_DESTROY: {
         if (p) {
+            if (g_alphaEdit.pin == p) CloseAlphaEdit();
             p->dead = true;
             p->wnd = nullptr;
         }

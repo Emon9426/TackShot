@@ -92,5 +92,7 @@ struct MosaicFlyout {
 
 // 粒度 HUD：光标旁短暂显示当前样式与粒度（滚轮调节时）
 void DrawSizeHud(Gdiplus::Graphics& g, POINT pt, const Editor& ed, float scale);
+// 通用文字 HUD：光标旁短暂显示任意提示（透明度等）
+void DrawTextHud(Gdiplus::Graphics& g, POINT pt, const wchar_t* text, float scale);
 // 马赛克按钮右下角 ▾ 区域（用于展开二级菜单）
 RECT MosaicCaretZone(const Toolbar& tb);
