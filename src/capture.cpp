@@ -1,5 +1,6 @@
 // capture.cpp — 屏幕捕获 + 框选遮罩 + 编辑宿主（区域截图主流程）
 #include "editor.h"
+#include <dwmapi.h>
 
 namespace {
 
@@ -20,9 +21,59 @@ struct Session {
     ULONGLONG hoverSince = 0;
     HWND  prevFocus = nullptr;
     bool  shapeDrag = false;
+    std::vector<RECT> snaps;   // 会话开始枚举的可见顶层窗口（EnumWindows 自顶向下 z 序）
+    int   snapIdx = -1;
 } s;
 
 enum { TID_TIP = 3 };   // 悬停提示定时器：静止 320ms 后补一次重绘
+
+// ---------------- 窗口吸附（FR-1.3）----------------
+struct SnapEnumCtx { std::vector<RECT>* out; std::vector<std::wstring>* titles;
+                     DWORD selfPid; RECT vi; };
+
+BOOL CALLBACK SnapEnumProc(HWND hw, LPARAM lp) {
+    SnapEnumCtx* c = (SnapEnumCtx*)lp;
+    if (!IsWindowVisible(hw)) return TRUE;
+    DWORD pid = 0; GetWindowThreadProcessId(hw, &pid);
+    if (pid == c->selfPid) return TRUE;
+    if (GetWindowLongW(hw, GWL_EXSTYLE) & WS_EX_TOOLWINDOW) return TRUE;
+    if (GetWindowLongW(hw, GWL_STYLE) & WS_CHILD) return TRUE;
+    if (GetShellWindow() == hw) return TRUE;
+    int cloak = 0;
+    if (SUCCEEDED(DwmGetWindowAttribute(hw, DWMWA_CLOAKED, &cloak, sizeof(cloak))) && cloak)
+        return TRUE;
+    RECT r{};
+    if (FAILED(DwmGetWindowAttribute(hw, DWMWA_EXTENDED_FRAME_BOUNDS, &r, sizeof(r))))
+        GetWindowRect(hw, &r);                       // 退化路径：含阴影
+    if (r.right - r.left < 40 || r.bottom - r.top < 40) return TRUE;
+    RECT is;
+    if (!IntersectRect(&is, &r, &c->vi)) return TRUE;
+    wchar_t title[64] = L"";
+    GetWindowTextW(hw, title, 64);
+    c->out->push_back(r);
+    c->titles->push_back(title);
+    return TRUE;
+}
+
+void BuildSnaps() {
+    s.snaps.clear();
+    s.snapIdx = -1;
+    std::vector<std::wstring> titles;
+    SnapEnumCtx ctx{ &s.snaps, &titles, GetCurrentProcessId(),
+                     RECT{ s.vx, s.vy, s.vx + s.vw, s.vy + s.vh } };
+    EnumWindows(SnapEnumProc, (LPARAM)&ctx);
+    for (size_t i = 0; i < s.snaps.size() && i < 10; ++i) {
+        RECT& r = s.snaps[i];
+        Log(L"吸附候选%d: [%d,%d %ldx%ld] %s", (int)i + 1, r.left, r.top,
+            r.right - r.left, r.bottom - r.top, titles[i].c_str());
+    }
+}
+
+int FindSnap(POINT sp) {
+    for (size_t i = 0; i < s.snaps.size(); ++i)
+        if (PtInRect(&s.snaps[i], sp)) return (int)i;
+    return -1;
+}
 
 RECT Local(RECT r) { OffsetRect(&r, -s.vx, -s.vy); return r; }
 POINT LocalPt(POINT p) { return { p.x - s.vx, p.y - s.vy }; }
@@ -80,6 +131,31 @@ void RenderTo(HDC hdc) {
     g.DrawImage(s.base, Rect(0, 0, s.vw, s.vh), 0, 0, s.vw, s.vh, UnitPixel);
     SolidBrush dim(Color(118, 0, 0, 0));
     g.FillRectangle(&dim, 0, 0, s.vw, s.vh);
+
+    // 窗口吸附预览（FR-1.3）：无选区时光标下窗口高亮（清晰原图+双描边），点击即整窗截取
+    if (!s.selValid && s.snapIdx >= 0 && s.snapIdx < (int)s.snaps.size()) {
+        RECT sr = s.snaps[s.snapIdx];
+        ClampSel(sr);
+        RECT sl = Local(sr);
+        int w = sl.right - sl.left, h = sl.bottom - sl.top;
+        POINT off{ sr.left - s.vx, sr.top - s.vy };
+        g.DrawImage(s.base, Rect(sl.left, sl.top, w, h), off.x, off.y, w, h, UnitPixel);
+        Pen ib(Color(255, 255, 255, 255), 1.f);
+        Pen ob(Color(255, 59, 130, 246), 2.f);
+        g.DrawRectangle(&ib, sl.left, sl.top, w - 1, h - 1);
+        g.DrawRectangle(&ob, sl.left - 1, sl.top - 1, w + 1, h + 1);
+        FontFamily ff(L"Segoe UI");
+        Font f(&ff, (REAL)(12 * DpiScale(s.wnd)), FontStyleRegular, UnitPixel);
+        wchar_t t[64];
+        swprintf_s(t, 64, L"窗口 %d×%d（点击截取）", w, h);
+        SolidBrush cb(Color(235, 15, 23, 42));
+        RectF bb; StringFormat sf;
+        g.MeasureString(t, -1, &f, PointF(0, 0), &sf, &bb);
+        PointF org((REAL)sl.left, (REAL)(sl.top - 24 > 2 ? sl.top - 24 : sl.bottom + 6));
+        g.FillRectangle(&cb, org.X - 4, org.Y - 2, bb.Width + 8, bb.Height + 4);
+        SolidBrush tbx(Color(255, 226, 232, 240));
+        g.DrawString(t, -1, &f, org, &tbx);
+    }
 
     // 框选拖动中（含首次拖动，此时 selValid 尚为 false）也必须实时渲染选区（FR-1.11）
     bool draggingSel = (s.lbtn && s.mode == 0);
@@ -285,6 +361,7 @@ void OnToolbar(int id) {
 void UpdateCursor(POINT lp) {
     HCURSOR c = LoadCursor(NULL, IDC_ARROW);
     if (s.tb.Hit(lp.x, lp.y)) c = LoadCursor(NULL, IDC_HAND);
+    else if (!s.selValid && !s.lbtn && s.snapIdx >= 0) c = LoadCursor(NULL, IDC_ARROW);
     else if (!s.selValid || s.shapeDrag) c = LoadCursor(NULL, IDC_CROSS);
     else if (HitHandle(lp)) c = LoadCursor(NULL, IDC_SIZEALL);
     else if (PtInRect(&s.sel, { lp.x + s.vx, lp.y + s.vy })) {
@@ -319,8 +396,21 @@ LRESULT CALLBACK CapProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
             if (hov) SetTimer(wnd, TID_TIP, 320, NULL);
             Invalidate();
         }
+        if (!s.lbtn && !s.selValid) {
+            int idx = FindSnap(sp);
+            if (idx != s.snapIdx) { s.snapIdx = idx; Invalidate(); }
+        }
         if (s.lbtn) {
             if (s.mode == 0) { s.sel = NormSel(s.down, sp); ClampSel(s.sel); }
+            else if (s.mode == 10) {
+                // 吸附窗口按压后拖动超过阈值 → 转为自由框选
+                if (abs(sp.x - s.down.x) + abs(sp.y - s.down.y) > (int)(6 * DpiScale(s.wnd))) {
+                    s.mode = 0;
+                    s.snapIdx = -1;
+                    s.sel = NormSel(s.down, sp);
+                    ClampSel(s.sel);
+                }
+            }
             else if (s.mode == 1) {
                 OffsetRect(&s.sel, sp.x - s.down.x, sp.y - s.down.y);
                 s.down = sp; ClampSel(s.sel);
@@ -346,7 +436,10 @@ LRESULT CALLBACK CapProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         }
         s.lbtn = true; s.down = sp;
         SetCapture(wnd);
-        if (!s.selValid) { s.mode = 0; s.sel = NormSel(sp, sp); }
+        if (!s.selValid) {
+            if (s.snapIdx >= 0) s.mode = 10;              // 吸附窗口：点击确认 / 拖动取消
+            else { s.mode = 0; s.sel = NormSel(sp, sp); }
+        }
         else {
             int hh = HitHandle(sp);
             if (hh) s.mode = hh;
@@ -381,7 +474,10 @@ LRESULT CALLBACK CapProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
                     s.mode = 1;
                 }
             } else {
-                s.mode = 0; s.selValid = false; s.sel = NormSel(sp, sp);
+                s.snapIdx = FindSnap(sp);            // 选区外重选时也允许直接吸附
+                s.selValid = false;
+                if (s.snapIdx >= 0) s.mode = 10;
+                else { s.mode = 0; s.sel = NormSel(sp, sp); }
             }
         }
         Invalidate();
@@ -389,7 +485,15 @@ LRESULT CALLBACK CapProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
     case WM_LBUTTONUP: {
         if (!s.lbtn) break;
         s.lbtn = false; ReleaseCapture();
-        if (s.mode == 0) {
+        if (s.mode == 10) {
+            if (s.snapIdx >= 0 && s.snapIdx < (int)s.snaps.size()) {
+                s.sel = s.snaps[s.snapIdx];
+                ClampSel(s.sel);
+                s.selValid = true; s.phase = 1;
+                Log(L"窗口吸附截取：%ld×%ld",
+                    s.sel.right - s.sel.left, s.sel.bottom - s.sel.top);
+            }
+        } else if (s.mode == 0) {
             if (s.sel.right - s.sel.left >= 6 && s.sel.bottom - s.sel.top >= 6) {
                 s.selValid = true; s.phase = 1;
             }
@@ -437,6 +541,7 @@ LRESULT CALLBACK CapProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         if (s.dib) { DeleteObject(s.dib); s.dib = nullptr; }
         s.bits = s.backBits = nullptr;
         s.selValid = false; s.phase = 0; s.lbtn = false; s.shapeDrag = false;
+        s.snaps.clear(); s.snapIdx = -1;
         break; }
     }
     return DefWindowProcW(wnd, msg, wp, lp);
@@ -507,9 +612,10 @@ void StartRegionCapture() {
     SelectObject(s.backDc, s.back);
 
     s.phase = 0; s.selValid = false; s.lbtn = false; s.mode = 0;
-    s.hover = 0; s.shapeDrag = false;
+    s.hover = 0; s.shapeDrag = false; s.hoverSince = 0;
     s.ed = Editor{};
     s.prevFocus = GetForegroundWindow();
+    BuildSnaps();
 
     s.wnd = CreateWindowExW(WS_EX_TOPMOST | WS_EX_TOOLWINDOW,
                             kCls, L"", WS_POPUP,
@@ -519,7 +625,8 @@ void StartRegionCapture() {
     UpdateWindow(s.wnd);
     SetForegroundWindow(s.wnd);
     SetFocus(s.wnd);
-    Log(L"区域截图开始：虚拟屏 %dx%d @(%d,%d)", s.vw, s.vh, s.vx, s.vy);
+    Log(L"区域截图开始：虚拟屏 %dx%d @(%d,%d)，吸附候选窗口 %d 个",
+        s.vw, s.vh, s.vx, s.vy, (int)s.snaps.size());
 }
 
 void StartFullscreenCapture() {

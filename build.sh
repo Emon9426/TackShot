@@ -19,7 +19,7 @@ mkdir -p dist
   -Wall -Wno-unused-parameter \
   -o dist/TackShot.exe \
   src/app.cpp src/capture.cpp src/pin.cpp src/editor.cpp src/config.cpp src/util.cpp \
-  -lgdiplus -lcomctl32 -lcomdlg32 -lshell32 -lole32 -luser32 -lgdi32 -ladvapi32
+  -lgdiplus -lcomctl32 -lcomdlg32 -lshell32 -lole32 -luser32 -lgdi32 -ladvapi32 -ldwmapi
 
 echo "构建完成: dist/TackShot.exe"
 ls -la dist/TackShot.exe
