@@ -871,7 +871,7 @@
 <!-- ============================================================ -->
 <h2 id="s13">13. 功能清单 · 需求跟踪总表（RTM · 唯一跟踪基线） <span class="en">Feature List &amp; RTM</span></h2>
 
-<p>本章为<strong>独立、完整的功能清单</strong>，汇总全部功能需求（FR）及其优先级、状态与目标里程碑，是需求状态的唯一权威记录；第 4 章为各模块的详细描述，两者编号一一对应。维护规则与状态图例如下。</p>
+<p>本章为<strong>独立、完整的功能清单</strong>，汇总全部功能需求（FR）及其优先级、状态与目标里程碑，是需求状态的唯一权威记录；第 4 章为各模块的详细描述，两者编号一一对应。维护规则与状态图例如下。<br><strong>实现平台说明（V2.0 起）：</strong>自 V2.0 起实现平台由 C++20/Win32/GDI+ 切换为 <strong>Java 11+（Swing/AWT + JNA）</strong>，交付形态为 TackShot.jar + 启动.bat（无 exe）；本章此前各变更条目中的实现描述以当时的 C++ 版为准。</p>
 
 <div class="note">
   <strong>维护规则：</strong>本表是本项目需求状态的<strong>唯一权威记录</strong>。任何需求的<strong>新增</strong>、<strong>状态变更</strong>（待开发 → 开发中 → 已完成 → 已发布）、<strong>裁剪</strong>，都必须<strong>先更新本表</strong>并追加表下「变更记录」，再进行对应的开发或文档修改。新增需求编号规则：既有模块内追加（如 FR-3.14），新模块使用新编号（如 FR-8.x）。本维护规则已写入项目持久记忆，跨会话持续生效。
@@ -922,13 +922,13 @@
   <tr><td class="id">FR-4.7</td><td>贴图</td><td>多贴图共存</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-4.8</td><td>贴图</td><td>贴图就地编辑（悬浮菜单进入）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>V1.2 由 P2「贴图再编辑」升级</td></tr>
   <tr><td class="id">FR-4.9</td><td>贴图</td><td>鼠标穿透模式</td><td><span class="badge b2">P2</span></td><td><span class="st st-t">待开发</span></td><td>远期</td><td>—</td></tr>
-  <tr><td class="id">FR-4.10</td><td>贴图</td><td>悬浮菜单（悬停浮现）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>V1.2 新增</td></tr>
+  <tr><td class="id">FR-4.10</td><td>贴图</td><td>悬浮菜单（悬停浮现）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>V1.2 新增；V2.0：复制/保存按钮执行后自动关闭贴图（用户决策）</td></tr>
   <tr><td class="id">FR-4.11</td><td>贴图</td><td>编辑后同步剪贴板</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>V1.2 新增</td></tr>
   <tr><td class="id">FR-4.12</td><td>贴图</td><td>边缘/四角拖拽调整尺寸（四角等比、四边单轴）；工具条悬浮于图片上方不遮挡内容</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>当前迭代</td><td>V1.10：脚本验证四角等比/四边单轴均通过</td></tr>
   <tr><td class="id">FR-4.13</td><td>贴图</td><td>透明度交互：默认不透明；左键点击透明度按钮循环 0%→25%→75%→0%；右键呼出二级菜单（−/+ 步进 ±10% 与百分比数字输入）；任何路径上限 95%（永不 100% 全透明，保留可见轮廓）；Ctrl+滚轮统一为 ±10%；变更即时 HUD 反馈</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>当前迭代</td><td>V1.14：三档循环与二级菜单开合经用户实测、面板渲染经帧差分像素验证；输入/滚轮夹紧路径待补脚本回归</td></tr>
   <tr><td class="id">FR-5.1</td><td>输出</td><td>复制到剪贴板</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-5.2</td><td>输出</td><td>保存 PNG / JPEG</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
-  <tr><td class="id">FR-5.3</td><td>输出</td><td>另存为对话框</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
+  <tr><td class="id">FR-5.3</td><td>输出</td><td>另存为对话框</td><td><span class="badge b0">P0</span></td><td><span class="st st-x">已裁剪</span></td><td>M2</td><td>V2.0：保存统一为自动保存（图片目录+复制+关闭），对话框入口移除（用户决策，见变更记录）</td></tr>
   <tr><td class="id">FR-5.4</td><td>输出</td><td>自动命名（时间戳模板）</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
   <tr><td class="id">FR-5.5</td><td>输出</td><td>保存目录配置 / 重名加序号</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
   <tr><td class="id">FR-5.6</td><td>输出</td><td>完成动作可配置</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>默认改为复制并贴图（V1.2）</td></tr>
@@ -978,7 +978,11 @@
   <tr><td>2026-08-23</td><td>缺陷修复</td><td>「编辑工具条与入口菜单重叠」真根因定位并修复（V1.12 状态互斥修复未消除用户实际症状，因残影与状态无关）：贴图渲染原以 GDI+ 全透明刷 FillRectangle 作"清屏"，但该操作是 SrcOver 混合、对全透明色等于空操作，跨状态像素永久残留——编辑条（宽）残影留于两侧、入口菜单（居中窄）绘制其上，视觉即"两菜单同屏重叠"。修复＝每帧渲染前 ZeroMemory 物理清零窗口位图（pin.cpp）；新增贴图帧转储（TACKSHOT_DEBUG_SHOT=1 → dist/pinframe.bmp）供像素级验证；回归脚本 tools/verify_pin_clear.py：悬浮区 alpha 总和 基线 0 → 菜单显示 1,103,749 → 移开隐藏后归 0（PASS，无残影）</td></tr>
   <tr><td>2026-08-23</td><td>新增</td><td>FR-4.13 贴图透明度交互升级（V1.14 开发中）：默认不透明；左键循环 0%→25%→75%→0%（用户明确给出的序列）；右键二级菜单 −/+ 步进与百分比输入；全路径上限 95% 永不全透明；Ctrl+滚轮统一 ±10% 语义；HUD 即时反馈。原 CycleAlpha 五档（100/80/60/40/20%）与 Ctrl+滚轮 ±17、下限 20% 不透明语义随之替换</td></tr>
   <tr><td>2026-08-23</td><td>完成</td><td>FR-4.13 实施完成：三档循环与二级菜单展开/收合经用户实测（运行日志多轮"循环 25/75/0"），[−/值/+] 面板渲染经帧差分像素验证（宽扁贴图 1379×284 上恰为 204×52px、距右缘 451px、无裁剪）；百分比输入弹窗（顶层 EDIT，分层窗口不承载子控件）与 Ctrl+滚轮 ±10%、95% 夹紧已实现——脚本回归因会话中断未完整执行，标注待补；用户报告"右上角被裁剪的菜单"经取证为贴图内容中冻结的历史截图（截屏瞬间悬浮菜单被拍入图片），非实时 UI 缺陷；但据此修复两处真实瑕疵：二级菜单展开期间抑制 ◐ 悬停提示条（消除叠影）、提示条翻转后补左缘夹紧</td></tr>
-  <tr><td>2026-08-23</td><td>完成</td><td>FR-6.7 无管理员权限可用性落地（用户报告：无管理员电脑双击报"Windows 无法访问指定设备、路径或文件"）：取证确认仓库 zip 内 exe 完好（解压后 /test 3/3 通过）、Log 对不可写目录有容错、程序全部功能仅用户权限——报错源为下载拦截（SmartScreen/Mark-of-the-Web/杀软/AppLocker），非程序需要提权。修复与加固：① 嵌入应用程序清单 res/app.manifest（asInvoker + Win10/11 supportedOS + PerMonitorV2 DPI，已验证字节存在于 exe）；② VERSIONINFO 版本资源（产品名/版本/版权/原始文件名）；③ build.sh 发行目录全新组装（修复 zip 曾混入 tackshot.log 的污染）；④ 发行包新增 SHA256SUMS.txt 校验清单；⑤ README 中英双语新增"被拦截解锁指引"（解除锁定/SmartScreen 仍要运行/杀软信任/AppLocker 白名单）；从新 zip 解压→运行复现用户下载流程通过</td></tr></table>
+  <tr><td>2026-08-23</td><td>完成</td><td>FR-6.7 无管理员权限可用性落地（用户报告：无管理员电脑双击报"Windows 无法访问指定设备、路径或文件"）：取证确认仓库 zip 内 exe 完好（解压后 /test 3/3 通过）、Log 对不可写目录有容错、程序全部功能仅用户权限——报错源为下载拦截（SmartScreen/Mark-of-the-Web/杀软/AppLocker），非程序需要提权。修复与加固：① 嵌入应用程序清单 res/app.manifest（asInvoker + Win10/11 supportedOS + PerMonitorV2 DPI，已验证字节存在于 exe）；② VERSIONINFO 版本资源（产品名/版本/版权/原始文件名）；③ build.sh 发行目录全新组装（修复 zip 曾混入 tackshot.log 的污染）；④ 发行包新增 SHA256SUMS.txt 校验清单；⑤ README 中英双语新增"被拦截解锁指引"（解除锁定/SmartScreen 仍要运行/杀软信任/AppLocker 白名单）；从新 zip 解压→运行复现用户下载流程通过</td></tr>
+  <tr><td>2026-08-23</td><td>规格变更</td><td><strong>V2.0 实现平台切换（用户决策）：</strong>因公司电脑安全策略禁止运行 exe，实现语言由 C++20/Win32/GDI+ 整体重构为 Java 11+（Swing/AWT + JNA，jna/jna-platform 为 Apache-2.0 开源合规依赖），交付形态改为 TackShot.jar + 启动.bat 绿色包，不含任何 exe/jni 自编原生库。范围＝1:1 对齐 V1.14 已交付功能（51 条已完成需求 + FR-2.2 的 config.json 改键 + /test 冒烟 + TACKSHOT_DEBUG_SHOT 调试钩子），本表 62 条需求编号、语义与状态均不变；剪贴板保持 CF_DIB 写入语义（JNA 直调），config.json 格式与 tackshot.log（UTF-16LE）保持兼容。C++ 版源码（src/、res/、build.sh）与旧发行物移除，Java 成唯一版本；10 条待开发需求维持原状</td></tr>
+  <tr><td>2026-08-23</td><td>变更</td><td><strong>V2.0 交付语义优化（用户决策，影响 FR-3.11 / FR-5.3 / FR-4.10 / FR-5.1）：</strong>① 截图编辑器"保存"按钮＝自动保存到用户图片目录（TackShot 子目录）+ 复制剪贴板 + 结束截图会话；原"另存为对话框"交互入口随之移除（FR-5.3 变更为裁剪，自动保存继承其输出能力）；② 贴图悬浮菜单"复制"＝复制剪贴板 + 关闭该贴图；③ 贴图悬浮菜单"保存"＝自动保存 + 复制剪贴板 + 关闭该贴图；④ 截图确认（✓/Enter/双击）仍按 confirm_action 配置执行（默认复制并贴图）</td></tr>
+  <tr><td>2026-08-23</td><td>缺陷修复</td><td>贴图窗口宽度小于悬浮菜单（334px 基准）或编辑工具条（380px 基准）时菜单被窗口左右裁剪：窗口宽度下限改为按当前模式菜单宽度自适应（含 DPI 缩放），图片在窗口内水平居中、两侧留白透明且点击穿透，菜单任何情况下完整显示</td></tr>
+  <tr><td>2026-08-23</td><td>完成</td><td><strong>V2.0 Java 重构实施完成：</strong>构建通过（javac --release 11，JDK 11/17）；/test 冒烟 3/3；脚本与像素回归：贴图残影 PASS（基线 0→菜单 1.9M→隐藏 0）、四角等比/四边单轴拖拽 ALL-PASS、窄贴图菜单完整显示 PASS（窗口 350px/帧 350px/悬浮区 alpha 1.9M）；交付语义四项 ALL-PASS（编辑器保存=落盘+复制+关闭、贴图复制/保存=相应动作+关闭）；视觉验证深色面板与中文字形正常（修复 java.awt.Color 四参构造参数序错误与 Segoe UI 无 CJK 字形问题）；修复 AWT SunAwtWindow 自带 WS_EX_NOACTIVATE 致键盘事件丢失（改用无装饰 JFrame + 显式前台）；修复 start.bat 启动（javaw 探测与 jar 定位）；C++ 版移除（src/、res/、旧 release、w64devkit 工具链）。遗留：verify_alpha 全流程脚本回归两次被会话中断，待补跑</td></tr></table>
 
 <h2 id="s14">14. 附录 <span class="en">Appendix</span></h2>
 

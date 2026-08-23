@@ -1,40 +1,50 @@
 #!/usr/bin/env bash
-# 钉图 TackShot 构建脚本（MinGW-w64 GCC，产物 dist/TackShot.exe）
+# 钉图 TackShot V2.0（Java 版）构建：javac --release 11 → jar → 组装 release/TackShot
+# 依赖：JDK 11+；lib/ 下 jna jar（已在仓库中）
 set -e
 cd "$(dirname "$0")"
 
-GCC="${GCC:-}"
-if [ -z "$GCC" ]; then
-  if [ -x "tools/w64devkit/bin/g++.exe" ]; then
-    GCC="tools/w64devkit/bin/g++.exe"
-    PATH="$(pwd)/tools/w64devkit/bin:$PATH"
-    export PATH
-  elif command -v g++ >/dev/null 2>&1; then GCC="$(command -v g++)"
-  else echo "错误：未找到 g++（请先解压 w64devkit 到 tools/ 或安装 MinGW-w64）"; exit 1; fi
-fi
+JAVAC="${JAVAC:-javac}"
+JAR="${JAR:-jar}"
 
-mkdir -p dist
-# 应用图标（Explorer 文件图标）经 windres 编译为 COFF 目标
-windres res/app.rc -O coff -o dist/app_res.o
+rm -rf build dist/TackShot.jar
+mkdir -p build/classes dist
 
-"$GCC" -std=c++20 -municode -mwindows -O2 -static \
-  -DUNICODE -D_UNICODE \
-  -Wall -Wno-unused-parameter \
-  -o dist/TackShot.exe \
-  src/app.cpp src/capture.cpp src/pin.cpp src/editor.cpp src/config.cpp src/util.cpp dist/app_res.o \
-  -lgdiplus -lcomctl32 -lcomdlg32 -lshell32 -lole32 -luser32 -lgdi32 -ladvapi32 -ldwmapi
+cat > build/javac.args <<'EOF'
+--release 11
+-encoding UTF-8
+-cp "lib/jna-5.14.0.jar;lib/jna-platform-5.14.0.jar"
+-sourcepath src-java
+-d build/classes
+src-java/tackshot/Main.java
+EOF
 
-echo "构建完成: dist/TackShot.exe"
-ls -la dist/TackShot.exe
+echo "[1/5] 编译 (release 11)..."
+"$JAVAC" @build/javac.args
 
-# ---- 组装单文件夹发行包：release/TackShot/ 即完整软件 ----
-REL="release/TackShot"
-# 全新组装：先清空，杜绝把运行残留（如 tackshot.log）打进发行包
-rm -rf "$REL" release/TackShot-win64.zip
-mkdir -p "$REL/img"
-cp dist/TackShot.exe LICENSE THIRD-PARTY-NOTICES.txt README.md "$REL/"
-cp img/*.svg "$REL/img/"
-# 校验清单：用户可核对文件未被篡改（杀软误报时先验哈希）
-sha256sum dist/TackShot.exe | sed 's|dist/||' > "$REL/SHA256SUMS.txt"
-powershell -NoProfile -Command "Compress-Archive -Path 'release/TackShot' -DestinationPath 'release/TackShot-win64.zip' -Force" >/dev/null 2>&1
-echo "发行包: release/TackShot/（单文件夹） + release/TackShot-win64.zip"
+echo "[2/5] 打包 TackShot.jar..."
+cat > build/manifest.mf <<'EOF'
+Main-Class: tackshot.Main
+Class-Path: lib/jna-5.14.0.jar lib/jna-platform-5.14.0.jar
+EOF
+"$JAR" cfm dist/TackShot.jar build/manifest.mf -C build/classes .
+
+echo "[3/5] 复制运行依赖..."
+mkdir -p dist/lib
+cp lib/*.jar dist/lib/
+unix2dos -q start.bat 2>/dev/null || true
+cp start.bat dist/start.bat
+
+echo "[4/5] 组装 release/TackShot ..."
+rm -rf release/TackShot release/TackShot-java.zip release/TackShot-win64
+mkdir -p release/TackShot/lib release/TackShot/img
+cp dist/TackShot.jar release/TackShot/
+cp lib/*.jar release/TackShot/lib/
+cp start.bat README.md LICENSE THIRD-PARTY-NOTICES.txt release/TackShot/
+cp img/*.svg release/TackShot/img/ 2>/dev/null || true
+
+echo "[5/5] 生成 SHA256SUMS 与 zip ..."
+(cd release/TackShot && sha256sum TackShot.jar lib/*.jar start.bat README.md LICENSE > SHA256SUMS.txt)
+powershell -NoProfile -Command "Compress-Archive -Path 'release/TackShot' -DestinationPath 'release/TackShot-java.zip' -Force" >/dev/null 2>&1 || true
+
+echo "完成：dist/TackShot.jar（本地运行）与 release/TackShot/（发行包，双击 start.bat 启动）"

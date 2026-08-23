@@ -1,14 +1,15 @@
-tools/
-dist/
+# 构建产物与运行残留
 build/
+dist/
 .mimosa/
+.zcode/
 *.log
 *.log.*
 config.json
-*.o
-*.exe
-*.7z
-*.7z.exe
-# 例外：发行文件夹内的 exe 纳入版本库，GitHub 上 release/TackShot/ 直接完整可用
-!release/TackShot/TackShot.exe
 test_out.*
+tackshot.lock
+*.bmp
+# 本地工具链与临时脚本（不入库）
+tools/w64devkit/
+tools/w64devkit.7z*
+tools/TestHotkey.*

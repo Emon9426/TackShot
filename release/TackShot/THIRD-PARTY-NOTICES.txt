@@ -3,19 +3,22 @@
 
 本项目的全部第三方依赖情况如下（随发布包更新）：
 
-1. 无任何随包分发的第三方代码库。
-   本软件仅调用 Windows 操作系统自带的系统组件：
-   - Win32 API（user32 / gdi32 / shell32 / comctl32 / comdlg32 / advapi32）
-   - GDI+（gdiplus，操作系统组件）
-   上述组件通过操作系统的标准授权提供，不随本软件包再分发任何二进制。
+1. JNA（Java Native Access）——V2.0 起随包分发
+   - 组件：jna-5.14.0.jar、jna-platform-5.14.0.jar（位于 lib\）
+   - 许可证：Apache License 2.0 / LGPL 2.1 双许可（本项目选择 Apache-2.0 合规路径）
+   - 来源：https://github.com/java-native-access/jna （Maven Central 分发）
+   - 用途：调用 Windows 系统组件（全局热键 / 窗口枚举 / 剪贴板 CF_DIB /
+     注册表自启 / DPI 查询），不包含任何本项目的原生代码
 
-2. 字体：界面文字通过系统 API 调用系统字体（Segoe UI / 微软雅黑），
+2. 其余系统组件（不随包再分发二进制，经 JNA 按操作系统标准授权调用）：
+   - Win32 API（user32 / kernel32 / dwmapi / shell32 / advapi32）
+
+3. 字体：界面文字调用系统字体（Microsoft YaHei UI / Consolas），
    未随包分发任何字体文件。
 
-3. 图标：程序图标为原创绘制（运行时矢量生成），未使用第三方图标库。
+4. 图标：程序图标为原创绘制（运行时矢量生成），未使用第三方图标库。
 
-构建工具链（w64devkit / MinGW-w64 GCC，仅用于编译，不进入发行包）：
-- w64devkit: https://github.com/skeeto/w64devkit （公有领域 / Unlicense）
+构建工具链（JDK 11+，仅用于编译，不进入发行包）。
 
 若后续引入第三方库，必须在此文件登记：名称 / 版本 / 许可证 / 来源，
 且许可证必须落在项目白名单内（MIT / Apache-2.0 / BSD / ISC / zlib / 0BSD / OFL）。
