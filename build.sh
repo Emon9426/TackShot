@@ -14,11 +14,14 @@ if [ -z "$GCC" ]; then
 fi
 
 mkdir -p dist
+# 应用图标（Explorer 文件图标）经 windres 编译为 COFF 目标
+windres res/app.rc -O coff -o dist/app_res.o
+
 "$GCC" -std=c++20 -municode -mwindows -O2 -static \
   -DUNICODE -D_UNICODE \
   -Wall -Wno-unused-parameter \
   -o dist/TackShot.exe \
-  src/app.cpp src/capture.cpp src/pin.cpp src/editor.cpp src/config.cpp src/util.cpp \
+  src/app.cpp src/capture.cpp src/pin.cpp src/editor.cpp src/config.cpp src/util.cpp dist/app_res.o \
   -lgdiplus -lcomctl32 -lcomdlg32 -lshell32 -lole32 -luser32 -lgdi32 -ladvapi32 -ldwmapi
 
 echo "构建完成: dist/TackShot.exe"

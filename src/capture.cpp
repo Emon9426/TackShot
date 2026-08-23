@@ -26,7 +26,7 @@ struct Session {
     ULONGLONG hintUntil = 0;   // 进入截图后的操作引导显示截止时刻
 } s;
 
-enum { TID_TIP = 3 };   // 悬停提示定时器：静止 320ms 后补一次重绘
+enum { TID_TIP = 3, TID_ANIM = 4 };   // 3=悬停提示 320ms 补绘；4=悬停放大动画 40ms 补绘
 
 // ---------------- 窗口吸附（FR-1.3）----------------
 struct SnapEnumCtx { std::vector<RECT>* out; std::vector<std::wstring>* titles;
@@ -216,7 +216,14 @@ void RenderTo(HDC hdc) {
 
     if (s.phase == 1 && s.selValid) {
         LayoutBar();
-        s.tb.Draw(s.backDc, &s.ed, s.hover, TbMode::Editor);
+        // 悬停按钮放大动画：160ms ease-out 到 1.3 倍
+        float hs = 1.f;
+        if (s.hover && s.hoverSince) {
+            double e = (double)(GetTickCount64() - s.hoverSince);
+            float t = (float)std::min(1.0, e / 160.0);
+            hs = 1.f + 0.30f * t * (2.f - t);
+        }
+        s.tb.Draw(s.backDc, &s.ed, s.hover, TbMode::Editor, hs);
         if (s.hover && s.hoverSince && GetTickCount64() - s.hoverSince > 300) {
             POINT cp; GetCursorPos(&cp);
             cp = LocalPt(cp);
@@ -418,8 +425,12 @@ LRESULT CALLBACK CapProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         if (hov != s.hover) {
             s.hover = hov; s.hoverSince = GetTickCount64();
             KillTimer(wnd, TID_TIP);
+            KillTimer(wnd, TID_ANIM);
             // 静止悬停不产生重绘事件，需定时器在 320ms 后补一次重绘，提示条才会出现
-            if (hov) SetTimer(wnd, TID_TIP, 320, NULL);
+            if (hov) {
+                SetTimer(wnd, TID_TIP, 320, NULL);
+                SetTimer(wnd, TID_ANIM, 40, NULL);   // 放大动画补绘
+            }
             Invalidate();
         }
         if (!s.lbtn && !s.selValid) {
@@ -548,6 +559,12 @@ LRESULT CALLBACK CapProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         break;
     case WM_TIMER:
         if (wp == TID_TIP) { KillTimer(wnd, TID_TIP); Invalidate(); }
+        else if (wp == TID_ANIM) {
+            Invalidate();
+            if (!s.hover || !s.hoverSince ||
+                GetTickCount64() - s.hoverSince > 260)
+                KillTimer(wnd, TID_ANIM);
+        }
         return 0;
     case WM_KEYDOWN: {
         if (TextEntryActive()) break;

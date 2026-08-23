@@ -324,7 +324,7 @@ static void Glyph(Graphics& g, int id, const RectF& r, const Editor* ed) {
     default: break;
     }
 }
-void Toolbar::Draw(HDC dc, const Editor* ed, int hover, TbMode mode) const {
+void Toolbar::Draw(HDC dc, const Editor* ed, int hover, TbMode mode, float hoverScale) const {
     if (btns.empty()) return;
     Graphics g(dc);
     g.SetSmoothingMode(SmoothingModeAntiAlias);
@@ -358,6 +358,11 @@ void Toolbar::Draw(HDC dc, const Editor* ed, int hover, TbMode mode) const {
             StringFormat sf; sf.SetAlignment(StringAlignmentCenter);
             g.DrawString(t, -1, &f, RectF(r.X - 2, r.Y, r.Width + 4, r.Height), &sf, &tb);
             continue;
+        }
+        // 悬停放大动画：以按钮中心为基准外扩（hoverScale 由宿主按缓动曲线驱动）
+        if (hoverScale > 1.001f && b.id == hover) {
+            REAL g = r.Width * (hoverScale - 1.f) * 0.5f + 0.5f;
+            r.Inflate(g, g);
         }
         bool active = false;
         if (ed) {

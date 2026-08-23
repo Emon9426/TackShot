@@ -6,7 +6,7 @@
 namespace {
 
 const UINT WM_PRUNE = WM_APP + 3;
-enum { TID_HOVER = 1, TID_HIDE = 2, TID_TIP = 3 };
+enum { TID_HOVER = 1, TID_HIDE = 2, TID_TIP = 3, TID_ANIM = 4 };
 const wchar_t* kPinCls = L"TackShotPin";
 const int BORDER = 2;      // 贴图黑色边框宽度
 const int STRIP_GAP = 6;   // 工具条与图片间距（逻辑 px）
@@ -86,13 +86,19 @@ struct PinWindow {
         // 工具条画在顶部悬浮区（不占图片内容）；空白条区由 WM_NCHITTEST 穿透
         RECT strip{ 0, 0, ww, topZone };
         float sc = DpiScale(wnd);
+        float hs = 1.f;
+        if (hover && hoverSince) {
+            double e = (double)(GetTickCount64() - hoverSince);
+            float t = (float)std::min(1.0, e / 160.0);
+            hs = 1.f + 0.30f * t * (2.f - t);
+        }
         if (editing) {
             bar.Layout(strip, strip, TbMode::PinEdit, sc);
-            bar.Draw(winDc, &ed, hover, TbMode::PinEdit);
+            bar.Draw(winDc, &ed, hover, TbMode::PinEdit, hs);
         } else if (menuVisible) {
             menu.zoomPct = (int)(zoomX * 100 + 0.5);
             menu.Layout(strip, strip, TbMode::PinHover, sc);
-            menu.Draw(winDc, nullptr, hover, TbMode::PinHover);
+            menu.Draw(winDc, nullptr, hover, TbMode::PinHover, hs);
         }
         if (hover && hoverSince && GetTickCount64() - hoverSince > 300) {
             POINT cp; GetCursorPos(&cp);
@@ -390,7 +396,11 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         if (hov != p->hover) {
             p->hover = hov; p->hoverSince = GetTickCount64();
             KillTimer(wnd, TID_TIP);
-            if (hov) SetTimer(wnd, TID_TIP, 320, NULL);
+            KillTimer(wnd, TID_ANIM);
+            if (hov) {
+                SetTimer(wnd, TID_TIP, 320, NULL);   // 静止悬停补重绘以显示提示
+                SetTimer(wnd, TID_ANIM, 40, NULL);   // 放大动画补绘
+            }
             p->Render();
         }
         if (p->shapeDrag) {
@@ -437,6 +447,11 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         } else if (wp == TID_TIP) {
             KillTimer(wnd, TID_TIP);
             if (p->hover) p->Render();
+        } else if (wp == TID_ANIM) {
+            p->Render();
+            if (!p->hover || !p->hoverSince ||
+                GetTickCount64() - p->hoverSince > 260)
+                KillTimer(wnd, TID_ANIM);
         }
         break; }
     case WM_MOUSELEAVE: {

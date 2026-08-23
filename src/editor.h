@@ -58,7 +58,8 @@ struct Toolbar {
     float scale = 1.0f;      // DPI 缩放（96 基准），Layout 时设置
 
     void Layout(const RECT& host, const RECT& scr, TbMode mode, float dpiScale = 1.0f);
-    void Draw(HDC dc, const Editor* ed, int hover, TbMode mode) const;
+    void Draw(HDC dc, const Editor* ed, int hover, TbMode mode,
+              float hoverScale = 1.0f) const;   // hoverScale：悬停按钮放大系数（动画）
     int  Hit(int x, int y) const;
 };
 

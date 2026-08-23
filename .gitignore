@@ -1,6 +1,5 @@
 tools/
 dist/
-release/
 build/
 .mimosa/
 *.log

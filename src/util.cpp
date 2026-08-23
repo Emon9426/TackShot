@@ -261,14 +261,26 @@ HICON CreateAppIcon() {
         bg.CloseFigure();
         SolidBrush b1(Color(255, 30, 37, 54));
         g.FillPath(&b1, &bg);
-        // 图钉：蓝色圆头 + 斜针
-        Pen pen(Color(255, 235, 238, 240), 3.2f);
-        pen.SetStartCap(LineCapRound); pen.SetEndCap(LineCapRound);
-        g.DrawLine(&pen, 16, 14, 22, 27);
-        SolidBrush b2(Color(255, 59, 130, 246));
-        g.FillEllipse(&b2, 9, 4, 14, 14);
-        Pen ring(Color(255, 255, 255, 255), 1.6f);
-        g.DrawEllipse(&ring, 9, 4, 14, 14);
+        // 方头图钉（琥珀色）：方头 + 白描边，避免"圆+柄"的放大镜观感
+        Pen wpen(Color(255, 255, 255, 255), 2.0f);
+        SolidBrush head(Color(255, 245, 158, 11));
+        RectF hr(8.5f, 5.5f, 15.f, 10.f);
+        GraphicsPath hp;
+        REAL r = 3.f;
+        hp.AddArc(hr.GetLeft(), hr.GetTop(), r * 2, r * 2, 180, 90);
+        hp.AddArc(hr.GetRight() - r * 2, hr.GetTop(), r * 2, r * 2, 270, 90);
+        hp.AddArc(hr.GetRight() - r * 2, hr.GetBottom() - r * 2, r * 2, r * 2, 0, 90);
+        hp.AddArc(hr.GetLeft(), hr.GetBottom() - r * 2, r * 2, r * 2, 90, 90);
+        hp.CloseFigure();
+        g.FillPath(&head, &hp);
+        g.DrawPath(&wpen, &hp);
+        // 针杆：从钉头中下向右下刺出
+        Pen np(Color(255, 226, 232, 240), 3.f);
+        np.SetStartCap(LineCapRound); np.SetEndCap(LineCapRound);
+        g.DrawLine(&np, 16, 16, 21, 28);
+        // 钉头顶部高光
+        Pen hl(Color(255, 254, 243, 199), 1.6f);
+        g.DrawLine(&hl, 11, 8, 19, 8);
     }
     SelectObject(dc, old);
     DeleteDC(dc);
