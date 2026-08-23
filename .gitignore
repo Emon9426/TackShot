@@ -9,4 +9,6 @@ config.json
 *.exe
 *.7z
 *.7z.exe
+# 例外：发行文件夹内的 exe 纳入版本库，GitHub 上 release/TackShot/ 直接完整可用
+!release/TackShot/TackShot.exe
 test_out.*
