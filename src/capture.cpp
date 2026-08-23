@@ -17,6 +17,7 @@ struct Session {
     Editor ed;
     Toolbar tb;
     int   hover = 0;
+    ULONGLONG hoverSince = 0;
     HWND  prevFocus = nullptr;
     bool  shapeDrag = false;
 } s;
@@ -84,6 +85,10 @@ void RenderTo(HDC hdc) {
         POINT off{ s.sel.left - s.vx, s.sel.top - s.vy };
         g.DrawImage(s.base, Rect(sl.left, sl.top, w, h),
                     off.x, off.y, w, h, UnitPixel);
+        if (s.phase == 0 && s.lbtn && s.mode == 0) {   // 拖动框选中：白色半透明高亮（FR-1.11）
+            SolidBrush veil(Color(64, 255, 255, 255));
+            g.FillRectangle(&veil, sl.left, sl.top, w, h);
+        }
         g.TranslateTransform((REAL)sl.left, (REAL)sl.top);
         DrawShapes(g, s.ed.shapes, s.base, off);
         if (s.shapeDrag) DrawShape(g, s.ed.draft, s.base, off);
@@ -124,6 +129,12 @@ void RenderTo(HDC hdc) {
     if (s.phase == 1 && s.selValid) {
         LayoutBar();
         s.tb.Draw(s.backDc, &s.ed, s.hover, TbMode::Editor);
+        if (s.hover && s.hoverSince && GetTickCount64() - s.hoverSince > 300) {
+            POINT cp; GetCursorPos(&cp);
+            cp = LocalPt(cp);
+            DrawTooltip(g, cp, RECT{ 0, 0, s.vw, s.vh }, TbName(s.hover),
+                        DpiScale(s.wnd));
+        }
     }
 
     BitBlt(hdc, 0, 0, s.vw, s.vh, s.backDc, 0, 0, SRCCOPY);
@@ -275,7 +286,7 @@ LRESULT CALLBACK CapProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         int x = GET_X_LPARAM(lp), y = GET_Y_LPARAM(lp);
         POINT sp{ x + s.vx, y + s.vy };
         int hov = (s.phase == 1 && s.selValid) ? s.tb.Hit(x, y) : 0;
-        if (hov != s.hover) { s.hover = hov; Invalidate(); }
+        if (hov != s.hover) { s.hover = hov; s.hoverSince = GetTickCount64(); Invalidate(); }
         if (s.lbtn) {
             if (s.mode == 0) { s.sel = NormSel(s.down, sp); ClampSel(s.sel); }
             else if (s.mode == 1) {

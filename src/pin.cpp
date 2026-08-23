@@ -29,6 +29,7 @@ struct PinWindow {
     Toolbar bar;      // 就地编辑工具条
     Editor  ed;
     int     hover = 0;
+    ULONGLONG hoverSince = 0;
 
     POINT ImgPt(int x, int y) {
         return { (int)((x - 1) / zoom), (int)((y - 1) / zoom) };
@@ -79,6 +80,11 @@ struct PinWindow {
             menu.zoomPct = (int)(zoom * 100 + 0.5);
             menu.Layout(client, client, TbMode::PinHover, sc);
             menu.Draw(winDc, nullptr, hover, TbMode::PinHover);
+        }
+        if (hover && hoverSince && GetTickCount64() - hoverSince > 300) {
+            POINT cp; GetCursorPos(&cp);
+            RECT wr; GetWindowRect(wnd, &wr);
+            DrawTooltip(g, { cp.x - wr.left, cp.y - wr.top }, client, TbName(hover), sc);
         }
 
         PremultiplyBits(winBits, ww, wh);
@@ -287,7 +293,7 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         int hov = 0;
         if (p->editing) hov = p->bar.Hit(x, y);
         else if (p->menuVisible) hov = p->menu.Hit(x, y);
-        if (hov != p->hover) { p->hover = hov; p->Render(); }
+        if (hov != p->hover) { p->hover = hov; p->hoverSince = GetTickCount64(); p->Render(); }
         if (!p->menuVisible && !p->editing) SetTimer(wnd, TID_HOVER, 330, NULL);
         if (p->shapeDrag) {
             POINT ip = p->ImgPt(x, y);

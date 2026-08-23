@@ -124,7 +124,7 @@
     <tr><th>文档状态</th><td>初稿，供评审与开发估算使用</td><th>编制方式</th><td>基于用户原始需求分析、完善并结构化</td></tr>
     <tr><th>目标平台</th><td>Windows 10 (1809+) / Windows 11，x64</td><th>分发形式</th><td>ZIP 压缩包（绿色免安装）</td></tr>
   </table>
-  <p style="font-size:12.5px;color:var(--muted);text-align:center;margin:10px 0 0;">修订记录：V1.0（2026-08-23）初稿 · V1.1（2026-08-23）新增 4.9 功能需求跟踪总表（RTM）与第 5 章 UI 界面设计 · V1.2（2026-08-23）定名「钉图 TackShot」；默认完成动作改为「复制并贴图」；新增贴图悬浮菜单与就地编辑（FR-4.10 / FR-4.11 新增、FR-4.8 升级 P0、新增 5.7 UI-7）· V1.3（2026-08-23）开放问题全部定案：MIT 开源（Q2）、技术栈定 C++ 方案 A（Q3）、x64 首发零依赖 + ARM64 可选（Q4）、GitHub Releases + HTML 图文手册（Q5）、范围外功能不排期（Q6）；功能清单独立成章（原 4.9 → 第 13 章）· V1.4（2026-08-23）UI 优化：工具条按钮加大（工具 44 / 动作 46 基准）并全 UI 按显示器 DPI 等比缩放；选区控制点、坐标标签同步放大 · V1.5（2026-08-23）新增 FR-1.11 选区白色高亮、FR-3.14 工具条悬停提示；工具条整体缩小至 1/3 并升级彩色图标（待用户许可后实施）</p>
+  <p style="font-size:12.5px;color:var(--muted);text-align:center;margin:10px 0 0;">修订记录：V1.0（2026-08-23）初稿 · V1.1（2026-08-23）新增 4.9 功能需求跟踪总表（RTM）与第 5 章 UI 界面设计 · V1.2（2026-08-23）定名「钉图 TackShot」；默认完成动作改为「复制并贴图」；新增贴图悬浮菜单与就地编辑（FR-4.10 / FR-4.11 新增、FR-4.8 升级 P0、新增 5.7 UI-7）· V1.3（2026-08-23）开放问题全部定案：MIT 开源（Q2）、技术栈定 C++ 方案 A（Q3）、x64 首发零依赖 + ARM64 可选（Q4）、GitHub Releases + HTML 图文手册（Q5）、范围外功能不排期（Q6）；功能清单独立成章（原 4.9 → 第 13 章）· V1.4（2026-08-23）UI 优化：工具条按钮加大（工具 44 / 动作 46 基准）并全 UI 按显示器 DPI 等比缩放；选区控制点、坐标标签同步放大 · V1.5（2026-08-23）新增 FR-1.11 选区白色高亮、FR-3.14 工具条悬停提示；工具条整体缩小至 1/3 并升级彩色图标（已实施，2026-08-23）</p>
 </header>
 
 <nav class="toc">
@@ -892,7 +892,7 @@
   <tr><td class="id">FR-1.8</td><td>截图捕获</td><td>选区坐标 / 尺寸显示</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
   <tr><td class="id">FR-1.9</td><td>截图捕获</td><td>选区 8 控制点调整</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
   <tr><td class="id">FR-1.10</td><td>截图捕获</td><td>取消截图（Esc / 右键）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
-  <tr><td class="id">FR-1.11</td><td>截图捕获</td><td>拖动选区白色半透明高亮</td><td><span class="badge b0">P0</span></td><td><span class="st st-t">待开发</span></td><td>M2</td><td>V1.5 新增</td></tr>
+  <tr><td class="id">FR-1.11</td><td>截图捕获</td><td>拖动选区白色半透明高亮</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>V1.5 新增并实施</td></tr>
   <tr><td class="id">FR-2.1</td><td>全局热键</td><td>默认热键方案</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-2.2</td><td>全局热键</td><td>热键自定义</td><td><span class="badge b0">P0</span></td><td><span class="st st-d">开发中</span></td><td>M3</td><td>config.json 改键已可用；录入式设置 UI 待 M3</td></tr>
   <tr><td class="id">FR-2.3</td><td>全局热键</td><td>热键冲突检测与提示</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
@@ -911,7 +911,7 @@
   <tr><td class="id">FR-3.11</td><td>编辑器</td><td>完成动作（确认 / 另存 / 仅复制 / 取消）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>默认＝复制并贴图（V1.2 变更）</td></tr>
   <tr><td class="id">FR-3.12</td><td>编辑器</td><td>键盘约定（Enter / Esc）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-3.13</td><td>编辑器</td><td>工具快捷键（R / A / B / T / M…）</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>—</td></tr>
-  <tr><td class="id">FR-3.14</td><td>编辑器</td><td>工具条悬停提示（名称+快捷键）</td><td><span class="badge b0">P0</span></td><td><span class="st st-t">待开发</span></td><td>M2</td><td>V1.5 新增</td></tr>
+  <tr><td class="id">FR-3.14</td><td>编辑器</td><td>工具条悬停提示（名称+快捷键）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>V1.5 新增并实施</td></tr>
   <tr><td class="id">FR-4.1</td><td>贴图</td><td>一键贴图</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>确认后默认自动贴图（V1.2）</td></tr>
   <tr><td class="id">FR-4.2</td><td>贴图</td><td>窗口置顶（Topmost）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-4.3</td><td>贴图</td><td>拖动移动</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
@@ -954,7 +954,8 @@
   <tr><td>2026-08-23</td><td>缺陷修复</td><td>修复贴图不可见缺陷：分层窗口中 SetLayeredWindowAttributes 会使 UpdateLayeredWindow 位图失效，改为 BLENDFUNCTION.SourceConstantAlpha 承载不透明度（状态不变，仍为已完成）；/test 增加"贴图窗口可见性"断言；新增 /capture 自动化入口</td></tr>
   <tr><td>2026-08-23</td><td>UI 优化</td><td>工具条按钮加大（工具 44px / 动作按钮 46px / 色板 28px，96 基准），全部 UI 按显示器 DPI 等比缩放（解决高分屏下按钮偏小问题）；选区控制点放大至 10px 基准并加大命中半径</td></tr>
   <tr><td>2026-08-23</td><td>新增</td><td>V1.5 需求确认（用户已答复澄清问题）：新增 FR-1.11（拖动选区白色半透明高亮，松开恢复原图清晰显示）、FR-3.14（工具条悬停提示：功能名+快捷键）；待用户许可后实施</td></tr>
-  <tr><td>2026-08-23</td><td>规格变更</td><td>工具条整体缩小至 V1.4 的 1/3（工具/动作按钮 16px、色板/线宽 12px、面板高 20px 基准，仍随 DPI 缩放）；图标升级为彩色填充+粗线条点缀色；因小尺寸下文字标签不可读，功能名改由悬停提示（FR-3.14）承担；FR-4.8/4.10 贴图就地编辑交互维持现状（用户确认"先试试现状"）</td></tr></table>
+  <tr><td>2026-08-23</td><td>规格变更</td><td>工具条整体缩小至 V1.4 的 1/3（工具/动作按钮 16px、色板/线宽 12px、面板高 20px 基准，仍随 DPI 缩放）；图标升级为彩色填充+粗线条点缀色；因小尺寸下文字标签不可读，功能名改由悬停提示（FR-3.14）承担；FR-4.8/4.10 贴图就地编辑交互维持现状（用户确认"先试试现状"）</td></tr>
+  <tr><td>2026-08-23</td><td>完成</td><td>V1.5 UI 优化实施完成（构建+冒烟 3/3，干净退出）：FR-1.11 选区白色高亮、FR-3.14 工具条悬停提示置「已完成」；工具条缩至 1/3 + 彩色填充图标已实现（修复退出段错误：GDI+ 静态对象析构顺序）</td></tr></table>
 
 <h2 id="s14">14. 附录 <span class="en">Appendix</span></h2>
 

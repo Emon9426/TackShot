@@ -62,6 +62,11 @@ struct Toolbar {
     int  Hit(int x, int y) const;
 };
 
+// 悬停提示（FR-3.14）：按钮功能名 + 快捷键；绘制提示条
+const wchar_t* TbName(int id);
+void DrawTooltip(Gdiplus::Graphics& g, POINT pt, const RECT& clip,
+                 const wchar_t* text, float scale);
+
 // ---------------- 文字输入弹窗（顶层 EDIT，天然支持 IME） ----------------
 void StartTextEntry(HWND owner, POINT screenPos, int fontSizePx, Gdiplus::ARGB color,
                     std::function<void(const std::wstring&)> onCommit);

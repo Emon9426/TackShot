@@ -125,37 +125,37 @@ void Toolbar::Layout(const RECT& host, const RECT& scr, TbMode mode, float dpiSc
     struct Item { int id; float w; };
     std::vector<Item> items;
     if (mode == TbMode::Editor) {
-        items = { {TB_OK,46},{TB_PIN,46},{TB_SAVE,46},{TB_CANCEL,46},
-                  {TB_RECT,44},{TB_ELLIPSE,44},{TB_LINE,44},{TB_ARROW,44},{TB_PEN,44},
-                  {TB_TEXT,44},{TB_MOSAIC,44},{TB_HIGHLIGHT,44},
-                  {TB_UNDO,44},{TB_REDO,44},
-                  {TB_C0,28},{TB_C1,28},{TB_C2,28},{TB_C3,28},{TB_C4,28},{TB_C5,28},
-                  {TB_W0,32},{TB_W1,32},{TB_W2,32} };
+        items = { {TB_OK,16},{TB_PIN,16},{TB_SAVE,16},{TB_CANCEL,16},
+                  {TB_RECT,16},{TB_ELLIPSE,16},{TB_LINE,16},{TB_ARROW,16},{TB_PEN,16},
+                  {TB_TEXT,16},{TB_MOSAIC,16},{TB_HIGHLIGHT,16},
+                  {TB_UNDO,16},{TB_REDO,16},
+                  {TB_C0,12},{TB_C1,12},{TB_C2,12},{TB_C3,12},{TB_C4,12},{TB_C5,12},
+                  {TB_W0,12},{TB_W1,12},{TB_W2,12} };
     } else if (mode == TbMode::PinEdit) {
-        items = { {TB_OK,46},{TB_CANCEL,46},
-                  {TB_RECT,44},{TB_ELLIPSE,44},{TB_LINE,44},{TB_ARROW,44},{TB_PEN,44},
-                  {TB_TEXT,44},{TB_MOSAIC,44},{TB_HIGHLIGHT,44},
-                  {TB_UNDO,44},{TB_REDO,44},
-                  {TB_C0,28},{TB_C1,28},{TB_C2,28},{TB_C3,28},{TB_C4,28},{TB_C5,28},
-                  {TB_W0,32},{TB_W1,32},{TB_W2,32} };
+        items = { {TB_OK,16},{TB_CANCEL,16},
+                  {TB_RECT,16},{TB_ELLIPSE,16},{TB_LINE,16},{TB_ARROW,16},{TB_PEN,16},
+                  {TB_TEXT,16},{TB_MOSAIC,16},{TB_HIGHLIGHT,16},
+                  {TB_UNDO,16},{TB_REDO,16},
+                  {TB_C0,12},{TB_C1,12},{TB_C2,12},{TB_C3,12},{TB_C4,12},{TB_C5,12},
+                  {TB_W0,12},{TB_W1,12},{TB_W2,12} };
     } else { // PinHover
-        items = { {TB_EDIT,42},{TB_COPYIMG,42},{TB_SAVE,42},
-                  {TB_ZOOMOUT,34},{TB_NONE,56},{TB_ZOOMIN,34},
-                  {TB_OPAQUE,42},{TB_CLOSE,42} };
+        items = { {TB_EDIT,16},{TB_COPYIMG,16},{TB_SAVE,16},
+                  {TB_ZOOMOUT,12},{TB_NONE,26},{TB_ZOOMIN,12},
+                  {TB_OPAQUE,16},{TB_CLOSE,16} };
     }
-    int gap = S(3), pad = S(8);
+    int gap = S(1), pad = S(3);
     int total = pad * 2;
     for (size_t i = 0; i < items.size(); ++i)
         total += S(items[i].w) + (i + 1 < items.size() ? gap : 0);
-    int h = S(52);
+    int h = S(20);
     int cx = host.left + (host.right - host.left) / 2;
     int x = cx - total / 2;
     int y;
     if (mode == TbMode::PinHover) {
-        y = host.top + S(6);                   // 贴图顶部内侧
+        y = host.top + S(4);                   // 贴图顶部内侧
     } else {
-        y = host.bottom + S(10);               // 选区下方，越界翻到上方
-        if (y + h > scr.bottom) y = host.top - S(10) - h;
+        y = host.bottom + S(8);                // 选区下方，越界翻到上方
+        if (y + h > scr.bottom) y = host.top - S(8) - h;
         if (y < scr.top) y = scr.top;
     }
     if (x + total > scr.right - S(4)) x = scr.right - S(4) - total;
@@ -163,11 +163,10 @@ void Toolbar::Layout(const RECT& host, const RECT& scr, TbMode mode, float dpiSc
     bar = { x, y, x + total, y + h };
     int cur = x + pad;
     for (auto& it : items) {
-        btns.push_back({ it.id, { cur, y + S(6), cur + S(it.w), y + h - S(6) } });
+        btns.push_back({ it.id, { cur, y + S(2), cur + S(it.w), y + h - S(2) } });
         cur += S(it.w) + gap;
     }
 }
-
 int Toolbar::Hit(int x, int y) const {
     if (!PtInRect(&bar, { x, y })) return 0;
     for (auto& b : btns)
@@ -177,149 +176,154 @@ int Toolbar::Hit(int x, int y) const {
 
 // ---- 矢量图标绘制（不依赖字体符号，任何环境一致） ----
 static void Glyph(Graphics& g, int id, const RectF& r, const Editor* ed) {
-    Pen wp(Color(255, 226, 232, 240), 2.0f);
-    wp.SetLineCap(LineCapRound, LineCapRound, DashCapRound);
-    Pen gp(Color(255, 74, 222, 128), 2.6f);
-    gp.SetLineCap(LineCapRound, LineCapRound, DashCapRound);
-    Pen rp(Color(255, 248, 113, 113), 2.6f);
-    rp.SetLineCap(LineCapRound, LineCapRound, DashCapRound);
-    REAL l = r.X + r.Width * 0.18f, rt = r.X + r.Width * 0.82f;
-    REAL tp = r.Y + r.Height * 0.18f, bm = r.Y + r.Height * 0.82f;
-    REAL mx = r.X + r.Width / 2, my = r.Y + r.Height / 2;
+    REAL w = r.Width, h = r.Height;
+    REAL m = w * 0.2f;
+    REAL l = r.X + m, rt = r.X + w - m;
+    REAL tp = r.Y + m, bm = r.Y + h - m;
+    REAL mx = r.X + w / 2, my = r.Y + h / 2;
+    float pw = h * 0.16f;      // 主笔画
+    float pwT = h * 0.22f;     // 加粗笔画（确认/取消/画笔）
+    auto pen = [&](ARGB c, float thick) {
+        // 堆上懒创建、永不析构：避免 static GDI+ 对象在 GdiplusShutdown 后析构导致退出崩溃
+        static Pen* p = nullptr;
+        if (!p) p = new Pen(Color(c), thick);
+        p->SetColor(Color(c)); p->SetWidth(thick);
+        p->SetLineCap(LineCapRound, LineCapRound, DashCapRound);
+        return p;
+    };
     switch (id) {
     case TB_OK:
-        g.DrawLine(&gp, l, my + r.Height * 0.05f, mx - r.Width * 0.06f, bm);
-        g.DrawLine(&gp, mx - r.Width * 0.06f, bm, rt, tp);
+        g.DrawLine(pen(0xFF22C55E, pwT), l, my + h * 0.05f, mx - w * 0.06f, bm);
+        g.DrawLine(pen(0xFF22C55E, pwT), mx - w * 0.06f, bm, rt, tp);
         break;
-    case TB_PIN: {  // 图钉
-        g.DrawLine(&wp, mx, my - r.Height * 0.05f, mx + r.Width * 0.12f, bm);
-        SolidBrush b(Color(255, 59, 130, 246));
-        g.FillEllipse(&b, mx - r.Width * 0.18f, tp, r.Width * 0.42f, r.Height * 0.42f);
-        g.DrawEllipse(&wp, mx - r.Width * 0.18f, tp, r.Width * 0.42f, r.Height * 0.42f);
+    case TB_PIN: {
+        g.DrawLine(pen(0xFF94A3B8, pw * 0.8f), mx, my + h * 0.05f, mx + w * 0.14f, bm);
+        SolidBrush b(0xFF3B82F6);
+        g.FillEllipse(&b, mx - w * 0.2f, tp, w * 0.44f, h * 0.44f);
+        g.DrawEllipse(pen(0xFFFFFFFF, pw * 0.45f), mx - w * 0.2f, tp, w * 0.44f, h * 0.44f);
         break; }
-    case TB_SAVE: { // 下载入托盘
-        g.DrawLine(&wp, mx, tp, mx, my + r.Height * 0.08f);
-        g.DrawLine(&wp, mx - r.Width * 0.12f, my - r.Height * 0.02f, mx, my + r.Height * 0.10f);
-        g.DrawLine(&wp, mx + r.Width * 0.12f, my - r.Height * 0.02f, mx, my + r.Height * 0.10f);
-        g.DrawLine(&wp, l, bm, rt, bm);
+    case TB_SAVE: {
+        g.DrawLine(pen(0xFFF59E0B, pw), mx, tp, mx, my + h * 0.04f);
+        GraphicsPath tri;
+        tri.AddLine(mx - w * 0.14f, my - h * 0.02f, mx, my + h * 0.12f);
+        tri.AddLine(mx, my + h * 0.12f, mx + w * 0.14f, my - h * 0.02f);
+        tri.CloseFigure();
+        SolidBrush ab(0xFFF59E0B); g.FillPath(&ab, &tri);
+        g.DrawLine(pen(0xFF94A3B8, pw * 0.7f), l, bm, rt, bm);
         break; }
     case TB_CANCEL:
-        g.DrawLine(&rp, l, tp, rt, bm);
-        g.DrawLine(&rp, l, bm, rt, tp);
+        g.DrawLine(pen(0xFFEF4444, pwT), l, tp, rt, bm);
+        g.DrawLine(pen(0xFFEF4444, pwT), l, bm, rt, tp);
         break;
     case TB_RECT:
-        g.DrawRectangle(&wp, r.X + r.Width * 0.2f, r.Y + r.Height * 0.24f,
-                        r.Width * 0.6f, r.Height * 0.52f);
+        g.DrawRectangle(pen(0xFF3B82F6, pw), r.X + w * 0.18f, r.Y + h * 0.24f, w * 0.64f, h * 0.52f);
         break;
     case TB_ELLIPSE:
-        g.DrawEllipse(&wp, r.X + r.Width * 0.18f, r.Y + r.Height * 0.22f,
-                      r.Width * 0.64f, r.Height * 0.56f);
+        g.DrawEllipse(pen(0xFF14B8A6, pw), r.X + w * 0.16f, r.Y + h * 0.22f, w * 0.68f, h * 0.56f);
         break;
     case TB_LINE:
-        g.DrawLine(&wp, l, bm, rt, tp);
+        g.DrawLine(pen(0xFF94A3B8, pw), l, bm, rt, tp);
         break;
-    case TB_ARROW:
-        g.DrawLine(&wp, l, bm, rt - r.Width * 0.14f, tp + r.Height * 0.14f);
-        g.DrawLine(&wp, rt - r.Width * 0.14f, tp + r.Height * 0.14f,
-                        rt - r.Width * 0.22f, tp + r.Height * 0.10f);
-        g.DrawLine(&wp, rt - r.Width * 0.14f, tp + r.Height * 0.14f,
-                        rt - r.Width * 0.10f, tp + r.Height * 0.22f);
-        break;
-    case TB_PEN: { // 波浪线
-        PointF pts[4] = { {l, my}, {mx - r.Width * 0.14f, tp + r.Height * 0.02f},
-                          {mx + r.Width * 0.14f, bm - r.Height * 0.02f}, {rt, my - r.Height * 0.08f} };
-        g.DrawCurve(&wp, pts, 4);
+    case TB_ARROW: {
+        REAL ex = rt - w * 0.16f, ey = tp + h * 0.16f;
+        g.DrawLine(pen(0xFF6366F1, pw), l, bm, ex, ey);
+        GraphicsPath hd;
+        hd.AddLine(ex - w * 0.04f, ey - h * 0.22f, ex, ey);
+        hd.AddLine(ex, ey, ex + w * 0.22f, ey - h * 0.04f);
+        hd.CloseFigure();
+        SolidBrush hb(0xFF6366F1); g.FillPath(&hb, &hd);
+        break; }
+    case TB_PEN: {
+        PointF pts[4] = { {l, my}, {mx - w * 0.14f, tp + h * 0.02f},
+                          {mx + w * 0.14f, bm - h * 0.02f}, {rt, my - h * 0.08f} };
+        g.DrawCurve(pen(0xFFF97316, pwT), pts, 4);
         break; }
     case TB_TEXT: {
         FontFamily ff(L"Segoe UI");
-        Font f(&ff, r.Height * 0.62f, FontStyleBold, UnitPixel);
-        SolidBrush b(Color(255, 226, 232, 240));
+        Font f(&ff, h * 0.68f, FontStyleBold, UnitPixel);
+        SolidBrush b(0xFF8B5CF6);
         StringFormat sf; sf.SetAlignment(StringAlignmentCenter);
-        RectF rr(r.X, r.Y - r.Height * 0.05f, r.Width, r.Height);
+        RectF rr(r.X, r.Y - h * 0.04f, w, h);
         g.DrawString(L"T", 1, &f, rr, &sf, &b);
         break; }
-    case TB_MOSAIC: { // 3x3 网格
-        Pen np(Color(255, 148, 163, 184), 1.4f);
-        float cw = r.Width * 0.64f / 3, ch = r.Height * 0.64f / 3;
-        float ox = r.X + r.Width * 0.18f, oy = r.Y + r.Height * 0.18f;
+    case TB_MOSAIC: {
+        float cw = w * 0.62f / 3, ch = h * 0.62f / 3, gp = cw * 0.2f;
+        float ox = r.X + w * 0.19f, oy = r.Y + h * 0.19f;
         for (int yy = 0; yy < 3; ++yy)
-            for (int xx = 0; xx < 3; ++xx)
-                g.DrawRectangle(&np, ox + xx * cw, oy + yy * ch, cw, ch);
+            for (int xx = 0; xx < 3; ++xx) {
+                SolidBrush b(((xx + yy) & 1) ? 0xFFA5B4C4 : 0xFF64748B);
+                g.FillRectangle(&b, ox + xx * (cw + gp), oy + yy * (ch + gp), cw, ch);
+            }
         break; }
-    case TB_HIGHLIGHT: { // 半填充方块
-        RectF hr(r.X + r.Width * 0.22f, r.Y + r.Height * 0.26f,
-                 r.Width * 0.56f, r.Height * 0.48f);
-        SolidBrush b(Color(160, 250, 204, 21));
+    case TB_HIGHLIGHT: {
+        RectF hr(r.X + w * 0.2f, r.Y + h * 0.26f, w * 0.6f, h * 0.48f);
+        SolidBrush b(Color(200, 250, 204, 21));
         g.FillRectangle(&b, hr);
-        g.DrawRectangle(&wp, hr);
+        g.DrawRectangle(pen(0xFFF59E0B, pw * 0.55f), hr);
         break; }
-    case TB_UNDO: { // ↶
-        g.DrawArc(&wp, r.X + r.Width * 0.2f, r.Y + r.Height * 0.18f,
-                  r.Width * 0.6f, r.Height * 0.6f, 180.f, 240.f);
-        g.DrawLine(&wp, r.X + r.Width * 0.2f, r.Y + r.Height * 0.18f,
-                        r.X + r.Width * 0.2f, r.Y + r.Height * 0.42f);
-        g.DrawLine(&wp, r.X + r.Width * 0.2f, r.Y + r.Height * 0.18f,
-                        r.X + r.Width * 0.42f, r.Y + r.Height * 0.18f);
+    case TB_UNDO: {
+        g.DrawArc(pen(0xFF94A3B8, pw), r.X + w * 0.2f, r.Y + h * 0.18f, w * 0.6f, h * 0.6f, 180.f, 240.f);
+        SolidBrush b(0xFF94A3B8);
+        g.FillEllipse(&b, r.X + w * 0.2f - pw * 0.45f, r.Y + h * 0.18f - pw * 0.25f, pw * 0.9f, pw * 0.9f);
+        g.DrawLine(pen(0xFF94A3B8, pw), r.X + w * 0.2f, r.Y + h * 0.18f, r.X + w * 0.44f, r.Y + h * 0.18f);
         break; }
-    case TB_REDO: { // ↷
-        g.DrawArc(&wp, r.X + r.Width * 0.2f, r.Y + r.Height * 0.18f,
-                  r.Width * 0.6f, r.Height * 0.6f, -60.f, 240.f);
-        g.DrawLine(&wp, rt, r.Y + r.Height * 0.18f, rt, r.Y + r.Height * 0.42f);
-        g.DrawLine(&wp, rt, r.Y + r.Height * 0.18f, r.X + r.Width * 0.58f, r.Y + r.Height * 0.18f);
+    case TB_REDO: {
+        g.DrawArc(pen(0xFF94A3B8, pw), r.X + w * 0.2f, r.Y + h * 0.18f, w * 0.6f, h * 0.6f, -60.f, 240.f);
+        SolidBrush b(0xFF94A3B8);
+        g.FillEllipse(&b, rt - pw * 0.45f, r.Y + h * 0.18f - pw * 0.25f, pw * 0.9f, pw * 0.9f);
+        g.DrawLine(pen(0xFF94A3B8, pw), rt, r.Y + h * 0.18f, r.X + w * 0.56f, r.Y + h * 0.18f);
         break; }
     case TB_C0: case TB_C1: case TB_C2: case TB_C3: case TB_C4: case TB_C5: {
-        DWORD argb = TB_COLORS[id - TB_C0];
-        Color c(argb);
+        static const DWORD TB_COLORS2[6] = {
+            0xFFEF4444, 0xFFF59E0B, 0xFF22C55E, 0xFF3B82F6, 0xFFFFFFFF, 0xFF111827
+        };
+        Color c(TB_COLORS2[id - TB_C0]);
         Color fill(c.GetA(), c.GetR(), c.GetG(), c.GetB());
-        if (c.GetValue() == 0xFF111827) fill = Color(255, 40, 48, 64);   // 深色在深底上加亮
+        if (TB_COLORS2[id - TB_C0] == 0xFF111827) fill = Color(255, 40, 48, 64);
         SolidBrush b(fill);
         REAL d = r.Width * 0.72f;
         g.FillEllipse(&b, r.X + (r.Width - d) / 2, r.Y + (r.Height - d) / 2, d, d);
         if (ed && ed->color.GetValue() == c.GetValue()) {
-            Pen ring(Color(255, 96, 165, 250), 2.0f);
+            Pen ring(0xFF60A5FA, 2.0f);
             g.DrawEllipse(&ring, r.X + (r.Width - d) / 2 - 2, r.Y + (r.Height - d) / 2 - 2, d + 4, d + 4);
         }
         break; }
     case TB_W0: case TB_W1: case TB_W2: {
         int idx = id - TB_W0;
-        Pen lp(Color(255, 226, 232, 240), (REAL)PenWidth(idx));
-        lp.SetLineCap(LineCapRound, LineCapRound, DashCapRound);
-        g.DrawLine(&lp, l, my, rt, my);
+        g.DrawLine(pen(0xFFE2E8F0, (REAL)PenWidth(idx)), l, my, rt, my);
         break; }
-    case TB_EDIT: { // 铅笔
-        g.DrawLine(&wp, r.X + r.Width * 0.32f, bm, rt - r.Width * 0.1f, tp + r.Height * 0.1f);
-        g.DrawLine(&wp, r.X + r.Width * 0.18f, bm - r.Height * 0.14f, r.X + r.Width * 0.32f, bm);
-        g.DrawLine(&wp, r.X + r.Width * 0.32f, bm, r.X + r.Width * 0.46f, bm - r.Height * 0.14f);
+    case TB_EDIT: {
+        g.DrawLine(pen(0xFFF59E0B, pwT), r.X + w * 0.3f, bm, rt - w * 0.08f, tp + h * 0.08f);
+        g.DrawLine(pen(0xFF94A3B8, pw * 0.55f), r.X + w * 0.18f, bm - h * 0.12f, r.X + w * 0.3f, bm);
+        g.DrawLine(pen(0xFF94A3B8, pw * 0.55f), r.X + w * 0.3f, bm, r.X + w * 0.44f, bm - h * 0.12f);
         break; }
-    case TB_COPYIMG: { // 双叠矩形
-        g.DrawRectangle(&wp, r.X + r.Width * 0.34f, tp, r.Width * 0.46f, r.Height * 0.46f);
-        g.DrawRectangle(&wp, l, r.Y + r.Height * 0.34f, r.Width * 0.46f, r.Height * 0.46f);
+    case TB_COPYIMG: {
+        g.DrawRectangle(pen(0xFF0EA5E9, pw * 0.7f), r.X + w * 0.34f, tp, w * 0.46f, h * 0.46f);
+        g.DrawRectangle(pen(0xFF0EA5E9, pw * 0.7f), l, r.Y + h * 0.34f, w * 0.46f, h * 0.46f);
         break; }
     case TB_ZOOMOUT: case TB_ZOOMIN: {
-        Pen np(Color(255, 226, 232, 240), 2.0f);
-        float d = r.Width * 0.6f;
-        RectF mg(r.X + r.Width * 0.08f, r.Y + r.Height * 0.08f, d, d);
-        g.DrawEllipse(&np, mg);
-        g.DrawLine(&np, r.X + r.Width * 0.52f, r.Y + r.Height * 0.52f, rt, bm);
-        REAL cxx = r.X + r.Width * 0.08f + d / 2, cyy = r.Y + r.Height * 0.08f + d / 2;
-        g.DrawLine(&np, cxx - r.Width * 0.14f, cyy, cxx + r.Width * 0.14f, cyy);
-        if (id == TB_ZOOMIN) g.DrawLine(&np, cxx, cyy - r.Width * 0.14f, cxx, cyy + r.Width * 0.14f);
+        float d = w * 0.62f;
+        RectF mg(r.X + w * 0.08f, r.Y + h * 0.08f, d, d);
+        g.DrawEllipse(pen(0xFF0EA5E9, pw * 0.8f), mg);
+        g.DrawLine(pen(0xFF0EA5E9, pw * 0.8f), r.X + w * 0.52f, r.Y + h * 0.52f, rt, bm);
+        REAL cxx = r.X + w * 0.08f + d / 2, cyy = r.Y + h * 0.08f + d / 2;
+        g.DrawLine(pen(0xFFE2E8F0, pw * 0.7f), cxx - w * 0.13f, cyy, cxx + w * 0.13f, cyy);
+        if (id == TB_ZOOMIN) g.DrawLine(pen(0xFFE2E8F0, pw * 0.7f), cxx, cyy - w * 0.13f, cxx, cyy + w * 0.13f);
         break; }
-    case TB_OPAQUE: { // ◐ 半填充圆
-        float d = r.Width * 0.64f;
-        RectF cr(r.X + r.Width * 0.18f, r.Y + r.Height * 0.18f, d, d);
-        SolidBrush b(Color(255, 96, 165, 250));
+    case TB_OPAQUE: {
+        float d = w * 0.66f;
+        RectF cr(r.X + w * 0.17f, r.Y + h * 0.17f, d, d);
+        SolidBrush b(0xFF3B82F6);
         g.FillPie(&b, cr, -90.f, 180.f);
-        g.DrawEllipse(&wp, cr);
+        g.DrawEllipse(pen(0xFF93C5FD, pw * 0.6f), cr);
         break; }
     case TB_CLOSE:
-        g.DrawLine(&rp, l, tp, rt, bm);
-        g.DrawLine(&rp, l, bm, rt, tp);
+        g.DrawLine(pen(0xFFEF4444, pwT), l, tp, rt, bm);
+        g.DrawLine(pen(0xFFEF4444, pwT), l, bm, rt, tp);
         break;
     default: break;
     }
 }
-
 void Toolbar::Draw(HDC dc, const Editor* ed, int hover, TbMode mode) const {
     if (btns.empty()) return;
     Graphics g(dc);
@@ -349,7 +353,7 @@ void Toolbar::Draw(HDC dc, const Editor* ed, int hover, TbMode mode) const {
             wchar_t t[16];
             swprintf_s(t, 16, L"%d%%", zoomPct);
             FontFamily ff(L"Segoe UI");
-            Font f(&ff, 11.5f * scale, FontStyleRegular, UnitPixel);
+            Font f(&ff, 8.5f * scale, FontStyleRegular, UnitPixel);
             SolidBrush tb(Color(255, 148, 163, 184));
             StringFormat sf; sf.SetAlignment(StringAlignmentCenter);
             g.DrawString(t, -1, &f, RectF(r.X - 2, r.Y, r.Width + 4, r.Height), &sf, &tb);
@@ -444,4 +448,62 @@ void StartTextEntry(HWND owner, POINT sp, int fontSizePx, Gdiplus::ARGB,
     ShowWindow(g_textWnd, SW_SHOWNOACTIVATE);
     SetFocus(g_textWnd);
     SetWindowSubclass(g_textWnd, TextProc, 1, 0);
+}
+
+// ================= 悬停提示（FR-3.14） =================
+const wchar_t* TbName(int id) {
+    switch (id) {
+    case TB_OK: return L"确认 (Enter)";
+    case TB_PIN: return L"贴图";
+    case TB_SAVE: return L"另存为…";
+    case TB_CANCEL: return L"取消 (Esc)";
+    case TB_RECT: return L"矩形 (R)";
+    case TB_ELLIPSE: return L"椭圆 (O)";
+    case TB_LINE: return L"直线 (L)";
+    case TB_ARROW: return L"箭头 (A)";
+    case TB_PEN: return L"画笔 (B)";
+    case TB_TEXT: return L"文字 (T)";
+    case TB_MOSAIC: return L"马赛克 (M)";
+    case TB_HIGHLIGHT: return L"高亮 (H)";
+    case TB_UNDO: return L"撤销 (Ctrl+Z)";
+    case TB_REDO: return L"重做 (Ctrl+Y)";
+    case TB_C0: return L"颜色：红";
+    case TB_C1: return L"颜色：黄";
+    case TB_C2: return L"颜色：绿";
+    case TB_C3: return L"颜色：蓝";
+    case TB_C4: return L"颜色：白";
+    case TB_C5: return L"颜色：黑";
+    case TB_W0: return L"细线";
+    case TB_W1: return L"中线";
+    case TB_W2: return L"粗线";
+    case TB_EDIT: return L"编辑";
+    case TB_COPYIMG: return L"复制";
+    case TB_ZOOMOUT: return L"缩小（也可滚轮）";
+    case TB_ZOOMIN: return L"放大（也可滚轮）";
+    case TB_OPAQUE: return L"透明度（Ctrl+滚轮）";
+    case TB_CLOSE: return L"关闭（Esc / 双击）";
+    default: return L"";
+    }
+}
+
+void DrawTooltip(Gdiplus::Graphics& g, POINT pt, const RECT& clip,
+                 const wchar_t* text, float scale) {
+    if (!text || !*text) return;
+    using namespace Gdiplus;
+    FontFamily ff(L"Segoe UI");
+    Font f(&ff, 12.0f * scale, FontStyleRegular, UnitPixel);
+    RectF bb; StringFormat sf;
+    g.MeasureString(text, -1, &f, PointF(0, 0), &sf, &bb);
+    float pad = 5 * scale;
+    float bw = bb.Width + pad * 2, bh = bb.Height + pad * 1.6f;
+    float x = pt.x + 10 * scale;
+    float y = pt.y - bh - 8 * scale;
+    if (x + bw > clip.right - 4) x = pt.x - bw - 10 * scale;
+    if (y < clip.top + 4) y = pt.y + 14 * scale;
+    SolidBrush bg(Color(242, 15, 23, 42));
+    g.FillRectangle(&bg, x, y, bw, bh);
+    Pen bp(0xFF334155, 1.f);
+    g.DrawRectangle(&bp, x, y, bw, bh);
+    SolidBrush tb(0xFFF1F5F9);
+    g.DrawString(text, -1, &f, PointF(x + pad, y + pad * 0.6f), &tb);
 }
