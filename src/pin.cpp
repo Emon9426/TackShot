@@ -1,4 +1,6 @@
-// pin.cpp — 贴图窗口：置顶分层窗口 / 缩放 / 透明度 / 悬浮菜单 / 就地编辑
+// pin.cpp — 贴图窗口：置顶分层窗口 / 滚轮+边缘拖拽缩放 / 透明度 / 悬浮菜单 / 就地编辑
+// V1.10：zoomX/zoomY 分离（四角等比、四边单轴）；顶部预留工具条悬浮区（不遮挡图片，
+//        空白条区点击穿透 HTTRANSPARENT）；图片边缘 8 向拖拽调整尺寸。
 #include "editor.h"
 
 namespace {
@@ -6,7 +8,8 @@ namespace {
 const UINT WM_PRUNE = WM_APP + 3;
 enum { TID_HOVER = 1, TID_HIDE = 2, TID_TIP = 3 };
 const wchar_t* kPinCls = L"TackShotPin";
-const int BORDER = 2;   // 贴图黑色边框宽度
+const int BORDER = 2;      // 贴图黑色边框宽度
+const int STRIP_GAP = 6;   // 工具条与图片间距（逻辑 px）
 
 struct PinWindow {
     HWND  wnd = nullptr;
@@ -14,11 +17,12 @@ struct PinWindow {
     int   iw = 0, ih = 0;
     Gdiplus::Bitmap* bmp = nullptr;
 
-    double zoom = 1.0;
+    double zoomX = 1.0, zoomY = 1.0;    // 允许非等比（四边单轴拉伸）
     BYTE  alpha = 255;
 
     HBITMAP win = nullptr; HDC winDc = nullptr; void* winBits = nullptr;
     int   ww = 0, wh = 0;
+    int   topZone = 0;                   // 顶部工具条悬浮区高度（图片不含在此区内）
 
     bool  menuVisible = false;
     bool  editing = false;
@@ -27,19 +31,28 @@ struct PinWindow {
     bool  tracking = false;
 
     Toolbar menu;      // 悬浮菜单
-    Toolbar bar;      // 就地编辑工具条
+    Toolbar bar;       // 就地编辑工具条
     Editor  ed;
     int     hover = 0;
     ULONGLONG hoverSince = 0;
 
+    // 边缘拖拽调尺寸：-1 无；0..7 同截图控制点（0左上 1上中 2右上 3右中 4右下 5下中 6左下 7左中）
+    int   resizing = -1;
+    int   rsL = 0, rsT = 0, rsR = 0, rsB = 0;   // 拖拽开始时的窗口四边（屏幕坐标）
+
+    int TopZonePx() { return (int)((24 + STRIP_GAP) * DpiScale(wnd) + 0.5f); }
+    int ImgW() { return std::max(8, (int)(iw * zoomX) + 2 * BORDER); }
+    int ImgH() { return std::max(8, (int)(ih * zoomY) + 2 * BORDER); }
+
     POINT ImgPt(int x, int y) {
-        return { (int)((x - BORDER) / zoom), (int)((y - BORDER) / zoom) };
+        return { (int)((x - BORDER) / zoomX), (int)((y - topZone - BORDER) / zoomY) };
     }
 
     void Render() {
         if (!wnd) return;
-        ww = std::max(8, (int)(iw * zoom) + 2 * BORDER);
-        wh = std::max(8, (int)(ih * zoom) + 2 * BORDER);
+        topZone = TopZonePx();
+        ww = ImgW();
+        wh = ImgH() + topZone;
         if (!win || winSizeW != ww || winSizeH != wh) {
             if (winDc) { DeleteDC(winDc); winDc = nullptr; }
             if (win) { DeleteObject(win); win = nullptr; }
@@ -52,41 +65,40 @@ struct PinWindow {
         Graphics g(winDc);
         g.SetSmoothingMode(SmoothingModeAntiAlias);
         g.SetInterpolationMode(InterpolationModeHighQualityBicubic);
-        // 全透明清底
-        RECT fr{ 0, 0, ww, wh };
-        FillRect(winDc, &fr, (HBRUSH)GetStockObject(BLACK_BRUSH));
         {
             SolidBrush clear(Color(0, 0, 0, 0));
             g.FillRectangle(&clear, 0, 0, ww, wh);
         }
-        int dw = ww - 2 * BORDER, dh = wh - 2 * BORDER;
-        g.DrawImage(bmp, Rect(BORDER, BORDER, dw, dh), 0, 0, iw, ih, UnitPixel);
-        // 黑色边框：明确提示"这里是一张截图"；编辑态为蓝色高亮
+        int dw = ww - 2 * BORDER, dh = wh - topZone - 2 * BORDER;
+        g.DrawImage(bmp, Rect(BORDER, topZone + BORDER, dw, dh), 0, 0, iw, ih, UnitPixel);
+        // 黑色边框包住图片区域（编辑态蓝色高亮）
         Pen bd(Color(255, editing ? 59 : 0, editing ? 130 : 0, editing ? 246 : 0), 2.f);
-        g.DrawRectangle(&bd, 1.f, 1.f, ww - 2.f, wh - 2.f);
+        g.DrawRectangle(&bd, 1.f, topZone + 1.f, ww - 2.f, wh - topZone - 2.f);
 
         if (editing) {
-            g.TranslateTransform((REAL)BORDER, (REAL)BORDER);
-            g.ScaleTransform((REAL)zoom, (REAL)zoom);
+            g.TranslateTransform((REAL)BORDER, (REAL)(topZone + BORDER));
+            g.ScaleTransform((REAL)zoomX, (REAL)zoomY);
             DrawShapes(g, ed.shapes, bmp, POINT{ 0, 0 });
             if (shapeDrag) DrawShape(g, ed.draft, bmp, POINT{ 0, 0 });
             g.ResetTransform();
         }
 
-        RECT client{ 0, 0, ww, wh };
+        // 工具条画在顶部悬浮区（不占图片内容）；空白条区由 WM_NCHITTEST 穿透
+        RECT strip{ 0, 0, ww, topZone };
         float sc = DpiScale(wnd);
         if (editing) {
-            bar.Layout(client, client, TbMode::PinEdit, sc);
+            bar.Layout(strip, strip, TbMode::PinEdit, sc);
             bar.Draw(winDc, &ed, hover, TbMode::PinEdit);
         } else if (menuVisible) {
-            menu.zoomPct = (int)(zoom * 100 + 0.5);
-            menu.Layout(client, client, TbMode::PinHover, sc);
+            menu.zoomPct = (int)(zoomX * 100 + 0.5);
+            menu.Layout(strip, strip, TbMode::PinHover, sc);
             menu.Draw(winDc, nullptr, hover, TbMode::PinHover);
         }
         if (hover && hoverSince && GetTickCount64() - hoverSince > 300) {
             POINT cp; GetCursorPos(&cp);
             RECT wr; GetWindowRect(wnd, &wr);
-            DrawTooltip(g, { cp.x - wr.left, cp.y - wr.top }, client, TbName(hover), sc);
+            DrawTooltip(g, { cp.x - wr.left, cp.y - wr.top },
+                        RECT{ 0, 0, ww, wh }, TbName(hover), sc);
         }
 
         PremultiplyBits(winBits, ww, wh);
@@ -117,20 +129,67 @@ void Prune() {
 void Close(PinWindow* p) {
     if (p->dead || !p->wnd) return;
     if (TextEntryActive()) CancelTextEntry();
-    DestroyWindow(p->wnd);   // WM_DESTROY 里标记 dead + 请求 Prune
+    DestroyWindow(p->wnd);
 }
 
+// 图片区域（含边框，不含顶部悬浮区）的 8 向缩放命中区
+int ResizeZone(PinWindow* p, int x, int y) {
+    float sc = DpiScale(p->wnd);
+    int hz = (int)std::max(6.0, 6.0 * sc) + BORDER;
+    int x0 = 0, x1 = p->ww, y0 = p->topZone, y1 = p->wh;
+    bool inY = y >= y0 && y <= y1;
+    bool inX = x >= x0 && x <= x1;
+    bool L = inY && x >= x0 && x < x0 + hz;
+    bool R = inY && x >= x1 - hz && x < x1;
+    bool T = inX && y >= y0 && y < y0 + hz;
+    bool B = inX && y >= y1 - hz && y < y1;
+    // 角优先于边：先判 4 个角，再判 4 条边
+    if (L && T) return 0; if (R && T) return 2; if (R && B) return 4; if (L && B) return 6;
+    if (T) return 1; if (B) return 5; if (L) return 7; if (R) return 3;
+    return -1;
+}
+
+void DoResize(PinWindow* p) {
+    POINT cp; GetCursorPos(&cp);
+    int code = p->resizing;
+    bool leftMv  = (code == 0 || code == 6 || code == 7);
+    bool rightMv = (code == 2 || code == 3 || code == 4);
+    bool topMv   = (code == 0 || code == 1 || code == 2);
+    bool botMv   = (code == 4 || code == 5 || code == 6);
+    double minZ = 0.1, maxZ = 8.0;
+    double rx = p->zoomX, ry = p->zoomY;
+    if (rightMv) rx = (cp.x - p->rsL - 2.0 * BORDER) / p->iw;
+    if (leftMv)  rx = (p->rsR - cp.x - 2.0 * BORDER) / p->iw;
+    if (botMv)   ry = (cp.y - p->rsT - p->topZone - 2.0 * BORDER) / p->ih;
+    if (topMv)   ry = (p->rsB - cp.y - p->topZone - 2.0 * BORDER) / p->ih;
+    if (leftMv || rightMv) {
+        if (topMv || botMv) {           // 四角：等比
+            double z = std::min(std::max(std::max(rx, ry), minZ), maxZ);
+            p->zoomX = p->zoomY = z;
+        } else {
+            p->zoomX = std::min(std::max(rx, minZ), maxZ);
+        }
+    } else if (topMv || botMv) {
+        p->zoomY = std::min(std::max(ry, minZ), maxZ);
+    }
+    p->Render();
+    int nw = p->ImgW(), nh = p->ImgH() + p->topZone;
+    int nx = leftMv ? p->rsR - nw : p->rsL;
+    int ny = topMv ? p->rsB - nh : p->rsT;
+    SetWindowPos(p->wnd, HWND_TOPMOST, nx, ny, nw, nh, SWP_NOACTIVATE);
+    p->Render();
+}
+
+// 等比缩放（滚轮 / 菜单按钮）：保持光标下的图像点不动
 void ZoomAt(PinWindow* p, double factor, POINT cursorScr) {
-    double nz = std::min(8.0, std::max(0.1, p->zoom * factor));
-    if (nz == p->zoom) return;
+    double nz = std::min(8.0, std::max(0.1, p->zoomX * factor));
+    p->zoomX = p->zoomY = nz;
     RECT wr; GetWindowRect(p->wnd, &wr);
     POINT anchor = p->ImgPt(cursorScr.x - wr.left, cursorScr.y - wr.top);
-    p->zoom = nz;
-    int nw = std::max(8, (int)(p->iw * nz) + 2);
-    int nh = std::max(8, (int)(p->ih * nz) + 2);
-    int nx = cursorScr.x - (int)(anchor.x * nz) - BORDER;
-    int ny = cursorScr.y - (int)(anchor.y * nz) - BORDER;
     p->Render();
+    int nw = p->ImgW(), nh = p->ImgH() + p->topZone;
+    int nx = cursorScr.x - (int)(anchor.x * nz) - BORDER;
+    int ny = cursorScr.y - (int)(anchor.y * nz) - BORDER - p->topZone;
     SetWindowPos(p->wnd, HWND_TOPMOST, nx, ny, nw, nh, SWP_NOACTIVATE);
     p->Render();
 }
@@ -196,11 +255,11 @@ void OnMenu(PinWindow* p, int id) {
     case TB_SAVE:   SavePin(p); break;
     case TB_ZOOMIN: {
         RECT wr; GetWindowRect(p->wnd, &wr);
-        ZoomAt(p, 1.25, { (wr.left + wr.right) / 2, (wr.top + wr.bottom) / 2 });
+        ZoomAt(p, 1.25, { (wr.left + wr.right) / 2, p->topZone + (wr.bottom - wr.top - p->topZone) / 2 });
         break; }
     case TB_ZOOMOUT: {
         RECT wr; GetWindowRect(p->wnd, &wr);
-        ZoomAt(p, 0.8, { (wr.left + wr.right) / 2, (wr.top + wr.bottom) / 2 });
+        ZoomAt(p, 0.8, { (wr.left + wr.right) / 2, p->topZone + (wr.bottom - wr.top - p->topZone) / 2 });
         break; }
     case TB_OPAQUE: CycleAlpha(p); break;
     case TB_CLOSE:  Close(p); return;
@@ -240,6 +299,19 @@ void OnEditBar(PinWindow* p, int id) {
 LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
     PinWindow* p = Self(wnd);
     switch (msg) {
+    case WM_NCHITTEST: {
+        // 顶部悬浮区：工具条本身可点击，空白条区点击穿透到底下窗口
+        if (!p || p->topZone <= 0) break;
+        POINT pt{ GET_X_LPARAM(lp), GET_Y_LPARAM(lp) };
+        RECT wr; GetWindowRect(wnd, &wr);
+        if (pt.y < wr.top + p->topZone) {
+            POINT cl{ pt.x - wr.left, pt.y - wr.top };
+            bool onBar = p->editing ? PtInRect(&p->bar.bar, cl)
+                       : (p->menuVisible && PtInRect(&p->menu.bar, cl));
+            if (onBar) return HTCLIENT;
+            return HTTRANSPARENT;
+        }
+        break; }
     case WM_LBUTTONDOWN: {
         if (!p) break;
         SetFocus(wnd);
@@ -251,7 +323,17 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         if (p->editing) {
             int id = p->bar.Hit(x, y);
             if (id) { OnEditBar(p, id); break; }
-            if (x >= BORDER && y >= BORDER && x < p->ww - BORDER && y < p->wh - BORDER) {
+            if (x >= BORDER && y >= p->topZone + BORDER &&
+                x < p->ww - BORDER && y < p->wh - BORDER) {
+                int rz = ResizeZone(p, x, y);
+                if (rz >= 0) {          // 编辑态也允许从边缘调整尺寸
+                    RECT wr; GetWindowRect(wnd, &wr);
+                    p->rsL = wr.left; p->rsT = wr.top;
+                    p->rsR = wr.right; p->rsB = wr.bottom;
+                    p->resizing = rz;
+                    SetCapture(wnd);
+                    break;
+                }
                 POINT ip = p->ImgPt(x, y);
                 if (p->ed.cur == Tool::Text) {
                     Gdiplus::ARGB col = p->ed.color.GetValue();
@@ -284,12 +366,22 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
                 }
             }
         }
+        int rz = ResizeZone(p, x, y);
+        if (rz >= 0) {                  // 边缘/四角：拖拽调整尺寸
+            RECT wr; GetWindowRect(wnd, &wr);
+            p->rsL = wr.left; p->rsT = wr.top;
+            p->rsR = wr.right; p->rsB = wr.bottom;
+            p->resizing = rz;
+            SetCapture(wnd);
+            break;
+        }
         // 其余情况：拖动窗口
         ReleaseCapture();
         SendMessageW(wnd, WM_NCLBUTTONDOWN, HTCAPTION, 0);
         break; }
     case WM_MOUSEMOVE: {
         if (!p) break;
+        if (p->resizing >= 0) { DoResize(p); break; }
         KillTimer(wnd, TID_HIDE);
         int x = GET_X_LPARAM(lp), y = GET_Y_LPARAM(lp);
         int hov = 0;
@@ -298,16 +390,31 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         if (hov != p->hover) {
             p->hover = hov; p->hoverSince = GetTickCount64();
             KillTimer(wnd, TID_TIP);
-            if (hov) SetTimer(wnd, TID_TIP, 320, NULL);   // 静止悬停补重绘以显示提示
+            if (hov) SetTimer(wnd, TID_TIP, 320, NULL);
             p->Render();
         }
-        if (!p->menuVisible && !p->editing) SetTimer(wnd, TID_HOVER, 330, NULL);
         if (p->shapeDrag) {
             POINT ip = p->ImgPt(x, y);
             if (p->ed.cur == Tool::Pen) p->ed.draft.pts.push_back(ip);
             else p->ed.draft.b = ip;
             p->Render();
+        } else {
+            // 光标反馈：边缘 8 向缩放 / 图片区移动 / 编辑绘制十字
+            int rz = ResizeZone(p, x, y);
+            HCURSOR hc = LoadCursor(NULL, IDC_ARROW);
+            if (rz == 0 || rz == 4) hc = LoadCursor(NULL, IDC_SIZENWSE);
+            else if (rz == 2 || rz == 6) hc = LoadCursor(NULL, IDC_SIZENESW);
+            else if (rz == 1 || rz == 5) hc = LoadCursor(NULL, IDC_SIZENS);
+            else if (rz == 3 || rz == 7) hc = LoadCursor(NULL, IDC_SIZEWE);
+            else if (p->editing && p->ed.cur != Tool::None) {
+                static HCURSOR cc = nullptr;
+                if (!cc) cc = CreateCrossCursor();
+                if (cc) hc = cc;
+            } else if (y > p->topZone) hc = LoadCursor(NULL, IDC_SIZEALL);
+            SetCursor(hc);
         }
+        if (!p->menuVisible && !p->editing && y > p->topZone)
+            SetTimer(wnd, TID_HOVER, 330, NULL);
         if (!p->tracking) {
             TRACKMOUSEEVENT tme{ sizeof(tme), TME_LEAVE, wnd, 0 };
             TrackMouseEvent(&tme);
@@ -340,6 +447,11 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         break; }
     case WM_LBUTTONUP: {
         if (!p) break;
+        if (p->resizing >= 0) {
+            ReleaseCapture();
+            p->resizing = -1;
+            break;
+        }
         if (p->shapeDrag) {
             ReleaseCapture();
             p->shapeDrag = false;
@@ -350,9 +462,11 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
             p->Render();
         }
         break; }
-    case WM_LBUTTONDBLCLK:
-        if (p && !p->editing) Close(p);
-        return 0;
+    case WM_LBUTTONDBLCLK: {
+        if (!p) break;
+        int x = GET_X_LPARAM(lp), y = GET_Y_LPARAM(lp);
+        if (!p->editing && ResizeZone(p, x, y) < 0) Close(p);
+        return 0; }
     case WM_RBUTTONDOWN:
         if (!p) break;
         if (p->editing) { p->editing = false; p->shapeDrag = false; p->Render(); }
@@ -421,7 +535,6 @@ void CreatePin(HBITMAP src) {
     p->imgBits = nullptr;
     p->img = CreateDib32(iw, ih, &p->imgBits);
     if (!p->img) return;
-    // 复制像素（源可能是任意 DIB）
     BITMAPINFO wi{};
     wi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
     wi.bmiHeader.biWidth = iw; wi.bmiHeader.biHeight = -ih;
@@ -441,12 +554,14 @@ void CreatePin(HBITMAP src) {
     double fit = std::min(1.0,
         std::min((avail.right - avail.left) * 0.8 / iw,
                  (avail.bottom - avail.top) * 0.8 / ih));
-    p->zoom = fit;
+    p->zoomX = p->zoomY = fit;
+    p->topZone = (int)((24 + STRIP_GAP) * DpiScale(NULL) + 0.5f);
 
-    int ww = (int)(iw * p->zoom) + 2 * BORDER, wh = (int)(ih * p->zoom) + 2 * BORDER;
+    int ww = p->ImgW(), wh = p->ImgH() + p->topZone;
     POINT cp; GetCursorPos(&cp);
-    // FR-4.1（V1.6）：贴图中心锚定确认时的鼠标位置，并夹紧在工作区内
-    int x = cp.x - ww / 2, y = cp.y - wh / 2;
+    // FR-4.1（V1.6）：图片中心锚定确认时的鼠标位置，并夹紧在工作区内
+    int x = cp.x - ww / 2;
+    int y = cp.y - (wh - p->topZone) / 2;
     x = std::max<int>(avail.left, std::min<int>(x, avail.right - ww));
     y = std::max<int>(avail.top, std::min<int>(y, avail.bottom - wh));
 

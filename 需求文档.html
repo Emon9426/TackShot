@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>钉图 TackShot · 轻量级 Windows 截图工具 需求规格说明书 V1.9</title>
+<title>钉图 TackShot · 轻量级 Windows 截图工具 需求规格说明书 V1.10</title>
 <style>
   :root{
     --accent:#2563eb; --accent-soft:#eff6ff; --text:#1f2937; --muted:#6b7280;
@@ -120,7 +120,7 @@
   <h1>轻量级 Windows 截图工具 · 需求规格说明书</h1>
   <div class="sub">产品名称：钉图 TackShot（2026-08-23 定名，原代号 ScreenShort 弃用；备选名 SnapTack，见 14.2 Q1）</div>
   <table>
-    <tr><th style="width:120px">文档版本</th><td>V1.9（草案 · 待评审）</td><th style="width:120px">发布日期</th><td>2026-08-23</td></tr>
+    <tr><th style="width:120px">文档版本</th><td>V1.10（草案 · 待评审）</td><th style="width:120px">发布日期</th><td>2026-08-23</td></tr>
     <tr><th>文档状态</th><td>初稿，供评审与开发估算使用</td><th>编制方式</th><td>基于用户原始需求分析、完善并结构化</td></tr>
     <tr><th>目标平台</th><td>Windows 10 (1809+) / Windows 11，x64</td><th>分发形式</th><td>ZIP 压缩包（绿色免安装）</td></tr>
   </table>
@@ -331,7 +331,7 @@
   <tr><td class="id">FR-4.7</td><td>多贴图共存</td><td>可同时钉住多张贴图，各自独立缩放/透明度/位置。</td><td><span class="badge b0">P0</span></td></tr>
   <tr><td class="id">FR-4.8</td><td>贴图就地编辑</td><td>通过悬浮菜单进入编辑态：贴图边框高亮并出现编辑工具条，可直接在贴图上继续标注（矩形/箭头/文字/马赛克等，与编辑器同一套工具）；✓ 完成后更新贴图并把编辑后的图片同步到剪贴板，Esc 取消保留原画面。详见 5.7 UI-7。</td><td><span class="badge b0">P0</span></td></tr>
   <tr><td class="id">FR-4.9</td><td>鼠标穿透</td><td>可切换为点击穿透模式（贴图仅作视觉参考，不拦截鼠标）。</td><td><span class="badge b2">P2</span></td></tr>
-  <tr><td class="id">FR-4.10</td><td>悬浮菜单</td><td>鼠标悬停贴图约 300ms 后浮现半透明工具条菜单：编辑 / 复制 / 保存 / 缩放 / 透明度 / 关闭（详见 5.7 UI-7）；鼠标移出约 500ms 自动隐藏，防止误触。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-4.10</td><td>悬浮菜单</td><td>鼠标悬停贴图约 300ms 后浮现半透明工具条菜单：编辑 / 复制 / 保存 / 缩放 / 透明度 / 关闭（详见 5.7 UI-7）；鼠标移出约 500ms 自动隐藏，防止误触。工具条悬浮于图片<strong>上方预留区</strong>，不遮挡图片内容；空白条区点击穿透（V1.10）。</td><td><span class="badge b0">P0</span></td></tr>
   <tr><td class="id">FR-4.11</td><td>编辑后同步剪贴板</td><td>贴图上完成编辑后，自动将编辑后的最新图片重新写入剪贴板，保证"贴图上看到的 = 粘贴出去的"。</td><td><span class="badge b1">P1</span></td></tr>
 </table>
 
@@ -923,6 +923,7 @@
   <tr><td class="id">FR-4.9</td><td>贴图</td><td>鼠标穿透模式</td><td><span class="badge b2">P2</span></td><td><span class="st st-t">待开发</span></td><td>远期</td><td>—</td></tr>
   <tr><td class="id">FR-4.10</td><td>贴图</td><td>悬浮菜单（悬停浮现）</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>V1.2 新增</td></tr>
   <tr><td class="id">FR-4.11</td><td>贴图</td><td>编辑后同步剪贴板</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>M3</td><td>V1.2 新增</td></tr>
+  <tr><td class="id">FR-4.12</td><td>贴图</td><td>边缘/四角拖拽调整尺寸（四角等比、四边单轴）；工具条悬浮于图片上方不遮挡内容</td><td><span class="badge b1">P1</span></td><td><span class="st st-c">已完成</span></td><td>当前迭代</td><td>V1.10：脚本验证四角等比/四边单轴均通过</td></tr>
   <tr><td class="id">FR-5.1</td><td>输出</td><td>复制到剪贴板</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-5.2</td><td>输出</td><td>保存 PNG / JPEG</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
   <tr><td class="id">FR-5.3</td><td>输出</td><td>另存为对话框</td><td><span class="badge b0">P0</span></td><td><span class="st st-c">已完成</span></td><td>M2</td><td>—</td></tr>
@@ -964,7 +965,9 @@
   <tr><td>2026-08-23</td><td>UI 优化</td><td>① 自由框选改用自定义十字光标（白芯黑描边）；② 进入截图后顶部显示 2.8 秒操作引导条（"移到窗口上点击=整窗截取｜拖动=自由框选｜Esc 取消"），首次点击即收起</td></tr>
   <tr><td>2026-08-23</td><td>变更</td><td>FR-4.2：贴图边框改为 2px 黑色（编辑态蓝色），明确标示截图区域</td></tr>
   <tr><td>2026-08-23</td><td>发布</td><td>建立 release/TackShot 单文件夹发行结构（exe+README+LICENSE+NOTICES+图解，build.sh 自动组装并生成 zip）；README 重写为中英双语图文版（4 幅 SVG 功能图解）</td></tr>
-  <tr><td>2026-08-23</td><td>UI 优化</td><td>进入截图模式后光标全程为自定义十字光标（原先悬停窗口时为箭头）；进入瞬间即切换（不等首次移动）。窗口吸附的"可点击"语义由高亮框+提示条承担</td></tr></table>
+  <tr><td>2026-08-23</td><td>UI 优化</td><td>进入截图模式后光标全程为自定义十字光标（原先悬停窗口时为箭头）；进入瞬间即切换（不等首次移动）。窗口吸附的"可点击"语义由高亮框+提示条承担</td></tr>
+  <tr><td>2026-08-23</td><td>新增</td><td>FR-4.12：贴图四角/四边拖拽调整尺寸（四角等比缩放、四边单轴拉伸）；悬浮菜单与编辑工具条移至图片上方悬浮显示，不再遮挡图片内容；工具条图标整体放大 20%（V1.10 开发中）</td></tr>
+  <tr><td>2026-08-23</td><td>完成</td><td>FR-4.12 实施完成并通过脚本验证（拖右上角 Δ168×111 等比、拖右边 Δ157×0 单轴）：zoomX/zoomY 分离、图片边缘 8 向缩放手柄（角优先判定）、光标随边缘变形；悬浮菜单/编辑工具条绘制于顶部预留区（HTTRANSPARENT 点击穿透），不再遮挡图片；修复 ResizeZone 判定顺序缺陷（边条件遮蔽角条件）；工具条图标整体放大 20%（工具 19px/色板 14px/面板高 24px 基准）</td></tr></table>
 
 <h2 id="s14">14. 附录 <span class="en">Appendix</span></h2>
 
@@ -1022,7 +1025,7 @@
 </ul>
 
 <footer>
-  钉图 TackShot · 需求规格说明书 V1.9（草案） · 2026-08-23 · 本文档基于用户原始需求分析完善生成，供评审使用
+  钉图 TackShot · 需求规格说明书 V1.10（草案） · 2026-08-23 · 本文档基于用户原始需求分析完善生成，供评审使用
 </footer>
 
 </div>

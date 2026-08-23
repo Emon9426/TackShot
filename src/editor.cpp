@@ -125,29 +125,29 @@ void Toolbar::Layout(const RECT& host, const RECT& scr, TbMode mode, float dpiSc
     struct Item { int id; float w; };
     std::vector<Item> items;
     if (mode == TbMode::Editor) {
-        items = { {TB_OK,16},{TB_PIN,16},{TB_SAVE,16},{TB_CANCEL,16},
-                  {TB_RECT,16},{TB_ELLIPSE,16},{TB_LINE,16},{TB_ARROW,16},{TB_PEN,16},
-                  {TB_TEXT,16},{TB_MOSAIC,16},{TB_HIGHLIGHT,16},
-                  {TB_UNDO,16},{TB_REDO,16},
-                  {TB_C0,12},{TB_C1,12},{TB_C2,12},{TB_C3,12},{TB_C4,12},{TB_C5,12},
-                  {TB_W0,12},{TB_W1,12},{TB_W2,12} };
+        items = { {TB_OK,19},{TB_PIN,19},{TB_SAVE,19},{TB_CANCEL,19},
+                  {TB_RECT,19},{TB_ELLIPSE,19},{TB_LINE,19},{TB_ARROW,19},{TB_PEN,19},
+                  {TB_TEXT,19},{TB_MOSAIC,19},{TB_HIGHLIGHT,19},
+                  {TB_UNDO,19},{TB_REDO,19},
+                  {TB_C0,14},{TB_C1,14},{TB_C2,14},{TB_C3,14},{TB_C4,14},{TB_C5,14},
+                  {TB_W0,14},{TB_W1,14},{TB_W2,14} };
     } else if (mode == TbMode::PinEdit) {
-        items = { {TB_OK,16},{TB_CANCEL,16},
-                  {TB_RECT,16},{TB_ELLIPSE,16},{TB_LINE,16},{TB_ARROW,16},{TB_PEN,16},
-                  {TB_TEXT,16},{TB_MOSAIC,16},{TB_HIGHLIGHT,16},
-                  {TB_UNDO,16},{TB_REDO,16},
-                  {TB_C0,12},{TB_C1,12},{TB_C2,12},{TB_C3,12},{TB_C4,12},{TB_C5,12},
-                  {TB_W0,12},{TB_W1,12},{TB_W2,12} };
+        items = { {TB_OK,19},{TB_CANCEL,19},
+                  {TB_RECT,19},{TB_ELLIPSE,19},{TB_LINE,19},{TB_ARROW,19},{TB_PEN,19},
+                  {TB_TEXT,19},{TB_MOSAIC,19},{TB_HIGHLIGHT,19},
+                  {TB_UNDO,19},{TB_REDO,19},
+                  {TB_C0,14},{TB_C1,14},{TB_C2,14},{TB_C3,14},{TB_C4,14},{TB_C5,14},
+                  {TB_W0,14},{TB_W1,14},{TB_W2,14} };
     } else { // PinHover
-        items = { {TB_EDIT,16},{TB_COPYIMG,16},{TB_SAVE,16},
-                  {TB_ZOOMOUT,12},{TB_NONE,26},{TB_ZOOMIN,12},
-                  {TB_OPAQUE,16},{TB_CLOSE,16} };
+        items = { {TB_EDIT,19},{TB_COPYIMG,19},{TB_SAVE,19},
+                  {TB_ZOOMOUT,14},{TB_NONE,31},{TB_ZOOMIN,14},
+                  {TB_OPAQUE,19},{TB_CLOSE,19} };
     }
     int gap = S(1), pad = S(3);
     int total = pad * 2;
     for (size_t i = 0; i < items.size(); ++i)
         total += S(items[i].w) + (i + 1 < items.size() ? gap : 0);
-    int h = S(20);
+    int h = S(24);
     int cx = host.left + (host.right - host.left) / 2;
     int x = cx - total / 2;
     int y;
