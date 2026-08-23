@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>钉图 TackShot · 轻量级 Windows 截图工具 需求规格说明书 V1.8</title>
+<title>钉图 TackShot · 轻量级 Windows 截图工具 需求规格说明书 V1.9</title>
 <style>
   :root{
     --accent:#2563eb; --accent-soft:#eff6ff; --text:#1f2937; --muted:#6b7280;
@@ -120,7 +120,7 @@
   <h1>轻量级 Windows 截图工具 · 需求规格说明书</h1>
   <div class="sub">产品名称：钉图 TackShot（2026-08-23 定名，原代号 ScreenShort 弃用；备选名 SnapTack，见 14.2 Q1）</div>
   <table>
-    <tr><th style="width:120px">文档版本</th><td>V1.8（草案 · 待评审）</td><th style="width:120px">发布日期</th><td>2026-08-23</td></tr>
+    <tr><th style="width:120px">文档版本</th><td>V1.9（草案 · 待评审）</td><th style="width:120px">发布日期</th><td>2026-08-23</td></tr>
     <tr><th>文档状态</th><td>初稿，供评审与开发估算使用</td><th>编制方式</th><td>基于用户原始需求分析、完善并结构化</td></tr>
     <tr><th>目标平台</th><td>Windows 10 (1809+) / Windows 11，x64</td><th>分发形式</th><td>ZIP 压缩包（绿色免安装）</td></tr>
   </table>
@@ -963,7 +963,8 @@
   <tr><td>2026-08-23</td><td>完成</td><td>FR-1.3 窗口自动识别吸附实现（V1.7，提前至当前迭代）：枚举/悬停高亮/单击整窗截取/拖动转自由框选；验证：两次独立运行日志均出现"窗口吸附截取 2404×1600 → 贴图创建"，且命中为 z 序最顶层窗口（与最大面积窗口不同的对照恰好证明命中逻辑正确）；帧级亮度对照因活桌面内容差异不可靠，视觉细节待用户确认</td></tr>
   <tr><td>2026-08-23</td><td>UI 优化</td><td>① 自由框选改用自定义十字光标（白芯黑描边）；② 进入截图后顶部显示 2.8 秒操作引导条（"移到窗口上点击=整窗截取｜拖动=自由框选｜Esc 取消"），首次点击即收起</td></tr>
   <tr><td>2026-08-23</td><td>变更</td><td>FR-4.2：贴图边框改为 2px 黑色（编辑态蓝色），明确标示截图区域</td></tr>
-  <tr><td>2026-08-23</td><td>发布</td><td>建立 release/TackShot 单文件夹发行结构（exe+README+LICENSE+NOTICES+图解，build.sh 自动组装并生成 zip）；README 重写为中英双语图文版（4 幅 SVG 功能图解）</td></tr></table>
+  <tr><td>2026-08-23</td><td>发布</td><td>建立 release/TackShot 单文件夹发行结构（exe+README+LICENSE+NOTICES+图解，build.sh 自动组装并生成 zip）；README 重写为中英双语图文版（4 幅 SVG 功能图解）</td></tr>
+  <tr><td>2026-08-23</td><td>UI 优化</td><td>进入截图模式后光标全程为自定义十字光标（原先悬停窗口时为箭头）；进入瞬间即切换（不等首次移动）。窗口吸附的"可点击"语义由高亮框+提示条承担</td></tr></table>
 
 <h2 id="s14">14. 附录 <span class="en">Appendix</span></h2>
 
@@ -1021,7 +1022,7 @@
 </ul>
 
 <footer>
-  钉图 TackShot · 需求规格说明书 V1.8（草案） · 2026-08-23 · 本文档基于用户原始需求分析完善生成，供评审使用
+  钉图 TackShot · 需求规格说明书 V1.9（草案） · 2026-08-23 · 本文档基于用户原始需求分析完善生成，供评审使用
 </footer>
 
 </div>

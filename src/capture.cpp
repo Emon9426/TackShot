@@ -76,6 +76,13 @@ int FindSnap(POINT sp) {
     return -1;
 }
 
+// 自定义十字光标（截图模式全程使用：一进入就以十字明示状态）
+HCURSOR CrossCursor() {
+    static HCURSOR c = nullptr;
+    if (!c) c = CreateCrossCursor();
+    return c ? c : LoadCursor(NULL, IDC_CROSS);
+}
+
 RECT Local(RECT r) { OffsetRect(&r, -s.vx, -s.vy); return r; }
 POINT LocalPt(POINT p) { return { p.x - s.vx, p.y - s.vy }; }
 RECT NormSel(POINT a, POINT b) {
@@ -378,13 +385,10 @@ void OnToolbar(int id) {
 }
 
 void UpdateCursor(POINT lp) {
-    static HCURSOR crossCur = nullptr;
-    if (!crossCur) crossCur = CreateCrossCursor();
-    HCURSOR cross = crossCur ? crossCur : LoadCursor(NULL, IDC_CROSS);
+    HCURSOR cross = CrossCursor();
     HCURSOR c = LoadCursor(NULL, IDC_ARROW);
     if (s.tb.Hit(lp.x, lp.y)) c = LoadCursor(NULL, IDC_HAND);
-    else if (!s.selValid && !s.lbtn && s.snapIdx >= 0) c = LoadCursor(NULL, IDC_ARROW);
-    else if (!s.selValid || s.shapeDrag) c = cross;
+    else if (!s.selValid || s.shapeDrag) c = cross;   // 截图模式全程十字（含窗口吸附态）
     else if (HitHandle(lp)) c = LoadCursor(NULL, IDC_SIZEALL);
     else if (PtInRect(&s.sel, { lp.x + s.vx, lp.y + s.vy })) {
         if (s.ed.cur != Tool::None) c = cross;
@@ -649,6 +653,7 @@ void StartRegionCapture() {
     UpdateWindow(s.wnd);
     SetForegroundWindow(s.wnd);
     SetFocus(s.wnd);
+    SetCursor(CrossCursor());   // 一进入截图模式立即呈十字，不等首次鼠标移动
     Log(L"区域截图开始：虚拟屏 %dx%d @(%d,%d)，吸附候选窗口 %d 个",
         s.vw, s.vh, s.vx, s.vy, (int)s.snaps.size());
 }
