@@ -23,6 +23,7 @@ struct Session {
     bool  shapeDrag = false;
     std::vector<RECT> snaps;   // 会话开始枚举的可见顶层窗口（EnumWindows 自顶向下 z 序）
     int   snapIdx = -1;
+    ULONGLONG hintUntil = 0;   // 进入截图后的操作引导显示截止时刻
 } s;
 
 enum { TID_TIP = 3 };   // 悬停提示定时器：静止 320ms 后补一次重绘
@@ -217,6 +218,24 @@ void RenderTo(HDC hdc) {
         }
     }
 
+    // 操作引导条：进入截图后短暂显示，说明"点击整窗 / 拖动自由框选"两种方式
+    if (s.hintUntil && !s.selValid && GetTickCount64() < s.hintUntil) {
+        const wchar_t* txt = L"移到窗口上点击 = 整窗截取　｜　拖动 = 自由框选　｜　Esc 取消";
+        float sc = DpiScale(s.wnd);
+        FontFamily ff(L"Segoe UI");
+        Font f(&ff, 13.f * sc, FontStyleRegular, UnitPixel);
+        RectF bb; StringFormat sf;
+        g.MeasureString(txt, -1, &f, PointF(0, 0), &sf, &bb);
+        REAL hx = (s.vw - bb.Width) / 2;
+        REAL hy = (REAL)(int)(36 * sc);
+        SolidBrush bg(Color(235, 15, 23, 42));
+        g.FillRectangle(&bg, hx - 12, hy - 7, bb.Width + 24, bb.Height + 14);
+        Pen bp(Color(255, 51, 65, 85), 1.f);
+        g.DrawRectangle(&bp, hx - 12, hy - 7, bb.Width + 24, bb.Height + 14);
+        SolidBrush tb(Color(255, 241, 245, 249));
+        g.DrawString(txt, -1, &f, PointF(hx, hy), &tb);
+    }
+
     // 调试转储：设置环境变量 TACKSHOT_DEBUG_SHOT=1 时，把每帧渲染结果落盘（自动化验证用）
     if (GetEnvironmentVariableW(L"TACKSHOT_DEBUG_SHOT", nullptr, 0) && s.back && s.backBits) {
         DWORD hdrlen = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
@@ -359,13 +378,16 @@ void OnToolbar(int id) {
 }
 
 void UpdateCursor(POINT lp) {
+    static HCURSOR crossCur = nullptr;
+    if (!crossCur) crossCur = CreateCrossCursor();
+    HCURSOR cross = crossCur ? crossCur : LoadCursor(NULL, IDC_CROSS);
     HCURSOR c = LoadCursor(NULL, IDC_ARROW);
     if (s.tb.Hit(lp.x, lp.y)) c = LoadCursor(NULL, IDC_HAND);
     else if (!s.selValid && !s.lbtn && s.snapIdx >= 0) c = LoadCursor(NULL, IDC_ARROW);
-    else if (!s.selValid || s.shapeDrag) c = LoadCursor(NULL, IDC_CROSS);
+    else if (!s.selValid || s.shapeDrag) c = cross;
     else if (HitHandle(lp)) c = LoadCursor(NULL, IDC_SIZEALL);
     else if (PtInRect(&s.sel, { lp.x + s.vx, lp.y + s.vy })) {
-        if (s.ed.cur != Tool::None) c = LoadCursor(NULL, IDC_CROSS);
+        if (s.ed.cur != Tool::None) c = cross;
         else c = LoadCursor(NULL, IDC_SIZEALL);
     }
     SetCursor(c);
@@ -428,6 +450,7 @@ LRESULT CALLBACK CapProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
     case WM_LBUTTONDOWN: {
         if (!s.wnd) break;
         SetFocus(wnd);
+        s.hintUntil = 0;                  // 一旦开始操作即收起引导条
         int x = GET_X_LPARAM(lp), y = GET_Y_LPARAM(lp);
         POINT sp{ x + s.vx, y + s.vy };
         if (s.phase == 1 && s.selValid) {
@@ -613,6 +636,7 @@ void StartRegionCapture() {
 
     s.phase = 0; s.selValid = false; s.lbtn = false; s.mode = 0;
     s.hover = 0; s.shapeDrag = false; s.hoverSince = 0;
+    s.hintUntil = GetTickCount64() + 2800;
     s.ed = Editor{};
     s.prevFocus = GetForegroundWindow();
     BuildSnaps();

@@ -6,6 +6,7 @@ namespace {
 const UINT WM_PRUNE = WM_APP + 3;
 enum { TID_HOVER = 1, TID_HIDE = 2, TID_TIP = 3 };
 const wchar_t* kPinCls = L"TackShotPin";
+const int BORDER = 2;   // 贴图黑色边框宽度
 
 struct PinWindow {
     HWND  wnd = nullptr;
@@ -32,13 +33,13 @@ struct PinWindow {
     ULONGLONG hoverSince = 0;
 
     POINT ImgPt(int x, int y) {
-        return { (int)((x - 1) / zoom), (int)((y - 1) / zoom) };
+        return { (int)((x - BORDER) / zoom), (int)((y - BORDER) / zoom) };
     }
 
     void Render() {
         if (!wnd) return;
-        ww = std::max(8, (int)(iw * zoom) + 2);
-        wh = std::max(8, (int)(ih * zoom) + 2);
+        ww = std::max(8, (int)(iw * zoom) + 2 * BORDER);
+        wh = std::max(8, (int)(ih * zoom) + 2 * BORDER);
         if (!win || winSizeW != ww || winSizeH != wh) {
             if (winDc) { DeleteDC(winDc); winDc = nullptr; }
             if (win) { DeleteObject(win); win = nullptr; }
@@ -58,13 +59,14 @@ struct PinWindow {
             SolidBrush clear(Color(0, 0, 0, 0));
             g.FillRectangle(&clear, 0, 0, ww, wh);
         }
-        int dw = ww - 2, dh = wh - 2;
-        g.DrawImage(bmp, Rect(1, 1, dw, dh), 0, 0, iw, ih, UnitPixel);
-        Pen bd(Color(editing ? 255 : 190, editing ? 59 : 148, 130, (editing ? 246 : 184)), 1.f);
-        g.DrawRectangle(&bd, 0.5f, 0.5f, ww - 1.f, wh - 1.f);
+        int dw = ww - 2 * BORDER, dh = wh - 2 * BORDER;
+        g.DrawImage(bmp, Rect(BORDER, BORDER, dw, dh), 0, 0, iw, ih, UnitPixel);
+        // 黑色边框：明确提示"这里是一张截图"；编辑态为蓝色高亮
+        Pen bd(Color(255, editing ? 59 : 0, editing ? 130 : 0, editing ? 246 : 0), 2.f);
+        g.DrawRectangle(&bd, 1.f, 1.f, ww - 2.f, wh - 2.f);
 
         if (editing) {
-            g.TranslateTransform(1.f, 1.f);
+            g.TranslateTransform((REAL)BORDER, (REAL)BORDER);
             g.ScaleTransform((REAL)zoom, (REAL)zoom);
             DrawShapes(g, ed.shapes, bmp, POINT{ 0, 0 });
             if (shapeDrag) DrawShape(g, ed.draft, bmp, POINT{ 0, 0 });
@@ -126,8 +128,8 @@ void ZoomAt(PinWindow* p, double factor, POINT cursorScr) {
     p->zoom = nz;
     int nw = std::max(8, (int)(p->iw * nz) + 2);
     int nh = std::max(8, (int)(p->ih * nz) + 2);
-    int nx = cursorScr.x - (int)(anchor.x * nz) - 1;
-    int ny = cursorScr.y - (int)(anchor.y * nz) - 1;
+    int nx = cursorScr.x - (int)(anchor.x * nz) - BORDER;
+    int ny = cursorScr.y - (int)(anchor.y * nz) - BORDER;
     p->Render();
     SetWindowPos(p->wnd, HWND_TOPMOST, nx, ny, nw, nh, SWP_NOACTIVATE);
     p->Render();
@@ -249,7 +251,7 @@ LRESULT CALLBACK PinProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
         if (p->editing) {
             int id = p->bar.Hit(x, y);
             if (id) { OnEditBar(p, id); break; }
-            if (x >= 1 && y >= 1 && x < p->ww - 1 && y < p->wh - 1) {
+            if (x >= BORDER && y >= BORDER && x < p->ww - BORDER && y < p->wh - BORDER) {
                 POINT ip = p->ImgPt(x, y);
                 if (p->ed.cur == Tool::Text) {
                     Gdiplus::ARGB col = p->ed.color.GetValue();
@@ -441,7 +443,7 @@ void CreatePin(HBITMAP src) {
                  (avail.bottom - avail.top) * 0.8 / ih));
     p->zoom = fit;
 
-    int ww = (int)(iw * p->zoom) + 2, wh = (int)(ih * p->zoom) + 2;
+    int ww = (int)(iw * p->zoom) + 2 * BORDER, wh = (int)(ih * p->zoom) + 2 * BORDER;
     POINT cp; GetCursorPos(&cp);
     // FR-4.1（V1.6）：贴图中心锚定确认时的鼠标位置，并夹紧在工作区内
     int x = cp.x - ww / 2, y = cp.y - wh / 2;

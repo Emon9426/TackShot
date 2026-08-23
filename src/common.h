@@ -67,6 +67,7 @@ bool    SaveBitmapToFile(HBITMAP bmp, const std::wstring& path,
 std::wstring DefaultSaveDir();
 std::wstring BuildSavePath(const std::wstring& dir, const wchar_t* ext);
 HICON   CreateAppIcon();
+HCURSOR CreateCrossCursor();   // 自定义十字光标（截图框选用）
 void    SetProcessDpiAwareV2();
 float   DpiScale(HWND wnd);            // 96 基准的 UI 缩放系数
 

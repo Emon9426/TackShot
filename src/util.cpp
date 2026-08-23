@@ -214,6 +214,36 @@ std::wstring BuildSavePath(const std::wstring& dir, const wchar_t* ext) {
 }
 
 // ---------------- 程序图标（运行时矢量绘制，无资源文件） ----------------
+// 自定义十字光标：白芯黑描边，任意背景可见，提示"可自由框选"
+HCURSOR CreateCrossCursor() {
+    const int S = 32;
+    void* bits = nullptr;
+    HBITMAP dib = CreateDib32(S, S, &bits);
+    if (!dib) return NULL;
+    HDC dc = CreateCompatibleDC(NULL);
+    HGDIOBJ old = SelectObject(dc, dib);
+    {
+        using namespace Gdiplus;
+        Graphics g(dc);
+        SolidBrush clear(Color(0, 0, 0, 0));
+        g.FillRectangle(&clear, 0, 0, S, S);
+        Pen blk(Color(255, 0, 0, 0), 5.f);
+        Pen wht(Color(255, 255, 255, 255), 2.f);
+        for (int pass = 0; pass < 2; ++pass) {
+            Pen* p = pass == 0 ? &blk : &wht;
+            g.DrawLine(p, 16, 0, 16, 11);
+            g.DrawLine(p, 16, 21, 16, 31);
+            g.DrawLine(p, 0, 16, 11, 16);
+            g.DrawLine(p, 21, 16, 31, 16);
+        }
+    }
+    SelectObject(dc, old);
+    DeleteDC(dc);
+    HBITMAP mask = CreateBitmap(S, S, 1, 1, NULL);
+    ICONINFO ii{ FALSE, 16, 16, mask, dib };
+    return (HCURSOR)CreateIconIndirect(&ii);
+}
+
 HICON CreateAppIcon() {
     const int S = 32;
     void* bits = nullptr;

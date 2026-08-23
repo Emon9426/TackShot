@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="128" viewBox="0 0 920 128" font-family="Segoe UI, Microsoft YaHei, sans-serif">
+  <rect width="920" height="128" fill="#f8fafc"/>
+  <rect x="10" y="26" width="900" height="46" rx="10" fill="#1e2530" stroke="#334155"/>
+  <!-- 动作组 -->
+  <g stroke-width="3" fill="none" stroke-linecap="round">
+    <polyline points="34,54 40,60 52,44" stroke="#22c55e"/>
+    <g stroke="#3b82f6"><line x1="78" y1="40" x2="78" y2="60"/><circle cx="78" cy="40" r="6" fill="#3b82f6" stroke="none"/></g>
+    <g stroke="#f59e0b"><line x1="108" y1="40" x2="108" y2="54"/><polyline points="102,48 108,56 114,48"/></g>
+    <g stroke="#ef4444"><line x1="134" y1="42" x2="148" y2="56"/><line x1="134" y1="56" x2="148" y2="42"/></g>
+  </g>
+  <line x1="162" y1="34" x2="162" y2="64" stroke="#334155"/>
+  <!-- 工具组 -->
+  <g stroke-width="2.4" fill="none" stroke-linecap="round">
+    <rect x="176" y="42" width="20" height="16" stroke="#3b82f6"/>
+    <ellipse cx="222" cy="50" rx="10" ry="8" stroke="#14b8a6"/>
+    <line x1="246" y1="58" x2="264" y2="42" stroke="#94a3b8"/>
+    <g stroke="#6366f1"><line x1="286" y1="58" x2="302" y2="44"/><polyline points="296,43 304,42 303,50"/></g>
+    <path d="M 326 54 q 6 -12 12 0 q 6 12 12 -2" stroke="#f97316"/>
+    <text x="372" y="58" text-anchor="middle" font-size="16" font-weight="bold" fill="#8b5cf6" stroke="none">T</text>
+    <g stroke="none" fill="#64748b"><rect x="392" y="42" width="6" height="6"/><rect x="400" y="42" width="6" height="6" fill="#a5b4c4"/><rect x="408" y="42" width="6" height="6"/><rect x="392" y="50" width="6" height="6" fill="#a5b4c4"/><rect x="400" y="50" width="6" height="6"/><rect x="408" y="50" width="6" height="6" fill="#a5b4c4"/></g>
+    <rect x="430" y="42" width="18" height="14" fill="#facc15" fill-opacity="0.75" stroke="#f59e0b"/>
+  </g>
+  <line x1="462" y1="34" x2="462" y2="64" stroke="#334155"/>
+  <!-- 撤销重做 -->
+  <g stroke="#94a3b8" stroke-width="2.4" fill="none">
+    <path d="M 476 56 a 10 10 0 1 1 10 10"/><polyline points="476,50 476,58 484,56"/>
+    <path d="M 508 56 a 10 10 0 1 0 10 10"/><polyline points="518,50 518,58 510,56"/>
+  </g>
+  <line x1="534" y1="34" x2="534" y2="64" stroke="#334155"/>
+  <!-- 色板 -->
+  <g stroke="none">
+    <circle cx="550" cy="49" r="7" fill="#ef4444"/><circle cx="568" cy="49" r="7" fill="#f59e0b"/>
+    <circle cx="586" cy="49" r="7" fill="#22c55e"/><circle cx="604" cy="49" r="7" fill="#3b82f6"/>
+    <circle cx="622" cy="49" r="7" fill="#ffffff"/><circle cx="640" cy="49" r="7" fill="#111827"/>
+  </g>
+  <line x1="658" y1="34" x2="658" y2="64" stroke="#334155"/>
+  <!-- 线宽 -->
+  <g stroke="#e2e8f0" stroke-linecap="round">
+    <line x1="674" y1="49" x2="690" y2="49" stroke-width="2"/>
+    <line x1="700" y1="49" x2="716" y2="49" stroke-width="4"/>
+    <line x1="726" y1="49" x2="742" y2="49" stroke-width="7"/>
+  </g>
+  <!-- 悬停提示 -->
+  <rect x="770" y="30" width="120" height="22" rx="5" fill="#0f172a" stroke="#334155"/>
+  <text x="830" y="45" text-anchor="middle" fill="#f1f5f9" font-size="12">矩形 (R)</text>
+  <text x="460" y="102" text-anchor="middle" fill="#334155" font-size="13">编辑工具条：确认 / 贴图 / 另存 / 取消 · 9 种标注工具 · 撤销重做 · 色板 · 线宽（悬停显示名称与快捷键）</text>
+  <text x="460" y="120" text-anchor="middle" fill="#64748b" font-size="11">Editor toolbar with hover tooltips (name + hotkey)</text>
+</svg>

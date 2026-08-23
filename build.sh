@@ -23,3 +23,13 @@ mkdir -p dist
 
 echo "构建完成: dist/TackShot.exe"
 ls -la dist/TackShot.exe
+
+# ---- 组装单文件夹发行包：release/TackShot/ 即完整软件 ----
+REL="release/TackShot"
+mkdir -p "$REL/img"
+cp dist/TackShot.exe "$REL/"
+cp LICENSE THIRD-PARTY-NOTICES.txt README.md "$REL/"
+cp img/*.svg "$REL/img/"
+rm -f release/TackShot-win64.zip
+powershell -NoProfile -Command "Compress-Archive -Path 'release/TackShot' -DestinationPath 'release/TackShot-win64.zip' -Force" >/dev/null 2>&1
+echo "发行包: release/TackShot/（单文件夹） + release/TackShot-win64.zip"
