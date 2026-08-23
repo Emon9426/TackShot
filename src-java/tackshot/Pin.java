@@ -54,6 +54,7 @@ final class Pin {
     private boolean editing = false;
     private boolean shapeDrag = false;
     private boolean dead = false;
+    private boolean topmost = true;       // 置顶开关（TB_TOP）：开=始终最前，关=允许被其他窗口遮挡
 
     private final Tb.Toolbar menu = new Tb.Toolbar();
     private final Tb.Toolbar bar = new Tb.Toolbar();
@@ -252,6 +253,7 @@ final class Pin {
             bar.draw(g, ed, hover, Tb.MODE_PIN_EDIT, hs);
         } else if (menuVisible) {
             menu.zoomPct = (int) (zoomX * 100 + 0.5);
+            menu.topmost = topmost;
             menu.layout(strip, strip, Tb.MODE_PIN_HOVER, sc);
             menu.draw(g, null, hover, Tb.MODE_PIN_HOVER, hs);
         }
@@ -523,7 +525,7 @@ final class Pin {
         close();
     }
 
-    /** 就地编辑完成：合成新图 + 同步剪贴板（FR-4.11）。 */
+    /** 就地编辑完成：合成新图（V2.0.3 起不写剪贴板，FR-4.11 已裁剪，复制走悬浮菜单『复制』）。 */
     private void applyEdit() {
         if (TextInput.active()) TextInput.cancel();
         BufferedImage out = new BufferedImage(iw, ih, BufferedImage.TYPE_INT_RGB);
@@ -533,8 +535,7 @@ final class Pin {
         Edit.drawShapes(g, ed.shapes, img, 0, 0);
         g.dispose();
         img = out;
-        Clip.toClipboard(wnd, img);
-        Main.balloon("钉图 TackShot", "贴图已编辑，并同步到剪贴板");
+        Main.balloon("钉图 TackShot", "贴图已更新（复制请点悬浮菜单『复制』）");
         editing = false;
         shapeDrag = false;
         render();
@@ -577,6 +578,11 @@ final class Pin {
             case Tb.TB_OPAQUE:
                 cycleAlpha();
                 return;
+            case Tb.TB_TOP:
+                topmost = !topmost;
+                wnd.setAlwaysOnTop(topmost);
+                Log.write(topmost ? "贴图置顶：开（始终显示在最前）" : "贴图置顶：关（允许被其他窗口遮挡）");
+                break;
             case Tb.TB_CLOSE:
                 close();
                 return;

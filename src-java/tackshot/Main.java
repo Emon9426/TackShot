@@ -24,7 +24,7 @@ import java.util.Map;
 
 /** 钉图 TackShot V2.0（Java 版）入口：单实例 / 托盘 / 热键 / 输出分发 / 冒烟测试。 */
 public final class Main {
-    public static final String VERSION = "钉图 TackShot v2.0";
+    public static final String VERSION = "钉图 TackShot v2.0.3";
     public static Cfg cfg = new Cfg();
     public static String exeDir = ".";
     public static String exePath = "";
@@ -91,6 +91,7 @@ public final class Main {
         } catch (Exception ignored) {
         }
         scaleDialogFonts();
+        Log.write("UI 字体族：" + Tb.UI_FAMILY + "（FR-6.8 非中文系统字体回退）");
         hidden = new JFrame();
         hidden.setUndecorated(true);
         hidden.setType(Frame.Type.UTILITY);
@@ -115,16 +116,21 @@ public final class Main {
         }
     }
 
-    /** 物理像素模型下 Swing 对话框字体按主屏 DPI 放大（自绘 UI 不受影响）。 */
+    /** 物理像素模型下 Swing 对话框字体按主屏 DPI 放大（自绘 UI 不受影响）。
+     *  LAF 默认字体（Segoe UI 等）无中文字形，先统一换成探测到的 CJK 字体族（FR-6.8）。 */
     private static void scaleDialogFonts() {
         try {
             float s = Toolkit.getDefaultToolkit().getScreenResolution() / 96f;
-            if (s <= 1.01f) return;
             Map<Object, Object> scaled = new HashMap<>();
             for (Object k : UIManager.getLookAndFeelDefaults().keySet().toArray()) {
                 Object v = UIManager.getLookAndFeelDefaults().get(k);
-                if (v instanceof Font)
-                    scaled.put(k, ((Font) v).deriveFont(((Font) v).getSize2D() * s));
+                if (v instanceof Font) {
+                    Font f = (Font) v;
+                    Font base = f.canDisplay(Tb.CJK_PROBE) ? f
+                            : new Font(Tb.UI_FAMILY, f.getStyle(), f.getSize());
+                    if (s > 1.01f) scaled.put(k, base.deriveFont(base.getSize2D() * s));
+                    else if (base != f) scaled.put(k, base);
+                }
             }
             for (Map.Entry<Object, Object> en : scaled.entrySet())
                 UIManager.put(en.getKey(), en.getValue());
@@ -168,8 +174,15 @@ public final class Main {
         MenuItem mExit = new MenuItem("退出");
         mExit.addActionListener(e -> quit());
         pm.add(mExit);
+        // FR-6.8：AWT 托盘菜单由 AWT 自绘（GDI 直排文本，无字体链回退），英文系统默认菜单字体
+        // （Segoe UI）无中文字形 → 全部方框；显式指定探测到的 CJK 字体族（随 DPI 缩放）
+        float ms = Toolkit.getDefaultToolkit().getScreenResolution() / 96f;
+        Font menuFont = new Font(Tb.UI_FAMILY, Font.PLAIN, (int) (12f * ms + 0.5f));
+        for (MenuItem mi : new MenuItem[]{mRegion, mFull, mPin, mSettings, mAuto, mAbout, mExit})
+            mi.setFont(menuFont);
+        pm.setFont(menuFont);
         try {
-            tray = new TrayIcon(Icon.appIcon(), "钉图 TackShot v2.0 · Ctrl+Alt+A 截图", pm);
+            tray = new TrayIcon(Icon.appIcon(), "钉图 TackShot v2.0.3 · Ctrl+Alt+A 截图", pm);
             tray.setImageAutoSize(true);
             tray.addActionListener(e -> Capture.startRegion());
             SystemTray.getSystemTray().add(tray);
@@ -190,18 +203,18 @@ public final class Main {
         else balloon("钉图 TackShot", "剪贴板中没有图片");
     }
 
+    /** 确认（✓/Enter/双击/贴图按钮）输出分发：V2.0.3 起不写剪贴板，写剪贴板仅限复制/保存按钮。 */
     static void finishImage(BufferedImage img) {
         if (img == null) return;
-        boolean copied = Clip.toClipboard(hidden, img);
         String msg;
-        if (cfg.confirmAction.equals("copy_pin")) {
-            Pin.create(img);
-            msg = copied ? "已复制到剪贴板 · 已贴图" : "已贴图（复制到剪贴板失败）";
-        } else if (cfg.confirmAction.equals("copy_save")) {
+        if (cfg.confirmAction.equals("copy_save")) {
             String path = saveAuto(img);
-            msg = path.isEmpty() ? "已复制 · 自动保存失败" : "已复制到剪贴板 · 已保存 " + path;
+            msg = path.isEmpty() ? "自动保存失败" : "已保存 " + path;
         } else {
-            msg = copied ? "已复制到剪贴板" : "复制到剪贴板失败";
+            if (cfg.confirmAction.equals("copy"))   // “仅复制”确认已不写剪贴板，按默认贴图处理
+                Log.write("confirm_action=copy 不再写剪贴板，按默认贴图处理");
+            Pin.create(img);
+            msg = "已贴图";
         }
         balloon("钉图 TackShot", msg);
         Log.write("输出完成：" + msg);
@@ -246,10 +259,29 @@ public final class Main {
         } else Log.write("TEST FAIL: PNG 保存");
 
         total++;
-        if (Clip.toClipboard(null, bmp) && Nat.U32.I.IsClipboardFormatAvailable(2)) {
-            Log.write("TEST PASS: 剪贴板写入");
+        BufferedImage back = null;
+        try {
+            if (Clip.toClipboard(null, bmp)) back = Clip.fromClipboard();
+        } catch (Throwable t) {
+            Log.write("TEST 剪贴板异常：" + t);
+        }
+        // 回读 + 像素校验 + AWT 跨通道校验：仅查格式可用性无法发现"外部程序读不出"的回归（CF_DIB 曾误写为 CF_BITMAP）
+        boolean awtOk = false;
+        try {
+            Object awtImg = Toolkit.getDefaultToolkit().getSystemClipboard()
+                    .getContents(null).getTransferData(java.awt.datatransfer.DataFlavor.imageFlavor);
+            awtOk = awtImg instanceof java.awt.Image;
+        } catch (Throwable t) {
+            Log.write("TEST AWT 剪贴板读取异常：" + t);
+        }
+        if (back != null && back.getWidth() == W && back.getHeight() == H
+                && back.getRGB(0, 0) == bmp.getRGB(0, 0)
+                && back.getRGB(W - 1, H - 1) == bmp.getRGB(W - 1, H - 1)
+                && Nat.U32.I.IsClipboardFormatAvailable(Clip.CF_DIB) && awtOk) {
+            Log.write("TEST PASS: 剪贴板写入（CF_DIB 回读像素一致，AWT 跨通道可读）");
             pass++;
-        } else Log.write("TEST FAIL: 剪贴板写入");
+        } else Log.write("TEST FAIL: 剪贴板写入（回读=" + (back == null ? "null" : back.getWidth() + "x" + back.getHeight())
+                + "，AWT=" + awtOk + "）");
 
         total++;
         Pin.create(bmp);

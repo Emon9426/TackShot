@@ -9,10 +9,25 @@ import java.awt.image.BufferedImage;
 
 /** 剪贴板：JNA 直写 CF_DIB（bottom-up 32bpp、alpha 强制 0xFF），与 C++ 版粘贴兼容性一致。 */
 final class Clip {
-    private static final int CF_DIB = 2;
+    /** 标准剪贴板格式：CF_BITMAP=2、CF_DIB=8（曾误写 2，导致外部程序无法粘贴）。 */
+    static final int CF_DIB = 8;
     private static final int GMEM_MOVEABLE = 2;
 
     private Clip() {}
+
+    /** OpenClipboard 可能被剪贴板管理器等短暂占用，短重试提高成功率。 */
+    private static boolean openClipboard(HWND owner) {
+        for (int i = 0; i < 10; i++) {
+            if (Nat.U32.I.OpenClipboard(owner)) return true;
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
+        }
+        return false;
+    }
 
     static boolean toClipboard(Window owner, BufferedImage img) {
         if (img == null) return false;
@@ -52,7 +67,7 @@ final class Clip {
         }
         Nat.K32.I.GlobalUnlock(hg);
         HWND oh = owner == null ? null : Nat.hwndOf(owner);
-        if (!Nat.U32.I.OpenClipboard(oh)) {
+        if (!openClipboard(oh)) {
             Nat.K32.I.GlobalFree(hg);
             return false;
         }

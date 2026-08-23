@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.Arc2D;
@@ -12,6 +13,10 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
 
 /** 工具条 / 矢量图标 / 悬停提示 / 马赛克二级菜单 / HUD（1:1 移植 editor.cpp）。 */
 final class Tb {
@@ -26,13 +31,37 @@ final class Tb {
             TB_W0 = 21, TB_W1 = 22, TB_W2 = 23,
             TB_EDIT = 24, TB_COPYIMG = 25, TB_ZOOMOUT = 26, TB_ZOOMIN = 27,
             TB_OPAQUE = 28, TB_CLOSE = 29,
-            TB_MS_MOSAIC = 30, TB_MS_BLUR = 31, TB_MS_BLACK = 32;
+            TB_MS_MOSAIC = 30, TB_MS_BLUR = 31, TB_MS_BLACK = 32,
+            TB_TOP = 33;
 
     static final int[] PALETTE = {
             0xFFEF4444, 0xFFF59E0B, 0xFF22C55E, 0xFF3B82F6, 0xFFFFFFFF, 0xFF111827 };
 
-    /** UI 字体族：Java2D 无字体链回退，Segoe UI 不含中文字形，需用自带 CJK 的雅黑 UI。 */
-    static final String UI_FAMILY = "Microsoft YaHei UI";
+    /** UI 字体族：Java2D 无字体链回退，Segoe UI 不含中文字形，须用自带 CJK 的字体；
+     *  雅黑缺失（英文系统常见，Win10/11 中文为可选补充字体）时按已装字体探测回退（FR-6.8）。 */
+    static final String UI_FAMILY = resolveUiFamily();
+
+    /** 字形探测样本：常用简体字（任意 CJK 字均可）。 */
+    static final char CJK_PROBE = '钉';
+
+    private static String resolveUiFamily() {
+        try {
+            Set<String> have = new HashSet<>(Arrays.asList(
+                    GraphicsEnvironment.getLocalGraphicsEnvironment()
+                            .getAvailableFontFamilyNames(Locale.ENGLISH)));
+            String[] prefer = {
+                    "Microsoft YaHei UI", "Microsoft YaHei",
+                    "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC", "Source Han Sans CN",
+                    "SimSun", "SimHei", "Microsoft JhengHei UI", "Microsoft JhengHei",
+                    "MS Gothic", "Yu Gothic UI", "Yu Gothic", "Meiryo", "Arial Unicode MS"};
+            for (String f : prefer)
+                if (have.contains(f) && new Font(f, Font.PLAIN, 12).canDisplay(CJK_PROBE)) return f;
+            for (String f : have)   // 最后防线：企业镜像自带裁剪 CJK 字体等场景
+                if (new Font(f, Font.PLAIN, 12).canDisplay(CJK_PROBE)) return f;
+        } catch (Throwable ignored) {
+        }
+        return "Microsoft YaHei UI";   // 兜底：与中文系统一致；真缺失时 Java 自动回退 Dialog 组合字体
+    }
 
     /** C++ PtInRect 为闭区间（含右边/下边）。 */
     static boolean ptIn(Rectangle r, int x, int y) {
@@ -69,6 +98,7 @@ final class Tb {
             case TB_ZOOMOUT: return "缩小（也可滚轮）";
             case TB_ZOOMIN: return "放大（也可滚轮）";
             case TB_OPAQUE: return "透明度（左键循环 0/25/75%，右键精确调节）";
+            case TB_TOP: return "置顶开关（当前高亮=始终最前，点击切换为允许被遮挡）";
             case TB_CLOSE: return "关闭（Esc / 双击）";
             case TB_MS_MOSAIC: return "方格马赛克";
             case TB_MS_BLUR: return "高斯模糊";
@@ -106,7 +136,7 @@ final class Tb {
         return new int[][]{
                 {TB_EDIT, 19}, {TB_COPYIMG, 19}, {TB_SAVE, 19},
                 {TB_ZOOMOUT, 14}, {TB_NONE, 31}, {TB_ZOOMIN, 14},
-                {TB_OPAQUE, 19}, {TB_CLOSE, 19}};
+                {TB_TOP, 19}, {TB_OPAQUE, 19}, {TB_CLOSE, 19}};
     }
 
     private static int S(float v, float scale) {
@@ -139,6 +169,7 @@ final class Tb {
         ArrayList<TbBtn> btns = new ArrayList<>();
         Rectangle bar = new Rectangle();
         int zoomPct = 100;
+        boolean topmost = true;     // TB_TOP 选中态（贴图当前是否置顶）
         float scale = 1f;
 
         private int S(float v) { return (int) (v * scale + 0.5f); }
@@ -221,6 +252,7 @@ final class Tb {
                 if (b.id == TB_W0) active = curW == 0;
                 else if (b.id == TB_W1) active = curW == 1;
                 else if (b.id == TB_W2) active = curW == 2;
+                else if (b.id == TB_TOP) active = topmost;
                 boolean hov = hover == b.id;
                 if (active) {
                     g.setColor(new Color(37, 99, 235, 255));
@@ -424,6 +456,21 @@ final class Tb {
                 line(g, new Color(226, 232, 240), pw * 0.7f, cxx - w * 0.13f, cyy, cxx + w * 0.13f, cyy);
                 if (id == TB_ZOOMIN)
                     line(g, new Color(226, 232, 240), pw * 0.7f, cxx, cyy - w * 0.13f, cxx, cyy + w * 0.13f);
+                break;
+            }
+            case TB_TOP: {
+                // 置顶开关：后窗（灰框）+ 前窗（浅蓝实心）压在其上
+                g.setColor(new Color(148, 163, 184));
+                g.setStroke(new BasicStroke(pw * 0.7f));
+                g.draw(new Rectangle2D.Float((float) r.getX() + w * 0.32f, (float) r.getY() + h * 0.14f,
+                        w * 0.52f, h * 0.52f));
+                g.setColor(new Color(147, 197, 253));
+                g.fill(new Rectangle2D.Float((float) r.getX() + w * 0.14f, (float) r.getY() + h * 0.32f,
+                        w * 0.52f, h * 0.52f));
+                g.setColor(new Color(37, 99, 235));
+                g.setStroke(new BasicStroke(pw * 0.55f));
+                g.draw(new Rectangle2D.Float((float) r.getX() + w * 0.14f, (float) r.getY() + h * 0.32f,
+                        w * 0.52f, h * 0.52f));
                 break;
             }
             case TB_OPAQUE: {
