@@ -65,7 +65,7 @@
   @media (max-width:720px){
     .doc{padding:24px 18px;}
     .toc ul{columns:1;}
-  }
+  } 
 </style>
 <style>
   /* ---- RTM 状态标记（第 13 章）---- */
@@ -124,7 +124,7 @@
     <tr><th>文档状态</th><td>初稿，供评审与开发估算使用</td><th>编制方式</th><td>基于用户原始需求分析、完善并结构化</td></tr>
     <tr><th>目标平台</th><td>Windows 10 (1809+) / Windows 11，x64</td><th>分发形式</th><td>ZIP 压缩包（绿色免安装）</td></tr>
   </table>
-  <p style="font-size:12.5px;color:var(--muted);text-align:center;margin:10px 0 0;">修订记录：V1.0（2026-08-23）初稿 · V1.1（2026-08-23）新增 4.9 功能需求跟踪总表（RTM）与第 5 章 UI 界面设计 · V1.2（2026-08-23）定名「钉图 TackShot」；默认完成动作改为「复制并贴图」；新增贴图悬浮菜单与就地编辑（FR-4.10 / FR-4.11 新增、FR-4.8 升级 P0、新增 5.7 UI-7）· V1.3（2026-08-23）开放问题全部定案：MIT 开源（Q2）、技术栈定 C++ 方案 A（Q3）、x64 首发零依赖 + ARM64 可选（Q4）、GitHub Releases + HTML 图文手册（Q5）、范围外功能不排期（Q6）；功能清单独立成章（原 4.9 → 第 13 章）· V1.4（2026-08-23）UI 优化：工具条按钮加大（工具 44 / 动作 46 基准）并全 UI 按显示器 DPI 等比缩放；选区控制点、坐标标签同步放大 · V1.5（2026-08-23）新增 FR-1.11 选区白色高亮、FR-3.14 工具条悬停提示；工具条整体缩小至 1/3 并升级彩色图标（已实施，2026-08-23）· V1.6（2026-08-23）修复 FR-3.14 悬停提示不触发缺陷（静止悬停无重绘）；FR-4.1 贴图改为锚定确认时鼠标位置；新增 14.4 技术探索（窗口吸附 / GitHub Models·OCR 可行性，仅研究未实施）</p>
+  <p style="font-size:12.5px;color:var(--muted);text-align:center;margin:10px 0 0;">修订记录：V1.0（2026-08-23）初稿 · V1.1（2026-08-23）新增 4.9 功能需求跟踪总表（RTM）与第 5 章 UI 界面设计 · V1.2（2026-08-23）定名「钉图 TackShot」；默认完成动作改为「复制并贴图」；新增贴图悬浮菜单与就地编辑（FR-4.10 / FR-4.11 新增、FR-4.8 升级 P0、新增 5.7 UI-7）· V1.3（2026-08-23）开放问题全部定案：MIT 开源（Q2）、技术栈定 C++ 方案 A（Q3）、x64 首发零依赖 + ARM64 可选（Q4）、GitHub Releases + HTML 图文手册（Q5）、范围外功能不排期（Q6）；功能清单独立成章（原 4.9 → 第 13 章）· V1.4（2026-08-23）UI 优化：工具条按钮加大（工具 44 / 动作 46 基准）并全 UI 按显示器 DPI 等比缩放；选区控制点、坐标标签同步放大 · V1.5（2026-08-23）新增 FR-1.11 选区白色高亮、FR-3.14 工具条悬停提示；工具条整体缩小至 1/3 并升级彩色图标（已实施，2026-08-23）· V1.6（2026-08-23）修复 FR-3.14 悬停提示不触发缺陷（静止悬停无重绘）；FR-4.1 贴图改为锚定确认时鼠标位置；新增 14.4 技术探索（窗口吸附 / GitHub Models·OCR 可行性，仅研究未实施）· V1.7（2026-08-24）新增 FR-8 AI 能力模块（GitHub Copilot 接入，12 条，FR-8.1~8.4 为 P0）与 UI-8 结果浮窗；14.4-B 结论更新（GitHub Models 已退役、Copilot 开放端点可行）；技术依据与 UI 设计稿见根目录《AI功能技术探索.html》《AI功能UI设计.html》</p>
 </header>
 
 <nav class="toc">
@@ -367,6 +367,24 @@
   <tr><td class="id">FR-7.4</td><td>恢复默认</td><td>一键恢复全部设置为出厂值。</td><td><span class="badge b2">P2</span></td></tr>
 </table>
 
+<h3>FR-8 AI 能力（GitHub Copilot 接入，2026-08-24 立项）</h3>
+<p>以用户自己的 GitHub Copilot 订阅接入云端多模态大模型（OpenAI 兼容端点，PAT 鉴权，令牌仅存 Windows 凭据管理器），对截图/贴图执行识别类任务。设计原则：<strong>默认关闭、显式开启（opt-in）</strong>；结果复制一律为显式按钮（遵守 V2.0.3「仅复制/保存按钮写剪贴板」规则）；云端失败/未配置可降级本地 OCR。技术依据详见根目录《AI功能技术探索.html》（2026-08-24：GitHub Models 已退役，路线＝直连 Copilot 开放端点 + Windows.Media.Ocr 本地兜底），界面设计详见《AI功能UI设计.html》。</p>
+<table>
+  <tr><th style="width:76px">编号</th><th style="width:170px">需求</th><th>描述</th><th style="width:64px">优先级</th></tr>
+  <tr><td class="id">FR-8.1</td><td>AI 接入与设置</td><td>设置窗体新增 AI 页：启用开关、PAT 录入（密码框）/测试连接/清除、模型档位（快速/均衡/深度）、翻译目标语言、「发送前确认」隐私开关；令牌仅存凭据管理器（DPAPI），不落 config.json。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-8.2</td><td>截图文字提取（OCR）</td><td>贴图右键 → AI → 提取文字：图片发送云端多模态模型，保留段落结构，结果浮窗流式展示。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-8.3</td><td>图中文字翻译</td><td>识别＋翻译一次调用完成，目标语言可配（默认中英互译），对照展示。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-8.4</td><td>AI 结果浮窗（共用基座）</td><td>全部 AI 功能共用结果浮窗：流式渲染、复制（显式）/重试/换模型、加载/错误/未配置状态与降级引导、Esc 关闭、随贴图置顶层级。</td><td><span class="badge b0">P0</span></td></tr>
+  <tr><td class="id">FR-8.5</td><td>本地 OCR 兜底</td><td>Windows.Media.Ocr（PowerShell 桥接，零依赖离线）：未配置 AI / 网络不可用 / 额度耗尽 / 隐私敏感场景的纯文字提取。</td><td><span class="badge b1">P1</span></td></tr>
+  <tr><td class="id">FR-8.6</td><td>截图问答</td><td>对贴图自由提问（多轮，带图上下文）。</td><td><span class="badge b1">P1</span></td></tr>
+  <tr><td class="id">FR-8.7</td><td>报错截图诊断</td><td>识别报错弹窗/堆栈，给出解释与修复建议。</td><td><span class="badge b1">P1</span></td></tr>
+  <tr><td class="id">FR-8.8</td><td>代码截图还原</td><td>识别代码＋语言检测，输出带语言标注的代码块，一键复制。</td><td><span class="badge b1">P1</span></td></tr>
+  <tr><td class="id">FR-8.9</td><td>表格/公式提取</td><td>表格 → Markdown/CSV；公式 → LaTeX。</td><td><span class="badge b1">P1</span></td></tr>
+  <tr><td class="id">FR-8.10</td><td>长截图摘要</td><td>长贴图要点摘要。</td><td><span class="badge b2">P2</span></td></tr>
+  <tr><td class="id">FR-8.11</td><td>敏感信息检测</td><td>发送云端前扫描身份证/手机号/密钥等模式，预警并可联动马赛克工具。</td><td><span class="badge b2">P2</span></td></tr>
+  <tr><td class="id">FR-8.12</td><td>AI 文件名建议</td><td>保存时按内容建议文件名。</td><td><span class="badge b2">P2</span></td></tr>
+</table>
+
 <h3>4.8 核心交互流程（主链路）</h3>
 <div class="flow">
   热键触发 → 冻结屏幕快照并盖遮罩（多屏全覆盖） → 拖拽框选（显示坐标/尺寸，可窗口吸附） → 松开出现工具条 → 选择工具编辑（可撤销/重做） → <strong>✓ 确认</strong>（默认：复制到剪贴板 + 贴图置顶） / <strong>另存为</strong> / <strong>仅复制</strong> / <strong>✗ 取消</strong> → 贴图常驻屏幕（悬停可唤出悬浮菜单继续编辑，见 5.7），会话结束焦点归还原应用
@@ -412,6 +430,7 @@
   <tr><td class="id">UI-5</td><td>设置窗口</td><td>托盘菜单 → 设置</td><td>FR-7.x</td></tr>
   <tr><td class="id">UI-6</td><td>气泡与提示反馈</td><td>各类事件反馈</td><td>见 5.10</td></tr>
   <tr><td class="id">UI-7</td><td>贴图悬浮菜单与就地编辑</td><td>鼠标悬停贴图</td><td>FR-4.8 / FR-4.10 / FR-4.11</td></tr>
+  <tr><td class="id">UI-8</td><td>AI 结果浮窗与贴图右键 AI 菜单</td><td>贴图右键 → AI 子菜单触发；未配置时引导至设置（设计稿见《AI功能UI设计.html》）</td><td>FR-8.x</td></tr>
 </table>
 
 <h3>5.4 UI-1 · 截图遮罩 / 框选层（主界面）</h3>
@@ -945,6 +964,18 @@
   <tr><td class="id">FR-7.2</td><td>设置</td><td>输出设置页</td><td><span class="badge b1">P1</span></td><td><span class="st st-d">开发中</span></td><td>M3</td><td>V2.1：默认保存目录（浏览/恢复默认）已入窗体；图片格式/JPEG 质量仍经 config.json</td></tr>
   <tr><td class="id">FR-7.3</td><td>设置</td><td>通用设置页</td><td><span class="badge b1">P1</span></td><td><span class="st st-t">待开发</span></td><td>M3</td><td>—</td></tr>
   <tr><td class="id">FR-7.4</td><td>设置</td><td>恢复默认设置</td><td><span class="badge b2">P2</span></td><td><span class="st st-t">待开发</span></td><td>远期</td><td>—</td></tr>
+  <tr><td class="id">FR-8.1</td><td>AI 能力</td><td>AI 接入与设置（PAT/测试连接/模型档位/隐私开关，令牌存凭据管理器）</td><td><span class="badge b0">P0</span></td><td><span class="st st-d">开发中</span></td><td>当前迭代</td><td>V2.3-AI 已实现于 ai/ 独立目录（官方 SDK 1.0.11，Java 17+；设置三标签页/测试连接/凭据管理器）；真实链路待 PAT 实测</td></tr>
+  <tr><td class="id">FR-8.2</td><td>AI 能力</td><td>截图文字提取（OCR，云端多模态）</td><td><span class="badge b0">P0</span></td><td><span class="st st-d">开发中</span></td><td>当前迭代</td><td>同上；入口三处＝贴图右键 AI 菜单＋托盘识别剪贴板＋编辑器 AI 按钮（视觉验证通过）</td></tr>
+  <tr><td class="id">FR-8.3</td><td>AI 能力</td><td>图中文字翻译（识别+翻译一次调用，对照展示）</td><td><span class="badge b0">P0</span></td><td><span class="st st-d">开发中</span></td><td>当前迭代</td><td>同上；「原/译」对照着色渲染已实现</td></tr>
+  <tr><td class="id">FR-8.4</td><td>AI 能力</td><td>AI 结果浮窗（流式/复制/重试/换模型/降级引导，共用基座）</td><td><span class="badge b0">P0</span></td><td><span class="st st-d">开发中</span></td><td>当前迭代</td><td>同上；停靠贴图旁+继承置顶+关窗取消（D1/D5），复制为显式按钮（V2.0.3 规则）</td></tr>
+  <tr><td class="id">FR-8.5</td><td>AI 能力</td><td>本地 OCR 兜底（Windows.Media.Ocr，离线零依赖）</td><td><span class="badge b1">P1</span></td><td><span class="st st-t">待开发</span></td><td>远期</td><td>技术路线已定（PowerShell 桥），随 P0 之后的批次实施</td></tr>
+  <tr><td class="id">FR-8.6</td><td>AI 能力</td><td>截图问答（多轮带图）</td><td><span class="badge b1">P1</span></td><td><span class="st st-t">待开发</span></td><td>远期</td><td>技术探索报告 F3</td></tr>
+  <tr><td class="id">FR-8.7</td><td>AI 能力</td><td>报错截图诊断</td><td><span class="badge b1">P1</span></td><td><span class="st st-t">待开发</span></td><td>远期</td><td>技术探索报告 F4</td></tr>
+  <tr><td class="id">FR-8.8</td><td>AI 能力</td><td>代码截图还原</td><td><span class="badge b1">P1</span></td><td><span class="st st-t">待开发</span></td><td>远期</td><td>技术探索报告 F5</td></tr>
+  <tr><td class="id">FR-8.9</td><td>AI 能力</td><td>表格/公式提取（Markdown/CSV/LaTeX）</td><td><span class="badge b1">P1</span></td><td><span class="st st-t">待开发</span></td><td>远期</td><td>技术探索报告 F6</td></tr>
+  <tr><td class="id">FR-8.10</td><td>AI 能力</td><td>长截图摘要</td><td><span class="badge b2">P2</span></td><td><span class="st st-t">待开发</span></td><td>远期</td><td>技术探索报告 F8</td></tr>
+  <tr><td class="id">FR-8.11</td><td>AI 能力</td><td>敏感信息检测（联动马赛克）</td><td><span class="badge b2">P2</span></td><td><span class="st st-t">待开发</span></td><td>远期</td><td>技术探索报告 F9</td></tr>
+  <tr><td class="id">FR-8.12</td><td>AI 能力</td><td>AI 文件名建议</td><td><span class="badge b2">P2</span></td><td><span class="st st-t">待开发</span></td><td>远期</td><td>技术探索报告 F10</td></tr>
 </table>
 <p><strong>变更记录：</strong></p>
 <table>
@@ -989,7 +1020,10 @@
   <tr><td>2026-08-23</td><td>变更</td><td><strong>V2.0.3（用户决策）：</strong>剪贴板写入时机收窄——<strong>仅点击『复制』或『保存』按钮时</strong>才写剪贴板，其余路径一律不写：① 截图确认（✓/Enter/双击/贴图按钮）不再复制：confirm_action=copy_pin（默认）→只贴图、copy_save→只自动保存、copy→按默认贴图处理；② 贴图编辑完成（✓）不再同步剪贴板（FR-4.11 裁剪，需手动点『复制』）；③ 保留写入的仅三处：编辑器『保存』、贴图悬浮菜单『保存』（均=复制+落盘+关闭）、贴图悬浮菜单『复制』（复制+关闭）。Ctrl+Alt+P 贴图热键的剪贴板读取不属于写入，不受影响。背景：用户不希望截图/贴图过程覆盖剪贴板中已有内容</td></tr>
   <tr><td>2026-08-24</td><td>缺陷修复</td><td><strong>V2.0.4：</strong>托盘右键菜单英文系统仍方框（用户实测：V2.0.2 的 AWT MenuItem.setFont 未生效——AWT 自绘菜单对字体应用不可控；同一台机自绘悬浮提示正常，说明 Java2D+字体探测本身工作）——托盘菜单由 AWT PopupMenu 改为 <strong>Swing JPopupMenu 完全自绘</strong>（置顶承载窗内轻量弹出，与悬浮提示同一 Java2D 渲染路径）：右键呼出、位置贴任务栏上方并夹紧屏幕、Esc/点击外部关闭、双击托盘仍为区域截图；菜单项/勾选项（开机自启动）/禁用项（设置 M3）/分隔线全部 Swing 化，字体显式取探测族</td></tr>
   <tr><td>2026-08-24</td><td>新增</td><td><strong>V2.1（两项用户需求，交互语义经用户确认）：</strong>① 编辑界面补齐『保存』『复制』（FR-3.11/FR-4.8）——截图工具条新增『复制』（当前选区+标注合成图入剪贴板+结束会话，不落盘；『保存』维持自动保存+复制+结束）；贴图编辑态工具条新增『复制』『保存』（输出含标注合成图，复制=仅剪贴板、保存=自动保存+复制，均关闭贴图；✓ 仅应用编辑、✗ 取消保持不变）；符合 V2.0.3"仅复制/保存按钮写剪贴板"规则。② 新增设置窗体（FR-7.1 完成、FR-7.2 部分、FR-2.2 完成）：托盘菜单"设置…"启用——热键三项点击录入框按键捕获（须含 Ctrl/Alt/Win 修饰键、三者不可重复，保存后热键线程即时重注册、被占用气泡提示）、默认图片保存目录（浏览/恢复默认，空=图片库\TackShot），保存写回 config.json 立即生效</td></tr>
-  <tr><td>2026-08-24</td><td>新增+UI</td><td><strong>V2.2（交互语义经用户逐项确认）：</strong>① FR-3.10 对象编辑落地：编辑工具条（截图编辑器+贴图编辑态）新增选择工具（鼠标箭头，V 键）——八类标注全可选中和移动；矩形/椭圆/马赛克/高亮/画笔包围盒 8 向缩放、直线/箭头拖端点、文字拖角按比例改字号；Delete 删除；选中后色板/线宽直接改对象属性；撤销改为快照式（移动/缩放/删除/改属性皆可 Ctrl+Z）。② 图标重画：保存改软盘图标；钉住按钮改钉子图标、文案"贴图"→"钉住"（仅该按钮，托盘/热键等"贴图"术语不变）</td></tr></table>
+  <tr><td>2026-08-24</td><td>新增+UI</td><td><strong>V2.2（交互语义经用户逐项确认）：</strong>① FR-3.10 对象编辑落地：编辑工具条（截图编辑器+贴图编辑态）新增选择工具（鼠标箭头，V 键）——八类标注全可选中和移动；矩形/椭圆/马赛克/高亮/画笔包围盒 8 向缩放、直线/箭头拖端点、文字拖角按比例改字号；Delete 删除；选中后色板/线宽直接改对象属性；撤销改为快照式（移动/缩放/删除/改属性皆可 Ctrl+Z）。② 图标重画：保存改软盘图标；钉住按钮改钉子图标、文案"贴图"→"钉住"（仅该按钮，托盘/热键等"贴图"术语不变）</td></tr>
+  <tr><td>2026-08-24</td><td>新增</td><td><strong>V2.3 立项：新增 FR-8 AI 能力模块（12 条，FR-8.1~8.4 为 P0）与 UI-8。</strong>公司环境确认可经 GitHub Copilot 接入 AI 模型（用户决策）；技术依据＝根目录《AI功能技术探索.html》（关键结论：GitHub Models 已于 2026-07-30 全量退役；路线＝直连 Copilot OpenAI 兼容开放端点（PAT 鉴权）＋Windows.Media.Ocr 本地兜底；官方 Copilot SDK 需 Java 17+ 且捆绑 CLI，暂不采用）；UI 设计稿＝《AI功能UI设计.html》（本轮交付，关键交互待用户选项确认后实施）；FR-8.1~8.4 置开发中（设计评审），FR-8.5~8.12 待开发；14.4-B 结论同步更新</td></tr>
+  <tr><td>2026-08-24</td><td>变更</td><td><strong>V2.3 设计评审定案（用户确认 D1~D7，设计稿 V1.1）：</strong>D1 结果浮窗＝停靠贴图旁（继承置顶层级，贴图关则浮窗关）；D2 设置＝现有窗体改三标签页（热键与目录/AI/关于）；D3 P0 入口三项全取＝贴图右键 AI 菜单＋托盘「AI 识别剪贴板」＋编辑器工具条 AI 按钮（由 P1 提级，影响 FR-3.11 工具条布局与贴图最小窗宽）；D4 技术路线＝<strong>官方 Copilot SDK（com.github:copilot-sdk-java，用户决策）</strong>——实施前提：Java 17+（公司机已具备，构建与发行说明同步调整）、SDK 及传递依赖引入 lib/、SDK 捆绑 Copilot CLI 子进程的内存/便携影响，均需实施前 PoC 验证（Provider 抽象层保留回退直连端点能力）；D5 浮窗关闭即取消进行中请求、D6 贴图右键菜单仅含 AI 项、D7「发送前确认」默认开启（可勾选不再提示）——三项按设计推荐执行</td></tr>
+  <tr><td>2026-08-24</td><td>完成</td><td><strong>V2.3-AI 实现完成（独立目录，用户决策）：FR-8.1~8.4 在 ai/ 目录实现，主版本零改动。</strong>架构＝ai/src-java 主版本源码副本＋tackshot.ai 新包（AiService 门面/CopilotSdk 官方 SDK 适配（com.github:copilot-sdk-java 1.0.11，懒启动+空闲 3 分钟自停 CLI）/TokenVault 凭据管理器（自声明 advapi32 Cred*W 绑定）/ImagePrep（≤1568px JPEG85）/PromptLib（原/译对照模板）/AiResultWindow（停靠浮窗五状态）/AiMenu）；身份隔离＝tackshot-ai.lock、config-ai.json、tackshot-ai.log、自启名 TackShotAI。入口＝贴图右键 AI 菜单（原右键关闭保留为菜单末项——设计稿"右键未占用"有误，实测原右键=关闭）＋托盘「AI 识别剪贴板」＋编辑器工具条 TB_AI 星光按钮（两处工具条最小窗宽自动跟随）。验证＝构建（javac --release 17，JDK18）通过；/test 3/3（与主版本同时运行验证互不干扰）；/aitest 视觉验证＝设置三标签页 AI 页、未配置引导卡浮窗（修复 dock 时序 bug：内容填充前 pack 致宽 51px→固定 420 逻辑宽）、右键菜单六项（经 Win32 SendInput+截图+读图核对，无乱码）。待办＝真实 PAT 端到端识别（BlobAttachment 格式与流式 delta 为推断 API，待实测）、CLI 子进程内存 PoC、公司机 JDK17 运行；ai/README.md 已述构建/同步说明</td></tr></table>
 
 <h2 id="s14">14. 附录 <span class="en">Appendix</span></h2>
 
@@ -1036,6 +1070,7 @@
   <tr><td>本地 LLM（Ollama 等）</td><td>✅ 可行</td><td>OpenAI 兼容协议天然同构：同一接入层仅需换端点即可在云端（GitHub Models）与本地（Ollama）之间切换</td></tr>
 </table>
 <p><strong>建议架构（若未来采纳）</strong>：OCR 采用 Windows.Media.Ocr（离线优先）；AI 面板做成可选模块，统一走 OpenAI 兼容协议、端点与令牌用户可配、默认关闭。许可证面：均为 API 调用与系统组件，无代码引入，合规无虞。</p>
+<p><strong>2026-08-24 更新（V2.3 立项，需求已按 FR-8.x 纳入第 4/13 章）：</strong>上表 B 部分结论已过时——① GitHub Models 于 <strong>2026-07-30 全量退役</strong>（推理 API/BYOK 均关闭，官方文档确认）；② Copilot 侧出现事实可用的开放端点 <code>api.githubcopilot.com</code>（OpenAI 兼容，Docker/aider/LiteLLM 正式采用；官方 Copilot SDK 2026-04 起公测但要求 Java 17+ 并捆绑 CLI，与本项 Java 11/便携约束冲突）。新结论：<strong>路线①</strong>直连开放端点（PAT 鉴权，Java 11 标准库零依赖实现，多模态模型覆盖 OCR/翻译/表格/公式）；<strong>路线②</strong>Windows.Media.Ocr 本地兜底（维持本表"离线优先"定位，作为未配置/离线/隐私场景）；Ollama 路线维持可选。完整调研与风险分析见根目录《AI功能技术探索.html》，界面设计见《AI功能UI设计.html》。</p>
 
 
 <ul>

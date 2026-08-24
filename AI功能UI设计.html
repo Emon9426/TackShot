@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>钉图 TackShot — AI 功能 UI 设计稿（P0：FR-8.1~8.4）</title>
+<style>
+  :root{
+    --ink:#1f2430; --sub:#5a6474; --line:#dfe3ea; --bg:#f6f7fa; --card:#fff;
+    --blue:#2563eb; --blue2:#3b82f6; --blue-bg:#eef4ff;
+    --green:#16a34a; --green-bg:#ecfdf3; --red:#dc2626; --red-bg:#fef2f2;
+    --amber:#b45309; --amber-bg:#fffbeb; --violet:#6d28d9; --violet-bg:#f5f3ff;
+    /* —— 应用现有视觉 tokens（取自 Tb.java 自绘色板）—— */
+    --app-panel:rgba(27,33,44,.95); --app-panel-solid:#1b212c; --app-hover:#334155;
+    --app-text:#e2e8f0; --app-text-hi:#f1f5f9; --app-muted:#94a3b8; --app-dim:#64748b;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:"Microsoft YaHei UI","Microsoft YaHei","Segoe UI",system-ui,sans-serif;
+       font-size:15px;line-height:1.75;}
+  .page{max-width:1120px;margin:0 auto;padding:32px 28px 80px;}
+  header.hero{background:linear-gradient(135deg,#1e2a4a 0%,#2563eb 100%);color:#fff;border-radius:14px;padding:28px 34px;margin-bottom:26px;}
+  header.hero h1{margin:0 0 8px;font-size:25px;}
+  header.hero .meta{font-size:13px;opacity:.92;}
+  header.hero .meta span{display:inline-block;margin-right:20px;}
+  h2{font-size:20px;margin:44px 0 14px;padding:8px 0 8px 14px;border-left:5px solid var(--blue);background:linear-gradient(90deg,var(--blue-bg),transparent 70%);border-radius:4px;}
+  h2 .no{color:var(--blue);margin-right:6px;font-family:Consolas,monospace;}
+  h3{font-size:16.5px;margin:26px 0 8px;color:#16202f;}
+  h4{font-size:15px;margin:18px 0 6px;color:#33405a;}
+  p{margin:8px 0;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin:14px 0;}
+  table{border-collapse:collapse;width:100%;margin:12px 0;background:#fff;font-size:13.5px;}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top;}
+  th{background:#f1f3f7;font-weight:600;white-space:nowrap;}
+  code{font-family:Consolas,monospace;background:#f1f3f7;padding:1px 5px;border-radius:4px;font-size:13px;}
+  .small{font-size:12.5px;color:var(--sub);}
+  .note{border-left:4px solid var(--amber);background:var(--amber-bg);padding:10px 14px;border-radius:6px;margin:12px 0;}
+  .note.blue{border-left-color:var(--blue);background:var(--blue-bg);}
+  .note.green{border-left-color:var(--green);background:var(--green-bg);}
+  .badge{display:inline-block;padding:1px 10px;border-radius:999px;font-size:12px;font-weight:600;}
+  .b0{background:#dbeafe;color:#1d4ed8;} .b1{background:#dcfce7;color:#15803d;} .b2{background:#f1f5f9;color:#475569;}
+  ul,ol{margin:8px 0;padding-left:26px;} li{margin:4px 0;}
+
+  /* ============ 桌面场景画布 ============ */
+  .stage{position:relative;border-radius:12px;overflow:hidden;margin:14px 0;
+         background:
+           repeating-linear-gradient(0deg,#e8edf5 0 34px,#eef2f8 34px 68px);
+         border:1px solid #c9d2e0; min-height:280px;}
+  .stage .label{position:absolute;left:10px;top:8px;font-size:11.5px;color:#6b7890;z-index:1;
+         background:rgba(255,255,255,.8);padding:1px 8px;border-radius:99px;border:1px solid #d6deeb;}
+  /* 假桌面内容（示意底图） */
+  .fakewin{position:absolute;background:#fff;border:1px solid #c4ccd9;border-radius:8px;box-shadow:0 8px 22px rgba(15,23,42,.12);overflow:hidden;}
+  .fakewin .tb{height:26px;background:#eef1f6;border-bottom:1px solid #d7dde8;display:flex;align-items:center;gap:6px;padding:0 10px;font-size:11px;color:#64748b;}
+  .fakewin .dot{width:9px;height:9px;border-radius:50%;}
+  .fakewin .bd{padding:12px 16px;font-size:12px;color:#334155;line-height:1.8;}
+  .fakeline{height:8px;border-radius:4px;background:#e2e8f0;margin:7px 0;}
+  .fakeline.s{width:56%;} .fakeline.m{width:78%;}
+
+  /* ============ 贴图窗（应用风格） ============ */
+  .pin{position:absolute;background:#fff;border:2px solid #0f172a;box-shadow:0 10px 30px rgba(15,23,42,.28);z-index:5;}
+  .pin .cap{padding:6px 8px;font-size:11.5px;color:#334155;background:
+      linear-gradient(#fff,#fff) padding-box;letter-spacing:.5px;}
+  .pin .cap b{color:#0f172a;}
+  .pin-hud{position:absolute;background:var(--app-panel);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--app-muted);z-index:6;}
+
+  /* ============ 悬浮工具条（现有 UI 还原） ============ */
+  .floatbar{position:absolute;display:flex;gap:2px;align-items:center;background:var(--app-panel);
+      border-radius:8px;padding:4px 6px;box-shadow:0 6px 18px rgba(15,23,42,.35);z-index:6;}
+  .fbtn{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+      font-size:13px;color:var(--app-text);background:transparent;user-select:none;}
+  .fbtn.on{background:var(--app-hover);color:#fff;}
+  .fbtn svg{display:block;}
+
+  /* ============ 右键菜单（Swing 自绘风格） ============ */
+  .menu{position:absolute;background:var(--app-panel-solid);border:1px solid #3b4657;border-radius:8px;
+      box-shadow:0 12px 32px rgba(0,0,0,.45);padding:5px;min-width:196px;z-index:9;}
+  .mi{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:5px;font-size:13px;color:var(--app-text);}
+  .mi .sc{margin-left:auto;color:var(--app-dim);font-size:11.5px;}
+  .mi.hot{background:var(--app-hover);color:#fff;}
+  .mi.dis{color:#5b6779;}
+  .msep{height:1px;background:#37414f;margin:4px 8px;}
+  .msub{position:absolute;background:var(--app-panel-solid);border:1px solid #3b4657;border-radius:8px;
+      box-shadow:0 12px 32px rgba(0,0,0,.45);padding:5px;min-width:172px;z-index:10;}
+  .mi .arr{margin-left:auto;color:var(--app-dim);font-size:11px;}
+  .mi .ico{width:16px;text-align:center;font-size:12.5px;}
+
+  /* ============ AI 结果浮窗（核心新组件） ============ */
+  .aiwin{position:absolute;background:var(--app-panel-solid);border:1px solid #3b4657;border-radius:10px;
+      box-shadow:0 16px 44px rgba(0,0,0,.5);z-index:8;display:flex;flex-direction:column;overflow:hidden;}
+  .aiwin .tbar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#222b39;
+      border-bottom:1px solid #323d4d;font-size:12.5px;color:var(--app-text-hi);}
+  .aiwin .tbar .md{font-size:11px;color:#9fb4d8;background:#2c3a52;border:1px solid #3d4f6e;border-radius:99px;padding:0 8px;}
+  .aiwin .tbar .x{margin-left:auto;color:var(--app-dim);font-size:14px;padding:0 4px;}
+  .aiwin .body{padding:12px 14px;font-size:13px;color:var(--app-text);line-height:1.85;overflow:auto;}
+  .aiwin .body .txt{color:#f1f5f9;}
+  .aiwin .body .ori{color:#8fa0b8;font-size:12px;}
+  .aiwin .foot{display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid #323d4d;font-size:12px;}
+  .abtn{font-size:12px;color:var(--app-text);background:#334155;border:1px solid #46556c;border-radius:6px;padding:3px 12px;}
+  .abtn.pri{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .abtn.ghost{background:transparent;border-color:#46556c;color:var(--app-muted);}
+  .stat{margin-left:auto;color:var(--app-dim);font-size:11.5px;}
+  .caret{display:inline-block;width:7px;height:15px;background:var(--blue2);vertical-align:-2px;
+      animation:blink 1s steps(1) infinite;}
+  @keyframes blink{50%{opacity:0;}}
+  .dots span{display:inline-block;width:5px;height:5px;margin-right:3px;border-radius:50%;background:var(--app-muted);
+      animation:jump 1.2s infinite;}
+  .dots span:nth-child(2){animation-delay:.15s;} .dots span:nth-child(3){animation-delay:.3s;}
+  @keyframes jump{0%,60%,100%{transform:translateY(0);opacity:.5;}30%{transform:translateY(-4px);opacity:1;}}
+
+  /* ============ 设置窗 mockup ============ */
+  .settings{background:#fff;border:1px solid #b9c3d4;border-radius:10px;box-shadow:0 14px 40px rgba(15,23,42,.18);
+      overflow:hidden;margin:14px 0;font-size:13px;}
+  .settings .cap{background:#f1f4f9;border-bottom:1px solid #d7dde8;padding:8px 14px;font-weight:600;color:#1e293b;display:flex;align-items:center;gap:8px;}
+  .settings .cap .btns{margin-left:auto;display:flex;gap:6px;}
+  .settings .cap .cbtn{width:11px;height:11px;border-radius:50%;border:1px solid #b6bfcc;background:#fff;}
+  .tabs{display:flex;background:#f6f8fb;border-bottom:1px solid #d7dde8;padding:0 8px;}
+  .tab{padding:8px 18px;font-size:13px;color:#5a6779;border-bottom:2px solid transparent;}
+  .tab.on{color:#1d4ed8;border-bottom-color:var(--blue);font-weight:600;}
+  .sbody{padding:16px 20px;display:grid;grid-template-columns:130px 1fr 150px;gap:11px 14px;align-items:center;}
+  .sbody .row2{grid-column:2/4;}
+  .slabel{color:#334155;text-align:right;}
+  .inp{border:1px solid #a9b4c6;border-radius:6px;padding:5px 10px;background:#fff;color:#1e293b;width:100%;}
+  .inp.dis{background:#f1f4f9;color:#8a95a8;}
+  .sbtn{font-size:12.5px;border:1px solid #a9b4c6;border-radius:6px;padding:4px 12px;background:#fff;color:#334155;white-space:nowrap;}
+  .sbtn.pri{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .radio{display:inline-flex;gap:14px;align-items:center;color:#1e293b;}
+  .radio i{width:13px;height:13px;border-radius:50%;border:1.5px solid #7c8aa0;display:inline-block;vertical-align:-2px;margin-right:5px;}
+  .radio i.on{border-color:var(--blue);box-shadow:inset 0 0 0 3px #fff;background:var(--blue);}
+  .chk{color:#1e293b;} .chk i{width:13px;height:13px;border-radius:3px;border:1.5px solid #7c8aa0;display:inline-block;vertical-align:-2px;margin-right:6px;}
+  .chk i.on{background:var(--blue);border-color:var(--blue);color:#fff;font-size:10px;line-height:12px;text-align:center;}
+  .okmsg{color:var(--green);font-size:12px;} .warnmsg{color:var(--amber);font-size:12px;}
+  .hintline{grid-column:1/4;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;padding:8px 12px;color:#64748b;font-size:12px;}
+
+  .flow{background:#101623;color:#dbe4f3;border-radius:10px;padding:14px 18px;font-family:Consolas,monospace;font-size:12.8px;line-height:1.7;overflow-x:auto;white-space:pre;}
+  .state{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0;}
+  .st{border-radius:8px;padding:6px 14px;font-size:12.5px;border:1.5px solid #9fb0c8;color:#334155;background:#fff;}
+  .st.go{border-color:var(--blue);color:#1d4ed8;background:var(--blue-bg);}
+  .st.bad{border-color:var(--red);color:var(--red);background:var(--red-bg);}
+  .st.done{border-color:var(--green);color:var(--green);background:var(--green-bg);}
+  .arrow{color:#94a3b8;font-size:15px;}
+  footer{margin-top:52px;padding-top:14px;border-top:1px solid var(--line);color:var(--sub);font-size:12.5px;}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="hero">
+  <h1>钉图 TackShot · AI 功能 UI 设计稿</h1>
+  <div class="meta">
+    <span>📅 2026-08-24 · V1.1（设计评审稿 · <b>D1~D7 已确认</b>，见第 8 章）</span>
+    <span>🎯 范围：P0 = FR-8.1 设置接入 / FR-8.2 提取文字 / FR-8.3 翻译 / FR-8.4 结果浮窗</span>
+    <span>📐 依据：《AI功能技术探索.html》路线 B+D</span>
+    <span>🎨 视觉：对齐应用现有自绘风格（深色石板面板 #1B212C + 蓝 #2563EB）</span>
+  </div>
+</header>
+
+<div class="card">
+  <b>本稿内容：</b>① 入口设计（贴图右键 AI 菜单为主）；② 核心新组件「AI 结果浮窗」五状态高保真 mockup；③ AI 设置页布局；④ 交互流程与状态机；⑤ 视觉规范；⑥ 实现挂载点；⑦ 待确认决策点（7 项，见第 8 章——确认后即可进入实施）。
+  <div class="note" style="margin-bottom:0;"><b>本轮只做设计，未实施任何代码。</b>需求已按项目规则登记至《需求文档.html》（第 4 章 FR-8、第 5 章 UI-8、第 13 章 RTM、变更记录）。</div>
+</div>
+
+<!-- ============================================================ -->
+<h2><span class="no">1</span>设计原则（继承现有产品哲学）</h2>
+<div class="card">
+  <ol>
+    <li><b>AI 是可选增强，不是依赖</b>——默认关闭（opt-in）；未配置/离线/失败时所有既有功能不受任何影响；本地 OCR（FR-8.5，P1）落地后可完全离线。</li>
+    <li><b>不碰用户剪贴板</b>——延续 V2.0.3 决策：识别结果只在用户点击「复制」按钮时才写剪贴板，绝不自动覆盖。</li>
+    <li><b>视觉与现有 UI 同族</b>——结果浮窗/菜单复用 Tb.java 自绘色板（深色石板 + 蓝强调 + 雅黑探测字体），与贴图悬浮菜单、托盘菜单同一视觉语言；随 DPI 缩放。</li>
+    <li><b>过程可见、可打断</b>——流式逐字渲染（用户即时看到产出）；加载中可取消（Esc）；错误必须给出下一步动作（重试 / 打开设置）。</li>
+    <li><b>隐私前置</b>——首次使用强提示「截图将发送至 GitHub 及模型供应商」；「发送前确认」默认开启（可关闭）；令牌只存 Windows 凭据管理器。</li>
+  </ol>
+</div>
+
+<!-- ============================================================ -->
+<h2><span class="no">2</span>入口设计</h2>
+
+<h3>2.1 主入口 · 贴图右键 →「AI」子菜单 <span class="badge b0">P0</span></h3>
+<p>贴图<b>右键当前未被任何功能占用</b>（FR-4.6 关闭是 Esc/双击，编辑/复制/保存都在悬停工具条），是零冲突的理想入口。右键呼出上下文菜单，含 AI 子菜单；悬停工具条保持原样不动。</p>
+
+<div class="stage" style="min-height:330px;">
+  <div class="label">场景：桌面上有一张贴图 → 右键呼出菜单 → 悬停「AI」展开子菜单</div>
+  <div class="fakewin" style="left:4%;top:11%;width:30%;height:74%;">
+    <div class="tb"><span class="dot" style="background:#f87171"></span><span class="dot" style="background:#fbbf24"></span><span class="dot" style="background:#34d399"></span>浏览器</div>
+    <div class="bd"><div class="fakeline"></div><div class="fakeline m"></div><div class="fakeline s"></div><div class="fakeline"></div><div class="fakeline m"></div><div class="fakeline s"></div><div class="fakeline"></div><div class="fakeline m"></div></div>
+  </div>
+  <!-- 贴图 -->
+  <div class="pin" style="right:9%;top:16%;width:46%;">
+    <div class="cap"><b>📌 贴图</b>（2px 黑边 · 置顶） — 右键此处</div>
+    <div style="background:#fff;padding:14px 16px;">
+      <div style="font-size:12.5px;color:#0f172a;line-height:1.9;">
+        <b>Weekly Report — Aug 24</b><br>
+        1. 完成 V2.2 对象编辑功能交付<br>
+        2. AI 技术探索报告完成评审<br>
+        3. 下周计划：P0 OCR + 翻译
+      </div>
+    </div>
+  </div>
+  <!-- 悬停工具条（现有，不动） -->
+  <div class="floatbar" style="right:26%;top:9%;">
+    <div class="fbtn" title="编辑">✏️</div><div class="fbtn" title="复制">⧉</div><div class="fbtn" title="保存">💾</div><div class="fbtn on" title="置顶">📌</div><div class="fbtn" title="透明度">◐</div>
+  </div>
+  <!-- 右键菜单 -->
+  <div class="menu" style="right:44%;top:34%;">
+    <div class="mi"><span class="ico">✏️</span>编辑<span class="sc"></span></div>
+    <div class="mi"><span class="ico">⧉</span>复制图片</div>
+    <div class="mi"><span class="ico">💾</span>保存图片</div>
+    <div class="msep"></div>
+    <div class="mi hot"><span class="ico">✨</span>AI<span class="arr">▶</span></div>
+    <div class="msep"></div>
+    <div class="mi">置顶显示<span class="sc">✓</span></div>
+    <div class="mi">关闭贴图<span class="sc">Esc</span></div>
+  </div>
+  <!-- AI 子菜单 -->
+  <div class="msub" style="right:19%;top:44%;">
+    <div class="mi"><span class="ico">📄</span>提取文字<span class="sc">OCR</span></div>
+    <div class="mi"><span class="ico">译</span>翻译成中文<span class="sc">→ 中文</span></div>
+    <div class="mi"><span class="ico">A</span>翻译成英文<span class="sc">→ EN</span></div>
+    <div class="msep"></div>
+    <div class="mi dis">问答 / 诊断 / 表格…<span class="sc">P1</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <b>规格说明：</b>
+  <ul>
+    <li>菜单为 Swing <code>JPopupMenu</code> 自绘（复用 V2.0.4 托盘菜单同款技术路线：探测字体、随 DPI、Esc/点外部关闭），样式与托盘菜单一致；</li>
+    <li>「AI ▸」子菜单首版四项：<b>提取文字</b>、<b>翻译成中文</b>、<b>翻译成英文</b>（目标语言跟随设置默认值动态显示）、灰显的后续功能占位（悬停提示“P1 批次”）；</li>
+    <li>未配置 AI 时子菜单仅两项：「提取文字（本地）」灰显 P1 + 「AI 设置…」直达设置页（见 3.5 未配置态）；</li>
+    <li>菜单其余项（编辑/复制/保存/置顶/关闭）为既有功能整合——目前这些动作分散在悬停工具条，右键菜单作为等价入口补充，不影响原工具条（<b>决策点 D6</b>：右键菜单是否包含非 AI 项）。</li>
+  </ul>
+</div>
+
+<h3>2.2 辅入口 · 托盘菜单与设置 <span class="badge b0">P0（仅设置项）</span></h3>
+<div class="stage" style="min-height:250px;">
+  <div class="label">托盘菜单（V2.0.4 Swing 自绘）新增一项，位于「设置…」上方</div>
+  <div class="menu" style="left:34%;top:10%;position:relative;display:inline-block;margin:16px 0 20px;">
+    <div class="mi">区域截图<span class="sc">Ctrl+Alt+A</span></div>
+    <div class="mi">全屏截图<span class="sc">Ctrl+Alt+F</span></div>
+    <div class="mi">贴图（剪贴板）<span class="sc">Ctrl+Alt+P</span></div>
+    <div class="msep"></div>
+    <div class="mi"><span class="ico">✨</span>AI 识别剪贴板图片<span class="sc">决策点 D3</span></div>
+    <div class="mi">设置…<span class="sc">含 AI 标签页</span></div>
+    <div class="mi">☐ 开机自启动</div>
+    <div class="msep"></div>
+    <div class="mi">关于 钉图 TackShot</div>
+    <div class="mi">退出</div>
+  </div>
+</div>
+<p class="small">「AI 识别剪贴板图片」＝对剪贴板中已有图片直接执行默认 AI 功能（免截图流程），属 P0 可选范围（<b>决策点 D3</b>）。设置入口不变：托盘 → 设置… → 「AI」标签页（见第 4 章）。</p>
+
+<h3>2.3 编辑器工具条 AI 按钮 <span class="badge b0">P0（用户确认 D3，由 P1 提级）</span></h3>
+<ul>
+    <li><b>挂载：</b>截图编辑器与贴图编辑态工具条的动作区（✓/贴图/复制/保存/✗）尾部新增「✨ AI」按钮，图标沿用工具条彩色自绘风格（星形，蓝色系）；</li>
+    <li><b>行为：</b>点击＝对<b>当前选区+标注合成图</b>（复用 composeEdited 合成管线）执行设置的默认 AI 功能（默认提取文字，可在设置页改）；弹出的结果浮窗遵循 D1（停靠屏幕内贴图预期位置旁 / 无贴图时屏幕右下角，置顶）；</li>
+    <li><b>工具条宽度影响：</b>两处工具条按钮数 +1，需复核窄贴图最小窗宽（pinMinWinW）基准（实施时同步调整）；</li>
+    <li>全局热键入口仍留 P1 再议（避开现有热键冲突检测复杂度）。</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2><span class="no">3</span>核心组件 · AI 结果浮窗（FR-8.4）</h2>
+
+<h3>3.1 形态与定位（决策点 D1）</h3>
+<div class="card">
+  <p>浮窗承载所有 AI 功能的产出，是本设计最重要的新组件。三个候选形态：</p>
+  <table>
+    <tr><th>方案</th><th>形态</th><th>优点</th><th>缺点</th></tr>
+    <tr><td><b>A. 停靠贴图旁（推荐）</b></td><td>独立无装饰 JFrame，出现在贴图右侧（放不下时左侧/下方，屏幕夹紧）；<b>继承该贴图的置顶层级</b>；可拖动；宽 420 / 高自适应（上限 60% 屏高，超出滚动）</td><td>图文同屏对照（截图与识别结果并排）；贴图关闭时浮窗随之关闭；一次心智模型</td><td>贴图在屏幕边缘时需智能避让</td></tr>
+    <tr><td>B. 屏幕居中独立窗</td><td>模态对话框居中</td><td>实现最简单</td><td>遮挡贴图本身，无对照价值；打断感强</td></tr>
+    <tr><td>C. 贴图内嵌展开</td><td>贴图窗口自身向下扩展一块内容区</td><td>视觉最一体</td><td>贴图窗口结构复杂化（点击穿透/缩放/拖动都要特判）；与贴图“轻”的定位冲突</td></tr>
+  </table>
+  <p style="margin-bottom:0;">推荐 <b>A</b>：技术上是普通 Swing 窗口（复用无装饰 JFrame + makeActivatable 经验），交互上“贴图=源、浮窗=果”关系清晰。</p>
+</div>
+
+<h3>3.2 状态一 · 加载中（流式）</h3>
+<div class="stage" style="min-height:300px;">
+  <div class="label">发出请求后立即出现；流式逐字渲染（SSE），Esc 或「取消」中止</div>
+  <div class="pin" style="left:4%;top:14%;width:34%;">
+    <div class="cap"><b>📌 贴图</b>（源）</div>
+    <div style="background:#fff;padding:12px 14px;font-size:12px;color:#0f172a;line-height:1.9;">
+      Weekly Report — Aug 24<br>1. 完成 V2.2 对象编辑功能交付<br>2. AI 技术探索报告完成评审
+    </div>
+  </div>
+  <div class="aiwin" style="left:42%;top:9%;width:46%;">
+    <div class="tbar">✨ 提取文字 <span class="md">gpt-4o-mini · 快速</span> <span class="x">✕</span></div>
+    <div class="body" style="min-height:104px;">
+      <span class="dots"><span></span><span></span><span></span></span>
+      <span style="color:var(--app-muted);font-size:12px;">&nbsp;正在识别…</span><br><br>
+      <span class="txt">Weekly Report — Aug 24<span class="caret"></span></span>
+    </div>
+    <div class="foot">
+      <span class="abtn ghost">取消 <span style="color:var(--app-dim)">Esc</span></span>
+      <span class="stat">已发送 1,842 视觉 tokens</span>
+    </div>
+  </div>
+  <div class="pin-hud" style="left:4%;bottom:9%;">状态提示条样式同现有 HUD</div>
+</div>
+
+<h3>3.3 状态二 · 完成（提取文字）</h3>
+<div class="stage" style="min-height:330px;">
+  <div class="label">OCR 完成：文字可选中；「复制」为显式按钮（遵守 V2.0.3 剪贴板规则）；状态行显示字数/耗时</div>
+  <div class="pin" style="left:4%;top:14%;width:34%;">
+    <div class="cap"><b>📌 贴图</b>（源）</div>
+    <div style="background:#fff;padding:12px 14px;font-size:12px;color:#0f172a;line-height:1.9;">
+      Weekly Report — Aug 24<br>1. 完成 V2.2 对象编辑功能交付<br>2. AI 技术探索报告完成评审<br>3. 下周计划：P0 OCR + 翻译
+    </div>
+  </div>
+  <div class="aiwin" style="left:42%;top:9%;width:46%;">
+    <div class="tbar">✨ 提取文字 <span class="md">gpt-4o-mini · 快速</span> <span class="x">✕</span></div>
+    <div class="body" style="min-height:150px;">
+      <span class="txt">Weekly Report — Aug 24<br>1. 完成 V2.2 对象编辑功能交付<br>2. AI 技术探索报告完成评审<br>3. 下周计划：P0 OCR + 翻译</span>
+    </div>
+    <div class="foot">
+      <span class="abtn pri">⧉ 复制 <span style="opacity:.75">Ctrl+Shift+C</span></span>
+      <span class="abtn">↻ 重试</span>
+      <span class="abtn">⇄ 换模型 ▾</span>
+      <span class="stat">完成 · 96 字 · 2.8 秒</span>
+    </div>
+  </div>
+</div>
+<div class="card">
+  <b>细节：</b>① 文字区为可选中文本（JTextPane，深底浅字）；② 「换模型 ▾」弹出小菜单：快速 gpt-4o-mini / 均衡 gpt-4o / 深度 claude-sonnet-4（按 /models 实测结果动态填充），切换后立即重发；③ 「重试」沿用当前模型；④ 复制成功后按钮短暂变为「✓ 已复制」（1.2s），状态行走既有日志。
+</div>
+
+<h3>3.4 状态二 · 完成（翻译 · 对照模式）</h3>
+<div class="stage" style="min-height:330px;">
+  <div class="label">翻译默认「对照」视图：每段原文（暗色小字）+ 译文（亮色）；顶部可切「仅译文」</div>
+  <div class="pin" style="left:4%;top:14%;width:31%;">
+    <div class="cap"><b>📌 贴图</b>（英文截图源）</div>
+    <div style="background:#fff;padding:12px 14px;font-size:11.5px;color:#0f172a;line-height:1.9;">
+      Build failed: cannot find<br>symbol "CopilotProvider"<br>in module tackshot.ai
+    </div>
+  </div>
+  <div class="aiwin" style="left:39%;top:9%;width:49%;">
+    <div class="tbar">✨ 翻译 <span class="md">→ 中文</span> <span class="md">gpt-4o-mini</span>
+      <span style="margin-left:10px;font-size:11px;color:var(--app-muted);">［对照｜仅译文］</span> <span class="x">✕</span></div>
+    <div class="body" style="min-height:150px;">
+      <div class="ori">Build failed: cannot find symbol "CopilotProvider"</div>
+      <div class="txt">构建失败：找不到符号 "CopilotProvider"</div>
+      <div style="height:7px;"></div>
+      <div class="ori">in module tackshot.ai</div>
+      <div class="txt">位于模块 tackshot.ai 中</div>
+    </div>
+    <div class="foot">
+      <span class="abtn pri">⧉ 复制译文</span>
+      <span class="abtn">⧉ 复制对照</span>
+      <span class="abtn">↻ 重试</span>
+      <span class="stat">完成 · 2 段 · 2.1 秒</span>
+    </div>
+  </div>
+</div>
+
+<h3>3.5 状态三 · 未配置 / 错误（含降级引导）</h3>
+<div class="stage" style="min-height:270px;">
+  <div class="label">三种卡片式状态：未配置（引导设置）、网络/限流错误（重试）、令牌/额度错误（去设置）</div>
+  <div class="aiwin" style="left:3%;top:10%;width:30%;">
+    <div class="tbar">✨ 提取文字 <span class="x">✕</span></div>
+    <div class="body" style="text-align:center;padding:22px 14px;">
+      <div style="font-size:26px;">🔑</div>
+      <div style="color:var(--app-text-hi);font-size:13px;margin:6px 0 2px;">尚未配置 AI</div>
+      <div style="color:var(--app-muted);font-size:12px;">粘贴 GitHub 访问令牌即可启用<br>（使用你的 Copilot 订阅）</div>
+      <div style="margin-top:12px;"><span class="abtn pri">打开设置…</span> <span class="abtn ghost">取消</span></div>
+    </div>
+  </div>
+  <div class="aiwin" style="left:36%;top:10%;width:30%;">
+    <div class="tbar">✨ 提取文字 <span class="md">gpt-4o-mini</span> <span class="x">✕</span></div>
+    <div class="body" style="text-align:center;padding:22px 14px;">
+      <div style="font-size:26px;">⚠️</div>
+      <div style="color:var(--app-text-hi);font-size:13px;margin:6px 0 2px;">网络不可达</div>
+      <div style="color:var(--app-muted);font-size:12px;">无法连接 api.githubcopilot.com<br>（代理/防火墙？）</div>
+      <div style="margin-top:12px;"><span class="abtn pri">↻ 重试</span> <span class="abtn ghost">取消</span></div>
+    </div>
+  </div>
+  <div class="aiwin" style="left:69%;top:10%;width:30%;">
+    <div class="tbar">✨ 提取文字 <span class="md">gpt-4o-mini</span> <span class="x">✕</span></div>
+    <div class="body" style="text-align:center;padding:22px 14px;">
+      <div style="font-size:26px;">🎫</div>
+      <div style="color:var(--app-text-hi);font-size:13px;margin:6px 0 2px;">401 令牌无效 / 额度耗尽</div>
+      <div style="color:var(--app-muted);font-size:12px;">令牌可能过期或订阅额度用尽<br>请到设置中检查</div>
+      <div style="margin-top:12px;"><span class="abtn pri">打开设置…</span> <span class="abtn ghost">取消</span></div>
+    </div>
+  </div>
+</div>
+<p class="small">本地 OCR（FR-8.5，P1）落地后，网络/额度错误卡片将追加第三个按钮「改用本地识别」——设计已为其预留位置。</p>
+
+<h3>3.6 状态机</h3>
+<div class="state">
+  <span class="st go">未配置</span><span class="arrow">→</span>
+  <span class="st go">加载/流式中</span><span class="arrow">→</span>
+  <span class="st done">完成</span><span class="arrow">→</span>
+  <span class="st">换模型 / 重试</span><span class="arrow">↩</span>
+  <span class="st go">加载/流式中</span>
+</div>
+<div class="state">
+  <span class="st go">加载/流式中</span><span class="arrow">→</span>
+  <span class="st bad">错误（网络/401/429/额度）</span><span class="arrow">→</span>
+  <span class="st">重试 / 打开设置</span>
+</div>
+<ul>
+  <li>任何状态 <b>Esc 关闭浮窗</b>；进行中的请求后台可继续（重开贴图右键可见结果）或随浮窗关闭而取消（<b>决策点 D5</b>：默认取消，避免无主请求耗额度）；</li>
+  <li>「发送前确认」开启时，加载前先弹一次性小气泡卡：「将把这张截图发送至 GitHub（gpt-4o-mini）— [发送] [取消 [☑不再询问]]」；</li>
+  <li>贴图关闭 → 浮窗关闭；贴图编辑保存 → 结果过期提示（浅黄条“图片已修改，结果可能过期 — [重新识别]”）。</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2><span class="no">4</span>AI 设置页（FR-8.1）</h2>
+<p>承载方案（<b>决策点 D2</b>）：推荐将现有设置窗体升级为 <b>JTabbedPane 三个标签页</b>（热键与目录 / AI / 关于），热键页内容原样平移，AI 页如下。较“追加区块”方案更从容（AI 项多），较“独立窗体”少一个托盘入口。</p>
+
+<div class="settings">
+  <div class="cap">设置 · 钉图 TackShot
+    <div class="btns"><span class="cbtn"></span><span class="cbtn"></span><span class="cbtn"></span></div>
+  </div>
+  <div class="tabs">
+    <div class="tab">热键与目录</div>
+    <div class="tab on">✨ AI</div>
+    <div class="tab">关于</div>
+  </div>
+  <div class="sbody">
+    <div class="slabel">启用 AI 功能</div>
+    <div class="row2" style="text-align:left;"><span class="chk"><i class="on">✓</i>启用（关闭后右键菜单不显示 AI 项）</span></div>
+
+    <div class="slabel">GitHub 访问令牌</div>
+    <div><input class="inp" type="password" value="github_pat_••••••••••••••••••••••" style="width:100%;"></div>
+    <div style="text-align:left;white-space:nowrap;">
+      <span class="sbtn">测试连接</span> <span class="sbtn">显示</span> <span class="sbtn">清除</span>
+    </div>
+
+    <div class="slabel"></div>
+    <div class="row2 okmsg" style="text-align:left;">✓ 连接成功 · 可用模型 12 个（gpt-4o-mini、gpt-4o、claude-sonnet-4、gemini-2.5-pro…）· 订阅额度正常</div>
+
+    <div class="slabel">默认模型档</div>
+    <div class="row2 radio" style="text-align:left;">
+      <span><i class="on"></i>快速 · gpt-4o-mini（识别/翻译，最省额度）</span>
+      <span><i></i>均衡 · gpt-4o（复杂版面）</span>
+      <span><i></i>深度 · claude-sonnet-4</span>
+    </div>
+
+    <div class="slabel">翻译目标语言</div>
+    <div class="row2" style="text-align:left;"><input class="inp" style="width:130px;" value="中文 ▾"></div>
+
+    <div class="slabel">隐私</div>
+    <div class="row2" style="text-align:left;">
+      <span class="chk"><i class="on">✓</i>每次发送前确认（显示将发送的模型）</span>&nbsp;&nbsp;&nbsp;
+      <span class="chk"><i></i>不再提示（连续使用时减少打断）</span>
+    </div>
+
+    <div class="hintline">🔒 令牌仅保存在本机 Windows 凭据管理器（随 Windows 账户加密），不写入 config.json、不外传。启用云端 AI 后，截图内容将发送至 GitHub 及其模型供应商（OpenAI / Anthropic / Google）处理——请勿对涉密截图使用云端功能。用量按 token 计入你的 Copilot 订阅（AI Credits）。<br>获取令牌：github.com → Settings → Developer settings → Personal access tokens → <b>细粒度（Fine-grained）</b> → 生成 <code>github_pat_</code> 令牌（官方 SDK 路线 D4；详见 README 图解）。</div>
+  </div>
+  <div style="padding:10px 20px 14px;text-align:right;border-top:1px solid #e5eaf2;">
+    <span class="warnmsg" style="float:left;margin-top:5px;">令牌格式可疑：应以下划线开头的 40+ 字符</span>
+    <span class="sbtn pri">保存并关闭</span>&nbsp;<span class="sbtn">取消</span>
+  </div>
+</div>
+
+<div class="card">
+  <b>行为细节：</b>
+  <ul>
+    <li>「测试连接」＝即时调 <code>GET /models</code>：成功显示绿字（可用模型数 + 前几名）；失败红字给出区分（网络 / 401 令牌无效 / 无 Copilot 订阅）；测试期间按钮禁用转圈；</li>
+    <li>令牌输入框默认密码态，「显示」临时明文（便于核对）；粘贴时自动去除首尾空白；「清除」清空输入框并删除凭据管理器中的条目（二次确认）；</li>
+    <li>保存时：令牌写入凭据管理器（DPAPI），其余项写 config.json（新增 <code>ai.enabled / ai.modelTier / ai.translateTo / ai.confirmBeforeSend</code> 字段）；</li>
+    <li>「启用 AI 功能」总开关关闭时，右键菜单不出现 AI 项（保持菜单简洁）。</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2><span class="no">5</span>端到端交互流程</h2>
+<div class="flow">贴图右键 → 「AI ▸ 提取文字 / 翻译成中文」
+   │
+   ├─ 未启用/未配置 ────────────→ 结果浮窗·未配置卡 → [打开设置…] → AI 设置页 → 粘贴令牌 → 测试连接 → 保存
+   │
+   └─ 已配置 →（可选）发送前确认气泡卡 [发送]
+        → 图像预处理（长边≤1568px · JPEG 85 · base64）
+        → POST /chat/completions（Bearer PAT + Copilot-Integration-Id）stream:true
+        → 结果浮窗·加载/流式中（逐字渲染 · Esc 取消）
+        → 完成：选择文字 / [复制]（显式，唯一写剪贴板动作）/ [重试] / [换模型 ▾]
+        → 错误：按类型显示卡片（网络→重试 · 401/额度→设置 · 429→等待重试）</div>
+
+<!-- ============================================================ -->
+<h2><span class="no">6</span>视觉规范（对齐 Tb.java 现有色板）</h2>
+<table>
+  <tr><th>Token</th><th>值</th><th>用途</th></tr>
+  <tr><td>面板底色</td><td><code>rgba(27,33,44,235)</code> ≈ #1B212C</td><td>浮窗/菜单/工具条底（同贴图悬浮菜单）</td></tr>
+  <tr><td>面板实底</td><td>#1B212C（不透明）</td><td>右键菜单、浮窗（内容区需完全不透明保证可读）</td></tr>
+  <tr><td>悬停/次级底</td><td>#334155</td><td>菜单项悬停、按钮底</td></tr>
+  <tr><td>强调蓝</td><td>#2563EB / #3B82F6</td><td>主按钮（复制）、流式光标、选中态</td></tr>
+  <tr><td>正文</td><td>#F1F5F9（识别结果）/ #E2E8F0（一般）</td><td>浮窗文字</td></tr>
+  <tr><td>次级文字</td><td>#94A3B8（原文对照）/ #64748B（状态行）</td><td>对照原文、耗时/字数、快捷键提示</td></tr>
+  <tr><td>边框</td><td>#3B4657（1px 内描边）+ 外投影</td><td>浮窗/菜单（区别于贴图 2px 黑边）</td></tr>
+  <tr><td>字体</td><td>Tb.UI_FAMILY 探测族（雅黑优先），正文 13pt / 状态 11.5pt</td><td>与托盘菜单同源，随 DPI 缩放（沿用 GetDpiForWindow 管线）</td></tr>
+  <tr><td>圆角/尺寸</td><td>浮窗圆角 10px、宽 420 逻辑 px 起、内容区最小 3 行</td><td>200% DPI 下按现有缩放体系</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2><span class="no">7</span>实现挂载点（评审通过后的施工图）</h2>
+<table>
+  <tr><th>改动点</th><th>位置</th><th>内容</th></tr>
+  <tr><td>贴图右键</td><td><code>Pin.java</code> 鼠标监听</td><td>补 <code>isPopupTrigger</code>（press+release 双挂，同托盘）→ 呼出 JPopupMenu；双击关闭/Esc 逻辑不变</td></tr>
+  <tr><td>设置页</td><td><code>Settings.java</code></td><td>JDialog 内容改 JTabbedPane；现有热键+目录平移为页 1；新增 AI 页；About 页顺带收纳“关于”对话框内容（可选）</td></tr>
+  <tr><td>托盘菜单</td><td><code>Main.buildTrayMenu()</code></td><td>新增「AI 识别剪贴板图片」项（若 D3 采纳）</td></tr>
+  <tr><td>新增包</td><td><code>src-java/tackshot/ai/</code></td><td><code>AiService</code>（入口/开关/降级路由）、<b><code>CopilotSdkProvider</code>（官方 SDK 适配层，D4 用户决策）</b>、<code>TokenVault</code>（JNA 凭据管理器）、<code>ImagePrep</code>（缩放/JPEG/base64 或 SDK 附件格式）、<code>PromptLib</code>（提取/翻译模板）、<code>AiResultWindow</code>（浮窗，Swing 自绘）、<code>AiWorker</code>（SwingWorker 封装）</td></tr>
+  <tr><td>构建前提（D4）</td><td><code>build.sh</code> / <code>start.bat</code> / 发行包</td><td>① <b>Java 升 17+</b>（javac --release 17；公司机 JDK 17 已确认可用，发行说明注明）；② 官方 <code>com.github:copilot-sdk-java</code> 及其传递依赖经 Maven 导出后随包进 lib/（数量/体积待 PoC 实测）；③ SDK 自动捆绑/拉起 Copilot CLI 子进程——首次使用联网获取，内存与便携影响待 PoC 实测（若不可接受，Provider 抽象层可无损回退直连端点路线）</td></tr>
+  <tr><td>配置</td><td><code>Cfg.java</code></td><td>新增 ai.* 字段（enabled/modelTier/translateTo/confirmBeforeSend），config.json 向后兼容缺省</td></tr>
+  <tr><td>不动</td><td>—</td><td>悬浮工具条、编辑器工具条、热键、剪贴板写入时机（复制仍为唯一显式动作）</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2><span class="no">8</span>决策点确认结果（2026-08-24 用户已确认）</h2>
+<table>
+  <tr><th>#</th><th>决策点</th><th>选项</th><th>结果</th></tr>
+  <tr><td>D1</td><td>结果浮窗形态</td><td>A 停靠贴图旁 / B 屏幕居中模态 / C 贴图内嵌展开</td><td><b>✅ A 停靠贴图旁</b>（继承置顶层级，贴图关则浮窗关）</td></tr>
+  <tr><td>D2</td><td>设置承载</td><td>A 三标签页 / B 同窗体追加区块 / C 独立窗体</td><td><b>✅ A 三标签页</b>（热键与目录 / AI / 关于）</td></tr>
+  <tr><td>D3</td><td>P0 入口范围</td><td>贴图右键 / +托盘识别剪贴板 / +编辑器按钮</td><td><b>✅ 三项全取</b>（编辑器工具条按钮由 P1 提级 P0，见 2.3）</td></tr>
+  <tr><td>D4</td><td>实施技术路线</td><td>A 直连开放端点 / B 官方 Copilot SDK</td><td><b>✅ B 官方 Copilot SDK</b>（用户决策；实施前提见第 7 章「构建前提」，实施前 PoC 验证依赖体积与 CLI 子进程影响）</td></tr>
+  <tr><td>D5</td><td>浮窗关闭时进行中请求</td><td>取消 / 后台继续</td><td>按推荐：<b>取消</b>（省额度）</td></tr>
+  <tr><td>D6</td><td>右键菜单是否含非 AI 项</td><td>仅 AI / 完整菜单</td><td>按推荐：<b>仅 AI 项</b>（2.1 mockup 中完整版仅为对比示意）</td></tr>
+  <tr><td>D7</td><td>发送前确认默认值</td><td>默认开 / 默认关</td><td>按推荐：<b>默认开</b>，可勾选「不再提示」</td></tr>
+</table>
+<div class="note blue" style="margin-bottom:0;"><b>D4 官方 SDK 路线要点（相对直连端点的差异）：</b>认证同样走设置页粘贴令牌（SDK 接受 <code>github_pat_</code> 细粒度 PAT 或 <code>gho_</code> OAuth 令牌，传入 SDK 客户端配置）；模型调用、流式、图片附件由 SDK/CLI 承担（无需自写 SSE）；代价＝Java 17+、lib/ 依赖体积增大、CLI 子进程常驻内存。若 PoC 发现便携/内存不可接受，Provider 抽象层可无损切回直连端点（UI 与功能层零改动）。</div>
+
+<footer>
+  钉图 TackShot · AI 功能 UI 设计稿 V1.1 · 2026-08-24 · D1~D7 已确认（第 8 章），可进入实施 · 配套文档：《AI功能技术探索.html》（技术路线）、《需求文档.html》V1.7（FR-8.x / UI-8 / RTM）
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>钉图 TackShot — AI 功能技术探索报告（GitHub Copilot 接入可行性）</title>
+<style>
+  :root{
+    --ink:#1f2430; --sub:#5a6474; --line:#dfe3ea; --bg:#f6f7fa; --card:#ffffff;
+    --blue:#2563eb; --blue-bg:#eef4ff; --green:#15803d; --green-bg:#ecfdf3;
+    --red:#b91c1c; --red-bg:#fef2f2; --amber:#b45309; --amber-bg:#fffbeb;
+    --violet:#6d28d9; --violet-bg:#f5f3ff; --gray-bg:#f1f3f7;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+       font-family:"Microsoft YaHei UI","Microsoft YaHei","Segoe UI",system-ui,sans-serif;
+       font-size:15px;line-height:1.75;}
+  .page{max-width:1080px;margin:0 auto;padding:32px 28px 80px;}
+  header.hero{background:linear-gradient(135deg,#1e2a4a 0%,#2563eb 100%);color:#fff;
+       border-radius:14px;padding:30px 34px;margin-bottom:28px;}
+  header.hero h1{margin:0 0 10px;font-size:26px;line-height:1.4;}
+  header.hero .meta{font-size:13px;opacity:.92;}
+  header.hero .meta span{display:inline-block;margin-right:22px;}
+  .badge{display:inline-block;padding:1px 10px;border-radius:999px;font-size:12px;font-weight:600;vertical-align:2px;}
+  .badge.warn{background:var(--amber-bg);color:var(--amber);border:1px solid #f3d9a4;}
+  .badge.ok{background:var(--green-bg);color:var(--green);border:1px solid #b7e4c0;}
+  .badge.bad{background:var(--red-bg);color:var(--red);border:1px solid #f5c6c6;}
+  .badge.info{background:var(--blue-bg);color:var(--blue);border:1px solid #c3d7fb;}
+  .badge.violet{background:var(--violet-bg);color:var(--violet);border:1px solid #ddd3f8;}
+  h2{font-size:20px;margin:44px 0 14px;padding:8px 0 8px 14px;border-left:5px solid var(--blue);background:linear-gradient(90deg,var(--blue-bg),transparent 70%);border-radius:4px;}
+  h2 .no{color:var(--blue);margin-right:6px;font-family:Consolas,monospace;}
+  h3{font-size:16.5px;margin:26px 0 8px;color:#16202f;}
+  h4{font-size:15px;margin:18px 0 6px;color:#33405a;}
+  p{margin:8px 0;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin:14px 0;}
+  .card.tldr{border:2px solid var(--blue);}
+  .card.tldr h3{margin-top:0;}
+  .verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:12px;}
+  .verdict .v{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:#fbfcfe;}
+  .verdict .v b{display:block;margin-bottom:4px;}
+  table{border-collapse:collapse;width:100%;margin:12px 0;background:#fff;font-size:13.5px;}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top;}
+  th{background:var(--gray-bg);font-weight:600;white-space:nowrap;}
+  tr:nth-child(even) td{background:#fbfcfe;}
+  .small{font-size:12.5px;color:var(--sub);}
+  code,pre{font-family:Consolas,"Cascadia Mono",monospace;}
+  code{background:var(--gray-bg);padding:1px 5px;border-radius:4px;font-size:13px;}
+  pre{background:#101623;color:#dbe4f3;border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:13px;line-height:1.6;}
+  pre .c{color:#7e8aa0;}
+  pre .k{color:#8ab4f8;}
+  pre .s{color:#a5d6a7;}
+  ul,ol{margin:8px 0;padding-left:26px;}
+  li{margin:4px 0;}
+  .flow{background:#101623;color:#dbe4f3;border-radius:10px;padding:16px 18px;font-family:Consolas,monospace;font-size:13px;line-height:1.55;overflow-x:auto;white-space:pre;}
+  .note{border-left:4px solid var(--amber);background:var(--amber-bg);padding:10px 14px;border-radius:6px;margin:12px 0;}
+  .note.blue{border-left-color:var(--blue);background:var(--blue-bg);}
+  .note.red{border-left-color:var(--red);background:var(--red-bg);}
+  .note.green{border-left-color:var(--green);background:var(--green-bg);}
+  .toc{columns:2;column-gap:34px;}
+  .toc a{color:var(--ink);text-decoration:none;display:block;padding:3px 0;border-bottom:1px dashed var(--line);}
+  .toc a:hover{color:var(--blue);}
+  .toc a b{color:var(--blue);font-family:Consolas,monospace;margin-right:6px;}
+  .refs li{margin:6px 0;font-size:13.5px;}
+  .refs a{color:var(--blue);text-decoration:none;word-break:break-all;}
+  .refs a:hover{text-decoration:underline;}
+  .pill-row{margin:6px 0 2px;}
+  footer{margin-top:56px;padding-top:14px;border-top:1px solid var(--line);color:var(--sub);font-size:12.5px;}
+  .route{border:1px solid var(--line);border-radius:12px;margin:16px 0;overflow:hidden;}
+  .route .rh{display:flex;align-items:center;gap:10px;padding:11px 18px;background:var(--gray-bg);border-bottom:1px solid var(--line);}
+  .route .rh b{font-size:15.5px;}
+  .route .rb{padding:14px 18px;}
+  @media print{ body{background:#fff;} .page{padding:0;} pre,.flow{white-space:pre-wrap;} }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="hero">
+  <h1>钉图 TackShot — AI 功能技术探索报告<br><span style="font-size:18px;font-weight:400;opacity:.95;">以 GitHub Copilot 账户接入 AI 模型（OCR / 读图 / 扩展能力）</span></h1>
+  <div class="meta">
+    <span>📅 2026-08-24</span>
+    <span>📌 版本 V1.0（技术探索稿）</span>
+    <span>🎯 性质：<b>仅技术探索，不含任何实施</b></span>
+    <span>🔍 调研截止：2026-08-24 官方文档 / 官方博客 / 主流集成方文档</span>
+  </div>
+</header>
+
+<div class="card">
+  <h3 style="margin-top:0;">目录</h3>
+  <nav class="toc">
+    <a href="#s1"><b>1</b>调研背景：需求、项目约束与调研方法</a>
+    <a href="#s2"><b>2</b>关键事实：2025–2026 GitHub AI 平台剧变时间线</a>
+    <a href="#s3"><b>3</b>四条候选技术路线详析与对比矩阵</a>
+    <a href="#s4"><b>4</b>推荐技术方案：轻量直连 + 本地兜底 + 官方演进预留</a>
+    <a href="#s5"><b>5</b>建议的 AI 功能清单（P0/P1/P2）</a>
+    <a href="#s6"><b>6</b>风险登记册与缓解措施</a>
+    <a href="#s7"><b>7</b>PoC 验证清单（实施前必须跑通的 7 项）</a>
+    <a href="#s8"><b>8</b>与项目开发流程的衔接（RTM 规则）</a>
+    <a href="#s9"><b>9</b>参考资料</a>
+  </nav>
+</div>
+
+<div class="card tldr">
+  <h3>⚡ 结论速览（TL;DR）</h3>
+  <p><b>总体判定：技术路线可行（中高置信度），但不能按 2025 年的旧资料选型——平台在最近 12 个月发生了颠覆性变化。</b>“用 GitHub Copilot 账户调用 AI 大模型”这条路依然存在，且比以前更成熟；但通往它的具体路径与一年前完全不同。</p>
+  <div class="verdict">
+    <div class="v"><b>❌ GitHub Models（已关闭）</b><span class="small">曾是最省事的官方免费路线（PAT + models.github.ai）。<b>2026-07-30 已全量退役</b>，官方文档明确“不再向任何客户开放”。旧教程/旧博客全部失效。</span></div>
+    <div class="v"><b>⚠️ 官方 Copilot SDK（Java）</b><span class="small">2026-04 公测、2026-06 GA，<b>官方支持 Java</b>且支持图片内联输入。但要求 <b>Java 17+</b>、架构上要拉起本地 Copilot CLI 子进程——与本项目 Java 11 / 128MB / 便携免装约束冲突，暂不采用，作为未来演进路线。</span></div>
+    <div class="v"><b>✅ 推荐：直连 Copilot 开放端点</b><span class="small"><code>api.githubcopilot.com</code>（OpenAI 兼容），Copilot 订阅 + 令牌即可调用 gpt-4o / claude-sonnet-4 / gemini-2.5-pro 等多模态模型，<b>纯 Java 11 标准库即可实现</b>，零新增依赖。已被 aider、LiteLLM、Docker AI Agent 等主流产品采用。代价：该端点无官方公开文档，属灰色地带（见风险 R1/R2）。</span></div>
+    <div class="v"><b>✅ 配套：本地 OCR 兜底</b><span class="small">Windows 10/11 内置 OCR（经 PowerShell 调 WinRT），<b>离线、零依赖、零成本</b>，作为未配置 AI / 网络不可用 / 隐私敏感场景的兜底与对照，两项能力互补。</span></div>
+  </div>
+  <p class="small" style="margin-top:10px;">建议决策顺序：先跑通第 7 章 PoC（半天工作量）→ 确认公司网络可达与中文识别效果 → 再立项开发 P0 功能（OCR 提取 + 翻译）。</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="s1"><span class="no">1</span>调研背景：需求、项目约束与调研方法</h2>
+
+<h3>1.1 用户需求（原始诉求）</h3>
+<ul>
+  <li>引入 “GitHub Copilot SDK”，<b>用 GitHub Copilot 账户</b>接入 AI 模型（不另购 OpenAI/Azure key）；</li>
+  <li>核心场景一：<b>OCR——读取截图中的文字</b>；</li>
+  <li>核心场景二：读图之外<b>其他可能 worthwhile 的 AI 功能</b>（本报告第 5 章给出建议清单）；</li>
+  <li>本轮<b>只做技术可行性探索与方案设计，不做任何实施</b>。</li>
+</ul>
+
+<h3>1.2 必须同时满足的项目硬约束</h3>
+<table>
+  <tr><th>约束</th><th>来源</th><th>对 AI 方案的直接影响</th></tr>
+  <tr><td><b>Java 11 运行时</b>（<code>javac --release 11</code>，公司机 JDK 11/17）</td><td>build.sh / start.bat</td><td>官方 Copilot SDK 的 Java 包要求 17+，<b>不能直接引入</b>；Java 11 自带 <code>java.net.http.HttpClient</code> 足以直连 REST。</td></tr>
+  <tr><td><b>低内存</b>（<code>-Xmx128m</code>）</td><td>start.bat</td><td>大图 base64 编码需控制峰值内存；不能嵌本地大模型。</td></tr>
+  <tr><td><b>便携免安装、轻量</b>（发行包仅 jar + JNA 两个 jar + bat）</td><td>用户既定决策</td><td>排除“必须先安装 Node/CLI/额外运行时”的方案权重调低。</td></tr>
+  <tr><td><b>零第三方依赖原则</b>（当前仅 JNA/JNA-Platform）</td><td>项目现状</td><td>优先用 JDK 标准库手写 HTTP/JSON/SSE，而非引入 OkHttp/Jackson。</td></tr>
+  <tr><td><b>公司环境：禁自建 exe、网络策略未知</b></td><td>用户既定决策</td><td>需 PoC 验证 <code>api.githubcopilot.com:443</code> 与代理可达性；不应要求管理员权限。</td></tr>
+  <tr><td><b>开源合规</b>（全开源、THIRD-PARTY-NOTICES）</td><td>用户偏好</td><td>新增依赖须审计许可证；本报告推荐路线新增依赖为零。</td></tr>
+</table>
+
+<h3>1.3 调研方法与信息源</h3>
+<p>以<b>官方一手资料为准</b>（GitHub 官方文档 docs.github.com、官方博客 github.blog、官方变更日志、官方 github/copilot-sdk 仓库），辅以<b>主流集成方文档</b>（aider、LiteLLM、Docker AI Agent——它们代表该端点被产业界的实际采用程度），最后参考社区项目（ericc-ch/copilot-api、Alorse/copilot-to-api）用于理解认证内部机制。所有关键结论在文中标注来源链接（第 9 章汇总）。<b>检索截止 2026-08-24。</b></p>
+
+<!-- ============================================================ -->
+<h2 id="s2"><span class="no">2</span>关键事实：2025–2026 GitHub AI 平台剧变时间线</h2>
+
+<div class="note red"><b>为什么必须重新调研：</b>网络上的 GitHub Models / Copilot API 教程几乎全部写于 2024–2025 年，其中最主流的“GitHub Models 免费推理”路线已在<b>一个月前（2026-07-30）彻底关闭</b>。按旧资料选型会直接失败。</div>
+
+<table>
+  <tr><th>时间</th><th>事件</th><th>对本项目的影响</th></tr>
+  <tr><td>2025-05-15</td><td><b>GitHub Models API 正式可用</b>：OpenAI 兼容推理端点 + PAT 认证 + 免费额度（约 50~150 次/天，按模型分级）</td><td>曾是“最省事路线”——如今已死，仅作背景</td></tr>
+  <tr><td>2025-06-24</td><td>GitHub Models 支持超额付费</td><td>同上</td></tr>
+  <tr><td>2025-10</td><td>VS Code Copilot 开放 BYOK（自带 OpenAI/Anthropic/Gemini key）；生态侧出现 copilot-api 等反向工程项目</td><td>证明“Copilot 订阅→通用模型调用”需求广泛存在</td></tr>
+  <tr><td><b>2026-04-02</b></td><td><b>GitHub Copilot SDK 公开预览</b>（2026-06 GA）：官方多语言 SDK（TypeScript / Python / Go / .NET / <b>Java</b> / Rust），与 Copilot 云端 Agent、CLI 同源 runtime；支持流式、自定义工具、<b>图片/截图二进制附件内联</b>、OpenTelemetry</td><td>★ 官方路线成型；但 Java 包要求 <b>Java 17+</b>，且 SDK 通过<b>本地拉起 Copilot CLI 子进程 + RPC</b> 工作（不直接暴露公网 REST）</td></tr>
+  <tr><td><b>2026-06-01</b></td><td><b>Copilot 全面转用量计费</b>：premium request units（PRU）被 <b>AI Credits</b> 取代，按 token 消耗、按各模型公开 API 价率折算；Pro $10/月含 $10 额度、Pro+ $39、Business $19（过渡期 $30）、Enterprise $39（过渡期 $70）；可加购、可池化、可设预算；代码补全不计费</td><td>★ “Copilot 账户能用多少”有了明确账本：AI 功能按 token 消耗订阅额度，<b>轻量 OCR 用小模型单张成本极低</b>（第 4.6 节估算）</td></tr>
+  <tr><td>2026-06-04</td><td>Agent tasks REST API 对 Copilot Pro/Pro+/Max 开放（云端 Agent 任务）</td><td>面向编码 Agent 场景，与截图工具无关，不采用</td></tr>
+  <tr><td><b>2026-07-30</b></td><td><b>GitHub Models 全量退役</b>：官方文档原文“playground、model catalog、inference API、BYOK 均不再向任何客户可用”；官方推荐迁移至 <b>Azure AI Foundry</b>（需 Azure 账号/密钥，与“Copilot 账户”诉求不符）或 GitHub Copilot</td><td>★ <b>路线 C 判死</b>；官方留下的“用 Copilot 订阅调模型”通道 = Copilot SDK / api.githubcopilot.com</td></tr>
+</table>
+
+<div class="note blue"><b>当前（2026-08）格局一句话：</b>“GitHub Copilot 账户”可用的模型调用通道只剩两条——① 官方 <b>Copilot SDK</b>（经本地 Copilot CLI，正式产品）；② <b>api.githubcopilot.com 开放端点</b>（OpenAI 兼容，被 Docker/aider/LiteLLM 等正式产品当作 Provider 使用，但 GitHub 未发布公开文档）。两者消耗的都是用户 Copilot 订阅的 AI Credits。</div>
+
+<!-- ============================================================ -->
+<h2 id="s3"><span class="no">3</span>四条候选技术路线详析与对比矩阵</h2>
+
+<div class="route">
+  <div class="rh"><span class="badge info">路线 A</span><b>官方 GitHub Copilot SDK（Java 版）</b><span class="badge ok">官方</span><span class="badge warn">重</span></div>
+  <div class="rb">
+    <p><b>是什么：</b>GitHub 官方多语言 SDK（仓库 <code>github/copilot-sdk</code>），Java 坐标 <code>com.github:copilot-sdk-java</code>（Maven/Gradle），公测于 2026-04-02，GA 于 2026-06。提供与 Copilot CLI / 云端 Agent 同源的 agent runtime：多轮会话、流式输出、自定义工具回调、<b>二进制附件（图片/截图）内联发送</b>、系统提示词定制。</p>
+    <p><b>关键架构事实（决定性）：</b>SDK <b>并不直接调用公网 REST</b>——它在本地拉起 Copilot CLI 进程，通过 RPC（<code>session.create / session.send / session.resume</code>）与之通信；CLI 负责实际的模型调用与凭据管理。官方 getting-started 明言各语言 SDK 会“自动捆绑 CLI”。</p>
+    <p><b>认证：</b>三种方式——① 默认：复用本机 <code>copilot</code> CLI 的登录态（GitHub OAuth 设备流，凭据入系统 keychain）；② <b>OAuth GitHub App</b>：用户授权你的应用，把用户令牌（<code>gho_</code>/<code>ghu_</code>，也接受细粒度 PAT <code>github_pat_</code>）传入 SDK，应用即可代用户发起 Copilot API 请求（<b>要求用户持有 Copilot 订阅</b>）；③ BYOK：自带 OpenAI/Anthropic key 则无需订阅（但那就不是“Copilot 账户”了）。</p>
+    <p><b>对本项目的障碍（按严重度）：</b></p>
+    <ul>
+      <li><b>Java 17+</b>——本项目 <code>--release 11</code>、公司机 JDK 11/17，引入即被迫要求所有用户升 17+；</li>
+      <li><b>CLI 子进程</b>——首次运行要下载/捆绑 Copilot CLI（原生二进制 + Node 生态，数十 MB 级），常驻时额外内存开销与 128MB 预算冲突，公司环境“便携免装”不满足；</li>
+      <li>SDK 面向“编码 Agent”场景（工具调用、文件操作），对“截图→文字”这种单轮视觉调用属于<b>杀鸡用牛刀</b>。</li>
+    </ul>
+    <p><b>结论：暂不采用。</b>当未来项目升级到 Java 17/21 运行时、且公司环境允许分发 CLI 时，可作为正式化迁移目标（见 4.8 节）。</p>
+  </div>
+</div>
+
+<div class="route">
+  <div class="rh"><span class="badge violet">路线 B</span><b>直连 api.githubcopilot.com（OpenAI 兼容开放端点）</b><span class="badge ok">轻量</span><span class="badge warn">非官方文档</span></div>
+  <div class="rb">
+    <p><b>是什么：</b>Copilot 后端暴露的 OpenAI 兼容推理端点，基础地址 <code>https://api.githubcopilot.com</code>，提供 <code>/models</code>（列出订阅可用模型）、<code>/chat/completions</code>（经典 OpenAI 格式）、<code>/responses</code>（新版 Responses API；gpt-5 系列与 Codex 变体<b>仅</b>走此端点）。</p>
+    <p><b>产业采用度（重要佐证）：</b>Docker 官方 AI Agent 文档将其列为正式 Provider（含认证细节与必带请求头）；aider 将其列为官方支持的模型来源之一，并声明“按 Copilot 文档规则使用、无网页抓取”；LiteLLM 内置 <code>github_copilot/</code> Provider（OAuth 设备流 + 自动令牌管理）。它同时是 GitHub 官方托管 MCP 服务器的域名（<code>api.githubcopilot.com/mcp/</code>）。</p>
+    <p><b>认证（两种，Docker 文档均有记载）：</b></p>
+    <ul>
+      <li><b>PAT 模式（推荐首选）：</b>用户在 GitHub 设置中生成带 <code>copilot</code> scope 的 PAT，粘贴进 TackShot 设置——无 OAuth 应用注册、无浏览器回调，实现与 UX 最简单；要求有效 Copilot 订阅（Individual/Business/Enterprise）。</li>
+      <li><b>OAuth 设备流模式（RFC 8628，增强项）：</b><code>github.com/login/device/code</code> → 用户浏览器激活 → 轮询 <code>github.com/login/oauth/access_token</code> → 持久化 refresh；社区资料（LiteLLM、copilot-api、picoclaw 等）证明可行。是否可用<b>自注册 OAuth App 的 client_id</b>（而非伪装 VS Code 官方 ID <code>Iv1.b507a08c87ecfe98</code>）需 PoC 验证——若可行则合规性显著更好。</li>
+    </ul>
+    <p><b>必带请求头：</b><code>Authorization: Bearer &lt;token&gt;</code> 与 <code>Copilot-Integration-Id</code>（Docker 默认发 <code>copilot-developer-cli</code>，PAT/OAuth 令牌均接受；缺失会被 400 拒绝）。LiteLLM 还会注入 <code>editor-version</code> 等头。</p>
+    <p><b>视觉/OCR 能力：</b>Docker 文档明确“复用 OpenAI 客户端，多模态输入可用（前提是模型支持）”。可用模型含 <code>gpt-4o</code>（多模态均衡）、<code>gpt-4o-mini</code>（快且省）、<code>claude-sonnet-4</code>、<code>gemini-2.5-pro</code>、<code>o3-mini</code> 等。图片按 OpenAI 格式以 <code>image_url</code>（data URI base64）传入——<b>这正是 OCR 所需的完整能力闭环</b>（中文识别效果需 PoC 实测，见第 7 章）。</p>
+    <p><b>实现代价（对本项目极友好）：</b>Java 11 标准 <code>java.net.http.HttpClient</code> + 手写 JSON/SSE 解析即可，<b>零新增依赖</b>、无常驻子进程、按需短连接，内存可控。</p>
+    <p><b>主要风险：</b>端点无公开官方文档与 SLA，字段/路径可能变（R1）；非官方客户端调用属条款灰色地带，GitHub 对<b>滥用</b>（高并发倒卖、共享账号）有封号先例，但 Docker/aider/LiteLLM 这类正常低频个人用例至今正常运行（R2）。两条都有缓解手段，见第 6 章。</p>
+    <p><b>结论：推荐为主路线。</b>是唯一同时满足“Copilot 账户 + Java 11 + 零依赖 + 低内存”的方案。</p>
+  </div>
+</div>
+
+<div class="route">
+  <div class="rh"><span class="badge bad">路线 C</span><b>GitHub Models（已退役）／ Azure AI Foundry（官方继任者）</b></div>
+  <div class="rb">
+    <p><b>GitHub Models：</b>2026-07-30 全量退役（playground / 目录 / 推理 API / BYOK 全部关闭），<b>判死，无讨论价值</b>。互联网上大量“GitHub Models 免费用 GPT-4o”教程已全部失效。</p>
+    <p><b>Azure AI Foundry（官方推荐迁移目标）：</b>模型目录更广、正式 SLA，但需要 <b>Azure 订阅 + 部署 + API key</b>，与“直接用 GitHub Copilot 账户”的诉求不符；且 Azure OpenAI 区域/配额在公司环境未必可用。<b>作为备案记录，不推荐。</b></p>
+  </div>
+</div>
+
+<div class="route">
+  <div class="rh"><span class="badge ok">路线 D</span><b>本地 OCR（Windows 内置 OCR ／ Tesseract）</b><span class="badge ok">离线零成本</span></div>
+  <div class="rb">
+    <p><b>方案 D1：Windows 内置 OCR（推荐）。</b>Windows 10/11 自带 <code>Windows.Media.Ocr</code> WinRT API，离线、免费、随系统语言包支持中英文。无需引入任何二进制——用系统自带 <code>powershell.exe</code> 加载 WinRT 类型即可调用（项目 build.sh 已有调用 PowerShell 的先例）。局限：纯文字行识别，<b>不理解表格结构/公式/语义</b>，复杂版面排版还原弱。</p>
+    <p><b>方案 D2：Tesseract（tess4j/JNA + traineddata）。</b>识别质量与 D1 同级略优，但需携带原生库 + 语言数据约 30~60MB，与“轻量便携”冲突，<b>不推荐</b>，仅记录。</p>
+    <p><b>定位（关键设计决策）：</b>本地 OCR 不与云端模型竞争，而是<b>兜底与互补</b>——① 未配置 Copilot / 网络不可用 / 额度耗尽时降级可用；② 隐私敏感截图走“本地模式”；③ 与 AI 结果对照校验（降低大模型“幻读”风险）。两者共用同一 <code>AiProvider</code> 抽象（见 4.2）。</p>
+  </div>
+</div>
+
+<h3>3.1 对比矩阵</h3>
+<table>
+  <tr><th>维度</th><th>A·官方 Copilot SDK</th><th>B·直连开放端点</th><th>C·GitHub Models / Foundry</th><th>D·本地 OCR</th></tr>
+  <tr><td>官方支持度</td><td>★★★★★ 官方 SDK</td><td>★★☆ 端点真实存在且被 Docker/aider/LiteLLM 采用，但无公开文档</td><td>★ 已退役／需 Azure 账号</td><td>★★★★ 系统自带 API</td></tr>
+  <tr><td>用“Copilot 账户”</td><td>✅（消耗订阅 AI Credits）</td><td>✅（消耗订阅 AI Credits）</td><td>❌</td><td>—（无需账户）</td></tr>
+  <tr><td>Java 11 兼容</td><td>❌ 需 17+</td><td>✅ 纯标准库</td><td>—</td><td>✅（PowerShell 桥接）</td></tr>
+  <tr><td>新增依赖 / 体积</td><td>SDK + 捆绑 CLI（数十 MB）</td><td><b>零</b></td><td>—</td><td><b>零</b>（D2 需 30~60MB）</td></tr>
+  <tr><td>内存影响（128MB 预算）</td><td>CLI 子进程常驻，不利</td><td>按需请求，峰值可控（见 4.5）</td><td>—</td><td>极低</td></tr>
+  <tr><td>OCR / 视觉能力</td><td>✅ 图片内联，模型全</td><td>✅ gpt-4o/claude/gemini 多模态</td><td>—</td><td>仅纯文字行，无语义</td></tr>
+  <tr><td>翻译 / 问答 / 表格 / 公式</td><td>✅</td><td>✅</td><td>—</td><td>❌</td></tr>
+  <tr><td>网络要求</td><td>需外网</td><td>需外网（443，PoC 验证代理）</td><td>—</td><td><b>离线可用</b></td></tr>
+  <tr><td>条款风险</td><td>无</td><td>灰色地带（低频自用风险低，见 R2）</td><td>—</td><td>无</td></tr>
+  <tr><td>单张截图成本量级</td><td>token 计费（AI Credits）</td><td>同左，mini 档约 $0.000x 级</td><td>—</td><td>免费</td></tr>
+  <tr><td><b>判定</b></td><td><b>未来演进路线</b></td><td><b>★ 主路线</b></td><td>排除</td><td><b>★ 兜底/隐私路线</b></td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="s4"><span class="no">4</span>推荐技术方案：轻量直连 + 本地兜底 + 官方演进预留</h2>
+
+<div class="note green"><b>推荐组合：路线 B 为主（云端视觉模型，覆盖 OCR/翻译/问答/表格/公式）+ 路线 D 为兜底（本地 OCR，覆盖离线/隐私/降级），并以 Provider 抽象层为路线 A 预留官方化迁移接口。</b>所有云端调用消耗用户自己 Copilot 订阅的 AI Credits，项目方零 API 成本。</div>
+
+<h3>4.1 总体架构</h3>
+<div class="flow">┌─────────────────────────── TackShot（Java 11，-Xmx128m，零新增依赖）───────────────────────────┐
+│                                                                                                  │
+│  UI 层（Swing，全部复用现有组件体系）                                                              │
+│   托盘菜单「AI 设置…」   贴图右键「AI ▸」   编辑器工具条「AI」按钮   结果浮窗 AiResultWindow        │
+│        │                       │                    │                    ▲（流式逐字渲染）          │
+│        ▼                       ▼                    ▼                    │                        │
+│  ┌───────────────────────────── AiService（单例，统一入口/鉴权检查/降级路由）─────────────────┐    │
+│  │   AiWorker：SwingWorker 封装，EDT 安全；超时/取消/重试策略                                  │    │
+│  │        │                                                                                   │    │
+│  │        ▼                          ▼                                                        │    │
+│  │  ┌─ CopilotProvider ─┐      ┌─ LocalOcrProvider ─┐      ┌─(预留)CopilotSdkProvider─┐      │    │
+│  │  │ 实现 AiProvider   │      │ 实现 AiProvider    │      │ Java17+ 时接入官方 SDK    │      │    │
+│  │  └───────┬───────────┘      └─────────┬─────────┘      └───────────────────────────┘      │    │
+│  └──────────┼────────────────────────────┼──────────────────────────────────────────────────┘    │
+│             │                              │                                                      │
+│  ┌──────────▼──────────┐        ┌──────────▼──────────┐  ┌────────────────┐                      │
+│  │ ImagePrep           │        │ WindowsOcr          │  │ PromptLib      │                      │
+│  │ 缩放≤1568px/JPEG/base64│     │ powershell.exe 桥接 │  │ OCR/翻译/诊断等 │                      │
+│  └──────────┬──────────┘        │ WinRT OcrEngine    │  │ 内置提示词模板  │                      │
+│             │                   └──────────┬──────────┘  └────────────────┘                      │
+│  ┌──────────▼───────────────────────────── ┼ ─────────────────────────┐                         │
+│  │ TokenVault（JNA→Windows 凭据管理器 DPAPI 加密存储令牌）              │                         │
+│  └──────────────────────────────────────────────────────────────────── ┘                         │
+└─────────────┼──────────────────────────────┼───────────────────────────────────────────────────────┘
+              ▼ HTTPS 443                     ▼ 本机进程
+   api.githubcopilot.com               powershell.exe(系统自带)
+   /models /chat/completions           Windows.Media.Ocr
+   （Bearer PAT + Copilot-Integration-Id）</div>
+<p class="small">新增类文件全部位于 <code>src-java/tackshot/ai/</code> 新包，与现有 12+2 个类零耦合；<code>Cfg</code>（config.json）扩展 AI 相关字段。核心新增代码量估计：CopilotProvider ≈ 300 行（含 SSE 解析）、设备流 ≈ 150 行（若做）、本地 OCR 桥 ≈ 120 行、UI ≈ 400 行。</p>
+
+<h3>4.2 Provider 抽象（一个接口，三种实现）</h3>
+<pre><span class="c">// 预留接口示意（本轮不实施，仅表达设计）</span>
+interface AiProvider {
+    String name();                          <span class="c">// "copilot" / "local-ocr"</span>
+    boolean ready();                        <span class="c">// 已配置令牌 / 系统语言包可用</span>
+    void chat(AiRequest req, AiListener cb) <span class="c">// req=图片+功能模板+参数；cb=流式/完成/失败</span>;
+}
+record AiRequest(BufferedImage image, PromptTemplate tpl, Map&lt;String,String&gt; params) {}</pre>
+<p>功能层只面向 <code>AiProvider</code> 编程：OCR、翻译、问答不关心后端是谁；设置页可切换“云端 / 本地 / 自动（云端失败转本地）”。未来切官方 SDK（路线 A）时新增实现类即可，功能层零改动。</p>
+
+<h3>4.3 认证与令牌管理（安全重点）</h3>
+<table>
+  <tr><th>项</th><th>设计</th></tr>
+  <tr><td>首选认证</td><td><b>PAT 模式</b>：设置页粘贴<b>仅含 <code>copilot</code> scope</b> 的 GitHub PAT（最小权限原则），“测试连接”按钮实时验证（调 <code>GET /models</code>）。</td></tr>
+  <tr><td>增强认证（PoC 后决定）</td><td>OAuth 设备流：用户点“登录 GitHub”→ 显示 8 位设备码 + 自动开浏览器 <code>github.com/login/device</code> → 轮询拿 access/refresh token。<b>优先验证自注册 OAuth App 的 client_id 可用性</b>（合规、可署名）；若端点校验强制官方 client_id，则降级只提供 PAT 模式，<b>不做客户端伪装</b>（降低 R2 风险）。</td></tr>
+  <tr><td>令牌存储</td><td><b>不落 config.json 明文</b>。用项目已有的 JNA 调 Windows 凭据管理器（<code>CredWriteW/CredReadW</code>，DPAPI 加密，按当前用户隔离），凭据名如 <code>TackShot/CopilotToken</code>。</td></tr>
+  <tr><td>请求头约定</td><td><code>Authorization: Bearer &lt;PAT&gt;</code> + <code>Copilot-Integration-Id: copilot-developer-cli</code>（Docker/aider 同款，PAT 与 OAuth 令牌均接受）。</td></tr>
+  <tr><td>失效处理</td><td>401/403 → 气球提示“令牌失效，请到设置重新粘贴”；设置页提供“清除令牌”。</td></tr>
+</table>
+
+<h3>4.4 调用协议与模型选型</h3>
+<ul>
+  <li><b>能力探测：</b>启动后首次使用时 <code>GET /models</code> 缓存可用模型列表（随订阅档位不同而不同），设置页下拉只列真实可用的。</li>
+  <li><b>主端点：</b><code>POST /chat/completions</code>，OpenAI 消息格式；图片走 <code>{type:"image_url", image_url:{url:"data:image/jpeg;base64,..."}}</code>；<code>stream:true</code> 走 SSE 逐 token 渲染到结果浮窗。</li>
+  <li><b>模型策略（默认自动分档，用户可改）：</b></li>
+</ul>
+<table>
+  <tr><th>档位</th><th>模型（示例）</th><th>用途</th><th>备注</th></tr>
+  <tr><td>快速档（默认）</td><td><code>gpt-4o-mini</code></td><td>OCR 提取、翻译、文件名建议</td><td>最省额度，速度最快</td></tr>
+  <tr><td>均衡档</td><td><code>gpt-4o</code></td><td>截图问答、报错诊断、表格/公式</td><td>版面理解与中文更强</td></tr>
+  <tr><td>深度档</td><td><code>claude-sonnet-4</code> / <code>gemini-2.5-pro</code></td><td>复杂文档还原、长图分析</td><td>用户手选</td></tr>
+</table>
+<p class="small">注意：gpt-5 系列及 Codex 变体仅在 <code>/responses</code> 端点提供（走 <code>/chat/completions</code> 会 400）——首版不接 gpt-5 系，<code>/responses</code> 支持列为后续增强。模型 ID 与可用性以 <code>/models</code> 实测为准（PoC-1）。</p>
+
+<h3>4.5 图片预处理与内存预算（128MB 约束下）</h3>
+<ul>
+  <li>截图先<b>长边缩至 ≤1568px</b>（多模态模型最优分辨率，超过只增 token 不增效）、转 <b>JPEG 质量 85</b>（文字类截图典型 1080p → 150~400KB）；</li>
+  <li>base64 后约 0.2~0.55MB，叠加 Java String UTF-16 与 JSON 拼装缓冲，单次调用峰值 &lt; 3MB——128MB 堆内完全安全；</li>
+  <li>显式 <code>Content-Length</code> + 一次写出发送，避免流式上传缓冲放大；<code>HttpClient</code> 设置连接超时 10s / 请求超时 60s（流式期间按读空闲计算）。</li>
+</ul>
+
+<h3>4.6 成本估算（AI Credits，token 计费）</h3>
+<p class="small">按 2026-06-01 起的用量计费规则（按各模型公开 API 价率折算 token）。估算：1080p 截图缩放后约 1,000~2,000 视觉输入 token + 提示词 ≈ 100 token，输出 300~800 token。<b>gpt-4o-mini</b>：单张约 $0.0003~0.001（Pro 档每月 $10 额度 ≈ 可支撑数千张）；<b>gpt-4o</b>：单张约 $0.005~0.02。结论：默认 mini 档下日常用量对订阅额度几乎无感。⚠ 以上为推算值，PoC 时以真实账单页核对。</p>
+
+<h3>4.7 UI/UX 集成设计（复用现有交互语言）</h3>
+<table>
+  <tr><th>入口</th><th>交互</th></tr>
+  <tr><td>贴图右键 →「AI ▸」子菜单</td><td>提取文字 / 翻译 / 问答 / 诊断 / 表格 / 公式 / 摘要；点击后贴图旁弹出<b>结果浮窗</b>（无装饰 JFrame，风格同现有悬浮工具条，流式渲染，底部：复制 / 重试 / 换模型 / 关闭）</td></tr>
+  <tr><td>编辑器工具条「AI」按钮</td><td>对<b>当前选区/标注结果合成图</b>执行（复用 composeEdited 合成管线，走默认功能，可配置）</td></tr>
+  <tr><td>托盘菜单 →「AI 设置…」</td><td>在现有 Settings 窗体加“AI”标签页：令牌粘贴/测试/清除、默认模型档位、翻译目标语言、“每次发送前确认”隐私开关、用量提示</td></tr>
+  <tr><td>托盘菜单 →「AI 识别剪贴板图片」</td><td>对已有剪贴板图直接 OCR（Ctrl+Alt+O 之类快捷键，避开现有占用）</td></tr>
+</table>
+
+<h3>4.8 隐私、合规与降级</h3>
+<ul>
+  <li><b>隐私明示：</b>设置页与首次使用时提示“启用云端 AI 后，截图内容将发送至 GitHub 及其模型供应商（OpenAI/Anthropic/Google）处理”；提供“本地模式”开关（仅本地 OCR，绝不联网）。</li>
+  <li><b>公司敏感信息：</b>默认在发送前显示一次确认（可勾选“不再提示”）；敏感检测功能（P2）落地后可自动预警。</li>
+  <li><b>降级链：</b>云端失败（网络/429/额度尽/令牌失效）→ 提示并询问是否转本地 OCR；本地语言包缺失 → 提示安装路径。</li>
+  <li><b>官方化演进：</b>Provider 抽象使未来升级 Java 17 + 引入官方 Copilot SDK（路线 A）成为纯增量替换，UI 与功能层不动。</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="s5"><span class="no">5</span>建议的 AI 功能清单（P0/P1/P2）</h2>
+<p>均基于“截图/贴图在手上”这一 TackShot 独有上下文设计；所有功能共用同一套 Provider/结果浮窗基础设施，边际开发成本递减。</p>
+
+<h3>P0（首批，价值最高、实现最直接）</h3>
+<table>
+  <tr><th>#</th><th>功能</th><th>说明</th><th>输入 → 输出</th><th>建议模型档</th></tr>
+  <tr><td>F1</td><td><b>截图 OCR 文字提取</b></td><td>核心诉求。保留段落/换行结构；结果浮窗展示 + 一键复制纯文本（不覆盖用户剪贴板内容的选择：复制为显式按钮，符合 V2.0.3 剪贴板收窄决策）</td><td>贴图/编辑图 → 纯文本</td><td>快速档</td></tr>
+  <tr><td>F2</td><td><b>图中文字翻译</b></td><td>识别+翻译一次调用完成（提示词要求“逐段对照”）；默认中↔英，可设目标语言；结果窗中英对照展示</td><td>贴图/编辑图 → 对照文本</td><td>快速档</td></tr>
+</table>
+
+<h3>P1（第二批，差异化价值）</h3>
+<table>
+  <tr><th>#</th><th>功能</th><th>说明</th><th>建议模型档</th></tr>
+  <tr><td>F3</td><td><b>截图问答</b></td><td>对贴图自由提问（“这个报错什么意思”“图里的价格汇总一下”），结果浮窗支持追问（多轮，带图上下文）</td><td>均衡档</td></tr>
+  <tr><td>F4</td><td><b>报错截图诊断</b></td><td>针对弹窗/堆栈截图：解释错误 + 给出修复建议清单（与 F3 共用问答底座，专用提示词模板）</td><td>均衡档</td></tr>
+  <tr><td>F5</td><td><b>代码截图还原</b></td><td>识别代码 + 语言检测，输出带语言标注的代码块，一键复制（可直接粘进 IDE）</td><td>均衡档</td></tr>
+  <tr><td>F6</td><td><b>表格 → Markdown/CSV、公式 → LaTeX</b></td><td>版面结构理解是多模态模型显著强于本地 OCR 之处；输出可直接进文档</td><td>均衡档</td></tr>
+  <tr><td>F7</td><td><b>本地 OCR 模式</b></td><td>路线 D 落地：离线/隐私/降级场景的纯文字提取（功能矩阵中的“兜底”）</td><td>本地</td></tr>
+</table>
+
+<h3>P2（第三批，锦上添花）</h3>
+<table>
+  <tr><th>#</th><th>功能</th><th>说明</th></tr>
+  <tr><td>F8</td><td>长截图/文章摘要</td><td>对长贴图（整页滚动截图）输出要点摘要</td></tr>
+  <tr><td>F9</td><td>敏感信息检测</td><td>发送云端前扫描身份证/手机号/密钥/token 等模式，弹窗预警并可联动现有马赛克工具一键打码——与 TackShot 编辑器天然互补</td></tr>
+  <tr><td>F10</td><td>AI 文件名/描述建议</td><td>保存时按内容建议文件名（如 <code>登录报错-超时_20260824.png</code>），纯本地规则亦可做一半</td></tr>
+  <tr><td>F11</td><td>多模型手动切换</td><td>结果浮窗“换模型重答”按钮（已含在浮窗设计中），观察不同模型对同一截图的表现</td></tr>
+  <tr><td>F12</td><td>Responses 端点 / gpt-5 系支持</td><td>技术增强：接 <code>/responses</code>，解锁 gpt-5 系视觉模型</td></tr>
+</table>
+
+<div class="note"><b>刻意不做的功能（边界）：</b>对话式通用聊天助手、代码生成/Agent 执行、语音输入——与“截图工具”定位偏离，徒增 UI 复杂度与额度消耗。AI 能力始终锚定“<b>对眼前这张图</b>做事”。</div>
+
+<!-- ============================================================ -->
+<h2 id="s6"><span class="no">6</span>风险登记册与缓解措施</h2>
+<table>
+  <tr><th>ID</th><th>风险</th><th>等级</th><th>影响</th><th>缓解措施</th></tr>
+  <tr><td>R1</td><td>api.githubcopilot.com 无公开文档/SLA，字段、路径、必带头可能变化（历史上有过迁移：copilot-proxy → 新域名）</td><td>中</td><td>云端功能整体失效</td><td>① 端点与请求头<b>集中在 CopilotProvider 一处</b>，做成可配置常量；② 启动探测 + 明确错误码上报（区别于网络错误）；③ 本地 OCR 兜底保证 OCR 基线能力永续；④ 官方 SDK（路线 A）为长期退路</td></tr>
+  <tr><td>R2</td><td>条款灰色：非官方客户端调用可能违反 GitHub ToS；GitHub 对滥用（共享账号、高并发转售）有封号先例；copilot-api 仓库 2025-08 曾被投毒（已澄清为仓库入侵而非 SDK 本身）</td><td>中</td><td>极端情况账户受限</td><td>① <b>不伪装官方客户端</b>（优先 PAT + 中性 Integration-Id，PoC 验证自注册 client_id）；② 单用户自用、低频、无转发代理——与 Docker/aider 同等使用形态；③ 设置页明示“非官方端点，风险自担”字样；④ 默认本地模式、云端按需开启</td></tr>
+  <tr><td>R3</td><td>公司网络不可达 api.githubcopilot.com（防火墙/代理）</td><td>中</td><td>公司机不可用</td><td>PoC-0 先测连通性；HttpClient 支持系统代理；不可达则纯本地 OCR 模式</td></tr>
+  <tr><td>R4</td><td>视觉 OCR 精度不达预期（小字号中文、低对比度、复杂表格线）</td><td>中</td><td>核心功能口碑</td><td>PoC-2 用真实工作截图建样本集验收；预处理 2x 放大小字号区域；提示词工程（要求“仅输出图中真实存在的文字，不得推测补全”）；结果浮窗保留原图对照</td></tr>
+  <tr><td>R5</td><td>额度/计费变化：AI Credits 价率调整、Free 档限制收紧</td><td>低</td><td>成本上升</td><td>默认 mini 档；设置页展示估算消耗；429/额度尽错误明确提示</td></tr>
+  <tr><td>R6</td><td>令牌泄漏（配置文件被拷贝、日志误记）</td><td>低</td><td>账户安全</td><td>TokenVault 存凭据管理器（DPAPI，随用户账户隔离）；日志永不全量打印令牌；仅 copilot scope 最小权限</td></tr>
+  <tr><td>R7</td><td>隐私合规：截图外发到第三方（个人/公司敏感信息）</td><td>中</td><td>数据合规</td><td>首次启用强提示 + 默认发送前确认 + 本地模式开关；文档写明数据流向（GitHub→OpenAI/Anthropic/Google）</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="s7"><span class="no">7</span>PoC 验证清单（实施前必须跑通的 7 项）</h2>
+<p>以下用一段独立试验代码（不进主干）完成，预计半天；<b>全部通过再立项开发</b>。</p>
+<table>
+  <tr><th>#</th><th>验证项</th><th>方法</th><th>验收标准</th></tr>
+  <tr><td>PoC-0</td><td>公司网络连通性</td><td>公司机 curl <code>https://api.githubcopilot.com/models</code>（带 PAT）</td><td>200 + 模型 JSON（或确认代理方案）</td></tr>
+  <tr><td>PoC-1</td><td>PAT 认证与模型清单</td><td>生成 copilot scope PAT；Java 11 HttpClient 调 <code>/models</code></td><td>列出的模型含至少一个多模态模型（gpt-4o 系）</td></tr>
+  <tr><td>PoC-2</td><td><b>视觉 OCR 中文准确率（核心）</b></td><td>20 张真实工作截图样本（中文文档/表格/代码/报错弹窗/小字号）走 <code>/chat/completions</code> image_url</td><td>纯文本场景字符准确率 ≥95%；表格结构合理还原；记录各模型对比</td></tr>
+  <tr><td>PoC-3</td><td>流式 SSE 解析</td><td><code>stream:true</code> 手写 SSE 解析（java.net.http.BodyHandlers.ofLines）</td><td>逐 token 回调无乱码（UTF-8 边界处理正确）</td></tr>
+  <tr><td>PoC-4</td><td>内存峰值</td><td>-Xmx128m 下 4K 截图全流程（缩放/JPEG/base64/发送）</td><td>无 OOM，堆峰值 &lt; 40MB</td></tr>
+  <tr><td>PoC-5</td><td>Windows 本地 OCR</td><td>powershell.exe 调 WinRT OcrEngine 识别同批样本</td><td>中文可识别；记录与云端差距；确认语言包检测逻辑</td></tr>
+  <tr><td>PoC-6</td><td>设备流自注册 client_id（可选增强）</td><td>自注册 OAuth App 启用 device flow → 换 copilot token → 调用</td><td>可行→设计进设置页；不可行→仅 PAT 模式（决策点）</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="s8"><span class="no">8</span>与项目开发流程的衔接（RTM 规则）</h2>
+<div class="note blue">按项目既定规则：<b>若后续决定立项实施，须先在《需求文档.html》第 13 章 RTM 追加相应 FR 条目（F1~F12 逐一登记状态）并写入变更记录，再进入开发。</b>本报告仅为技术探索交付物，按用户指示<b>未改动任何代码与需求文档</b>。建议的 RTM 章节归属：新增“第 8 章 AI 能力”或并入现有功能域（待用户决策）。</div>
+
+<!-- ============================================================ -->
+<h2 id="s9"><span class="no">9</span>参考资料</h2>
+<h3>官方文档 / 官方博客 / 官方变更日志</h3>
+<ul class="refs">
+  <li>GitHub Docs — GitHub Models 已退役公告（2026-07-30）：<a href="https://docs.github.com/github-models">docs.github.com/github-models</a></li>
+  <li>GitHub Changelog — Copilot SDK 公开预览（2026-04-02）：<a href="https://github.blog/changelog/2026-04-02-copilot-sdk-in-public-preview/">github.blog/changelog/2026-04-02-copilot-sdk-in-public-preview</a></li>
+  <li>GitHub Docs — Copilot SDK 入门（各语言坐标，Java 17+，RPC 驱动 CLI）：<a href="https://docs.github.com/en/copilot/how-tos/copilot-sdk/getting-started">docs.github.com/en/copilot/how-tos/copilot-sdk/getting-started</a></li>
+  <li>GitHub Docs — Copilot SDK 认证（OAuth GitHub App / 设备流 / PAT 类型 / 订阅要求）：<a href="https://docs.github.com/en/copilot/how-tos/copilot-sdk/auth/authenticate">docs.github.com/en/copilot/how-tos/copilot-sdk/auth/authenticate</a></li>
+  <li>官方 SDK 仓库（Java/TS/Python/Go/.NET/Rust）：<a href="https://github.com/github/copilot-sdk">github.com/github/copilot-sdk</a> ｜ Java 官方 Javadoc（0.3.0-java.2）：<a href="https://github.github.com/copilot-sdk-java/0.3.0-java.2/">github.github.com/copilot-sdk-java</a></li>
+  <li>GitHub Blog — Copilot 转向用量计费（AI Credits，2026-06-01 生效）：<a href="https://github.blog/news-insights/company-news/github-copilot-is-moving-to-usage-based-billing/">github.blog/…github-copilot-is-moving-to-usage-based-billing</a></li>
+  <li>GitHub Changelog — GitHub Models API 发布（2025-05-15，历史）：<a href="https://github.blog/changelog/2025-05-15-github-models-api-now-available/">github.blog/changelog/2025-05-15-github-models-api-now-available</a></li>
+  <li>GitHub Changelog — Agent tasks REST API（2026-06-04）：<a href="https://github.blog/changelog/2026-06-04-agent-tasks-rest-api-now-available-for-copilot-pro-pro-and-max/">github.blog/changelog/2026-06-04-agent-tasks-rest-api…</a></li>
+  <li>VS Code Blog — Bring Your Own Key（2025-10，背景）：<a href="https://code.visualstudio.com/blogs/2025/10/22/bring-your-own-key">code.visualstudio.com/blogs/2025/10/22/bring-your-own-key</a></li>
+</ul>
+<h3>主流集成方文档（证明开放端点的产业采用）</h3>
+<ul class="refs">
+  <li>Docker AI Agent — GitHub Copilot Provider（认证头 /chat/completions 与 /responses / 多模态 / 模型表）：<a href="https://docs.docker.com/ai/docker-agent/providers/github-copilot/">docs.docker.com/ai/docker-agent/providers/github-copilot</a></li>
+  <li>aider — GitHub Copilot 接入指南（OpenAI 兼容用法与合规立场）：<a href="https://aider.chat/docs/llms/github.html">aider.chat/docs/llms/github.html</a></li>
+  <li>LiteLLM — github_copilot Provider（设备流/令牌管理/env 配置）：<a href="https://docs.litellm.ai/docs/providers/github_copilot">docs.litellm.ai/docs/providers/github_copilot</a></li>
+</ul>
+<h3>社区项目（认证内部机制参考，均含风险自负声明）</h3>
+<ul class="refs">
+  <li>ericc-ch/copilot-api（OpenAI/Anthropic 兼容代理；封号风险警告）：<a href="https://github.com/ericc-ch/copilot-api">github.com/ericc-ch/copilot-api</a> ｜ 作者复盘：<a href="https://dev.to/ericc/i-turned-github-copilot-into-openai-api-compatible-provider-1fb8">dev.to/ericc/…</a></li>
+  <li>Alorse/copilot-to-api（client_id 硬编码于官方扩展的说明）：<a href="https://github.com/Alorse/copilot-to-api">github.com/Alorse/copilot-to-api</a></li>
+  <li>GitHub Community 讨论 #187602（模型可用性随订阅变化）：<a href="https://github.com/orgs/community/discussions/187602">github.com/orgs/community/discussions/187602</a></li>
+</ul>
+
+<footer>
+  钉图 TackShot · AI 功能技术探索报告 V1.0 · 2026-08-24 · 本报告为技术调研交付物，未修改任何代码与需求文档；引用事实截至调研当日，平台策略（端点/计费/许可）可能继续变化，实施前请以第 7 章 PoC 复核。
+</footer>
+
+</div>
+</body>
+</html>
