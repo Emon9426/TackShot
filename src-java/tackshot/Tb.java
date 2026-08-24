@@ -32,7 +32,7 @@ final class Tb {
             TB_EDIT = 24, TB_COPYIMG = 25, TB_ZOOMOUT = 26, TB_ZOOMIN = 27,
             TB_OPAQUE = 28, TB_CLOSE = 29,
             TB_MS_MOSAIC = 30, TB_MS_BLUR = 31, TB_MS_BLACK = 32,
-            TB_TOP = 33, TB_SELECT = 34;
+            TB_TOP = 33, TB_SELECT = 34, TB_AI = 35;
 
     static final int[] PALETTE = {
             0xFFEF4444, 0xFFF59E0B, 0xFF22C55E, 0xFF3B82F6, 0xFFFFFFFF, 0xFF111827 };
@@ -100,6 +100,7 @@ final class Tb {
             case TB_OPAQUE: return "透明度（左键循环 0/25/75%，右键精确调节）";
             case TB_TOP: return "置顶开关（当前高亮=始终最前，点击切换为允许被遮挡）";
             case TB_SELECT: return "选择/移动对象 (V)：点击选中标注，拖动移动，控制点缩放，Delete 删除";
+            case TB_AI: return "AI 识别（提取文字/翻译，需在设置中配置 GitHub 令牌）";
             case TB_CLOSE: return "关闭（Esc / 双击）";
             case TB_MS_MOSAIC: return "方格马赛克";
             case TB_MS_BLUR: return "高斯模糊";
@@ -119,6 +120,7 @@ final class Tb {
         if (mode == MODE_EDITOR) {
             return new int[][]{
                     {TB_OK, 19}, {TB_PIN, 19}, {TB_COPYIMG, 19}, {TB_SAVE, 19}, {TB_CANCEL, 19},
+                    {TB_AI, 19},
                     {TB_SELECT, 19},
                     {TB_RECT, 19}, {TB_ELLIPSE, 19}, {TB_LINE, 19}, {TB_ARROW, 19}, {TB_PEN, 19},
                     {TB_TEXT, 19}, {TB_MOSAIC, 19}, {TB_HIGHLIGHT, 19},
@@ -129,6 +131,7 @@ final class Tb {
         if (mode == MODE_PIN_EDIT) {
             return new int[][]{
                     {TB_OK, 19}, {TB_COPYIMG, 19}, {TB_SAVE, 19}, {TB_CANCEL, 19},
+                    {TB_AI, 19},
                     {TB_SELECT, 19},
                     {TB_RECT, 19}, {TB_ELLIPSE, 19}, {TB_LINE, 19}, {TB_ARROW, 19}, {TB_PEN, 19},
                     {TB_TEXT, 19}, {TB_MOSAIC, 19}, {TB_HIGHLIGHT, 19},
@@ -526,6 +529,27 @@ final class Tb {
                 line(g, new Color(239, 68, 68), pwT, l, tp, rt, bm);
                 line(g, new Color(239, 68, 68), pwT, l, bm, rt, tp);
                 break;
+            case TB_AI: {
+                // 四角星光（AI 识别）：大星 + 两颗小星点缀
+                GeneralPath star = new GeneralPath();
+                float cx1 = mx - w * 0.06f, cy1 = my - h * 0.06f, r1 = w * 0.34f;
+                star.moveTo(cx1, cy1 - r1);
+                star.lineTo(cx1 + r1 * 0.22f, cy1 - r1 * 0.22f);
+                star.lineTo(cx1 + r1, cy1);
+                star.lineTo(cx1 + r1 * 0.22f, cy1 + r1 * 0.22f);
+                star.lineTo(cx1, cy1 + r1);
+                star.lineTo(cx1 - r1 * 0.22f, cy1 + r1 * 0.22f);
+                star.lineTo(cx1 - r1, cy1);
+                star.lineTo(cx1 - r1 * 0.22f, cy1 - r1 * 0.22f);
+                star.closePath();
+                g.setColor(new Color(59, 130, 246));
+                g.fill(star);
+                g.setColor(new Color(148, 163, 184));
+                g.fill(new Ellipse2D.Float(rt - w * 0.10f, tp + h * 0.06f, w * 0.12f, w * 0.12f));
+                g.setColor(new Color(226, 232, 240));
+                g.fill(new Ellipse2D.Float(l + w * 0.02f, bm - h * 0.22f, w * 0.09f, w * 0.09f));
+                break;
+            }
             default:
                 break;
         }

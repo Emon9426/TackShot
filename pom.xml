@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  钉图 TackShot · AI 版依赖清单（仅用于解析官方 Copilot SDK 及其传递依赖到 ai/lib/，
+  主程序构建仍是 ai/build.sh 的 javac + jar，与主版本工程方式一致）。
+  官方 SDK：https://github.com/github/copilot-sdk ｜ Maven Central: com.github:copilot-sdk-java
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.emon.tackshot</groupId>
+  <artifactId>tackshot-ai-deps</artifactId>
+  <version>2.3.0</version>
+  <packaging>pom</packaging>
+
+  <properties>
+    <maven.compiler.release>17</maven.compiler.release>
+    <copilot.sdk.version>1.0.11</copilot.sdk.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.github</groupId>
+      <artifactId>copilot-sdk-java</artifactId>
+      <version>${copilot.sdk.version}</version>
+    </dependency>
+  </dependencies>
+</project>

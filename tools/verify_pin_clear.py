@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # 残影回归验证（V2.0 Java 版）：贴图悬停出菜单→移开隐藏→顶部悬浮区必须完全透明（alpha 全 0）
-# 自包含：启动 dist/TackShot.jar（TACKSHOT_DEBUG_SHOT=1）→ 热键 → 拖选 → Enter → 断言 → 结束进程
+# 自包含：启动 dist/TackShotAI.jar（TACKSHOT_DEBUG_SHOT=1）→ 热键 → 拖选 → Enter → 断言 → 结束进程
 import ctypes, ctypes.wintypes as wt, os, struct, subprocess, time
 
 u = ctypes.windll.user32
@@ -61,7 +61,7 @@ def find_pin(pid, timeout=10):
 # ---- 启动 Java 版 ----
 env = dict(os.environ); env["TACKSHOT_DEBUG_SHOT"] = "1"
 proc = subprocess.Popen(["java", "-Dsun.java2d.uiScale.enabled=false",
-                         "-jar", os.path.join(DIST, "TackShot.jar")],
+                         "-jar", os.path.join(DIST, "TackShotAI.jar")],
                         env=env, cwd=DIST)
 try:
     t0 = time.time()

@@ -7,8 +7,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Locale;
 
-/** 便携配置：jar 同目录 config.json，扁平键值，格式与 C++ 版完全兼容。 */
-final class Cfg {
+/** 便携配置：jar 同目录 config.json，扁平键值，格式与 C++ 版完全兼容。
+ *  AI 版：类与 AI 字段公开，供 tackshot.ai 包经 Main.cfg 读写。 */
+public final class Cfg {
     String hotkeyRegion = "Ctrl+Alt+A";
     String hotkeyFull = "Ctrl+Alt+F";
     String hotkeyPin = "Ctrl+Alt+P";
@@ -16,11 +17,16 @@ final class Cfg {
     String format = "png";               // png | jpeg
     String outputDir = "";               // 空 = 默认（图片\TackShot）
     int jpegQuality = 90;
+    // ---- AI 版新增（FR-8.1）：令牌不在此处，仅存 Windows 凭据管理器 ----
+    public boolean aiEnabled = false;    // 总开关（默认关，opt-in）
+    public String aiTier = "fast";              // fast | balanced | deep
+    public String aiTranslateTo = "中文";        // 翻译目标语言
+    public boolean aiConfirm = true;            // 发送前确认（D7 默认开）
 
     void load() {
         String text;
         try {
-            byte[] raw = Files.readAllBytes(Paths.get(Main.exeDir, "config.json"));
+            byte[] raw = Files.readAllBytes(Paths.get(Main.exeDir, "config-ai.json"));
             String utf8 = new String(raw, StandardCharsets.UTF_8);
             if (!utf8.isEmpty() && utf8.charAt(0) == '\uFEFF') utf8 = utf8.substring(1);
             text = utf8;
@@ -41,9 +47,14 @@ final class Cfg {
             } catch (NumberFormatException ignored) {
             }
         }
+        if ((v = findValue(text, "ai_enabled")) != null) aiEnabled = v.trim().equals("true");
+        if ((v = findValue(text, "ai_tier")) != null && !v.isEmpty())
+            aiTier = v.trim().equals("balanced") || v.trim().equals("deep") ? v.trim() : "fast";
+        if ((v = findValue(text, "ai_translate_to")) != null && !v.isEmpty()) aiTranslateTo = v;
+        if ((v = findValue(text, "ai_confirm")) != null) aiConfirm = !v.trim().equals("false");
     }
 
-    void save() {
+    public void save() {
         StringBuilder json = new StringBuilder();
         json.append("{\n");
         json.append("  \"hotkey_region\": \"").append(escape(hotkeyRegion)).append("\",\n");
@@ -52,10 +63,14 @@ final class Cfg {
         json.append("  \"confirm_action\": \"").append(escape(confirmAction)).append("\",\n");
         json.append("  \"format\": \"").append(escape(format)).append("\",\n");
         json.append("  \"output_dir\": \"").append(escape(outputDir)).append("\",\n");
-        json.append("  \"jpeg_quality\": ").append(jpegQuality).append("\n");
+        json.append("  \"jpeg_quality\": ").append(jpegQuality).append(",\n");
+        json.append("  \"ai_enabled\": ").append(aiEnabled).append(",\n");
+        json.append("  \"ai_tier\": \"").append(escape(aiTier)).append("\",\n");
+        json.append("  \"ai_translate_to\": \"").append(escape(aiTranslateTo)).append("\",\n");
+        json.append("  \"ai_confirm\": ").append(aiConfirm).append("\n");
         json.append("}\n");
         try {
-            Files.write(Paths.get(Main.exeDir, "config.json"), json.toString().getBytes(StandardCharsets.UTF_8));
+            Files.write(Paths.get(Main.exeDir, "config-ai.json"), json.toString().getBytes(StandardCharsets.UTF_8));
         } catch (IOException ignored) {
         }
     }

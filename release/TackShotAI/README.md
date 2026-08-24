@@ -1,14 +1,18 @@
-# 钉图 TackShot
+# 钉图 TackShot（AI 版分支）
 
-**轻量级截图 · 标注 · 贴图工具（Java 版 V2.2）**
+> **本分支（feature/AI）＝ AI 版主体**：以 GitHub Copilot SDK 接入 AI 识别（OCR / 翻译），产物 `TackShotAI.jar`（身份与配置独立，可与无 AI 旧版同机共存）。
+> **main 分支保留无 AI 主版本**；无 AI 版历史快照见 tag `v2.2-noai`。本分支可整体合并回 main（合并即切换为 AI 版）。
+> AI 版详细说明（前置条件 / 使用步骤 / 已验证项）见 **[README-AI.md](README-AI.md)**。
+
+**轻量级截图 · 标注 · 贴图工具（AI 版 V2.3-AI，Java 17+）**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%2B-0078D4.svg)](#)
-[![Offline](https://img.shields.io/badge/100%25-Offline-green.svg)](#隐私)
+[![AI](https://img.shields.io/badge/AI-Copilot%20SDK-8957e5.svg)](README-AI.md)
 
-绿色免安装：一个文件夹（`TackShot.jar` + `lib\` + `start.bat`）就是完整软件，**不含任何 exe**，适合禁止运行 exe 的办公环境；完全离线，无广告、无遥测。
+绿色免安装：一个文件夹（`TackShotAI.jar` + `lib\` + `start.bat`）就是完整软件，**不含任何 exe**；AI 默认关闭（opt-in），不启用 AI 时行为与无 AI 版一致。
 
-> V2.0 起实现平台由 C++ 切换为 **Java 11+（Swing/AWT + JNA）**，运行需安装 JDK/JRE 11 或 17。
+> AI 版运行需 **JDK/JRE 17+**（Copilot SDK 要求）；启用 AI 需自备 GitHub Copilot 订阅、本机安装 Copilot CLI 与访问令牌（详见 README-AI.md）。
 
 ---
 

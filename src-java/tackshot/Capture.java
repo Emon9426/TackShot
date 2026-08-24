@@ -771,6 +771,11 @@ final class Capture {
             case Tb.TB_CANCEL:
                 cancel();
                 return;
+            case Tb.TB_AI:                 // AI 按钮（D3 截图编辑器入口）：当前选区+标注合成图，不结束会话
+                if (selValid && wnd != null)
+                    tackshot.ai.AiService.runImage(this, compose(), wnd.getBounds(), true,
+                            tackshot.ai.AiService.FEAT_EXTRACT, null);
+                return;
             case Tb.TB_SELECT: ed.cur = Edit.Tool.Select; break;
             case Tb.TB_RECT: ed.cur = Edit.Tool.Rect; break;
             case Tb.TB_ELLIPSE: ed.cur = Edit.Tool.Ellipse; break;

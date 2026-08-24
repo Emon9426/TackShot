@@ -52,7 +52,7 @@ def find_pin(pid, timeout=10):
 
 env = dict(os.environ); env["TACKSHOT_DEBUG_SHOT"] = "1"
 proc = subprocess.Popen(["java", "-Dsun.java2d.uiScale.enabled=false",
-                         "-jar", os.path.join(DIST, "TackShot.jar")], env=env, cwd=DIST)
+                         "-jar", os.path.join(DIST, "TackShotAI.jar")], env=env, cwd=DIST)
 try:
     t0 = time.time()
     while time.time() - t0 < 20 and "热键已注册：区域截图" not in log_new():

@@ -150,6 +150,7 @@ final class Pin {
 
     private void close() {
         if (dead || wnd == null) return;
+        tackshot.ai.AiService.ownerClosed(this);   // AI：贴图关闭联动关结果浮窗（D1）
         if (TextInput.active()) TextInput.cancel();
         if (alphaEditPin == this) closeAlphaEdit();
         stopTimers();
@@ -157,6 +158,26 @@ final class Pin {
         wnd.dispose();
         wnd = null;
         pins.remove(this);
+    }
+
+    // ---------------- AI 版访问器（供 tackshot.ai 包使用） ----------------
+
+    boolean isDead() {
+        return dead;
+    }
+
+    boolean isTopmost() {
+        return topmost;
+    }
+
+    /** AI 输入图：编辑态=含标注合成图，否则原图。 */
+    BufferedImage aiImage() {
+        return editing ? composeEdited() : img;
+    }
+
+    /** AI 结果浮窗的停靠锚点（贴图窗口屏幕矩形）。 */
+    Rectangle aiAnchor() {
+        return wnd == null ? null : wnd.getBounds();
     }
 
     private void stopTimers() {
@@ -630,6 +651,10 @@ final class Pin {
                 shapeDrag = false;
                 ed.selected = null;
                 break;
+            case Tb.TB_AI:                 // AI 按钮（D3 编辑工具条入口）
+                tackshot.ai.AiService.runImage(this, aiImage(), aiAnchor(), topmost,
+                        tackshot.ai.AiService.FEAT_EXTRACT, null);
+                return;
             case Tb.TB_SELECT: ed.cur = Edit.Tool.Select; break;
             case Tb.TB_RECT: ed.cur = Edit.Tool.Rect; break;
             case Tb.TB_ELLIPSE: ed.cur = Edit.Tool.Ellipse; break;
@@ -1005,7 +1030,15 @@ final class Pin {
             render();
             return;
         }
-        close();
+        // AI 版（D6）：非编辑态右键弹 AI 菜单；原「右键=关闭」保留为菜单末项
+        tackshot.ai.AiMenu.show(wnd, x, y,
+                () -> tackshot.ai.AiService.runImage(Pin.this, aiImage(), aiAnchor(), topmost,
+                        tackshot.ai.AiService.FEAT_EXTRACT, null),
+                () -> tackshot.ai.AiService.runImage(Pin.this, aiImage(), aiAnchor(), topmost,
+                        tackshot.ai.AiService.FEAT_TRANSLATE, "中文"),
+                () -> tackshot.ai.AiService.runImage(Pin.this, aiImage(), aiAnchor(), topmost,
+                        tackshot.ai.AiService.FEAT_TRANSLATE, "English"),
+                this::close);
     }
 
     private void onWheel(MouseWheelEvent e) {

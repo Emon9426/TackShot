@@ -218,7 +218,7 @@ final class Nat {
 
     static boolean autoRunEnabled() {
         try {
-            return Advapi32Util.registryValueExists(WinReg.HKEY_CURRENT_USER, RUN_KEY, "TackShot");
+            return Advapi32Util.registryValueExists(WinReg.HKEY_CURRENT_USER, RUN_KEY, "TackShotAI");
         } catch (Throwable t) {
             return false;
         }
@@ -228,10 +228,10 @@ final class Nat {
         try {
             if (on) {
                 String javaw = Paths.get(System.getProperty("java.home"), "bin", "javaw.exe").toString();
-                Advapi32Util.registrySetStringValue(WinReg.HKEY_CURRENT_USER, RUN_KEY, "TackShot",
-                        "\"" + javaw + "\" -Dsun.java2d.uiScale.enabled=false -Xmx128m -jar \"" + Main.exePath + "\"");
+                Advapi32Util.registrySetStringValue(WinReg.HKEY_CURRENT_USER, RUN_KEY, "TackShotAI",
+                        "\"" + javaw + "\" -Dsun.java2d.uiScale.enabled=false -Xmx192m -jar \"" + Main.exePath + "\"");
             } else {
-                Advapi32Util.registryDeleteValue(WinReg.HKEY_CURRENT_USER, RUN_KEY, "TackShot");
+                Advapi32Util.registryDeleteValue(WinReg.HKEY_CURRENT_USER, RUN_KEY, "TackShotAI");
             }
         } catch (Throwable ignored) {
         }

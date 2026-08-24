@@ -15,6 +15,7 @@ import java.awt.AWTException;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Frame;
+import java.awt.Graphics2D;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.MouseInfo;
@@ -35,14 +36,16 @@ import java.util.Map;
 
 /** 钉图 TackShot V2.0（Java 版）入口：单实例 / 托盘 / 热键 / 输出分发 / 冒烟测试。 */
 public final class Main {
-    public static final String VERSION = "钉图 TackShot v2.2";
+    public static final String VERSION = "钉图 TackShot v2.3-AI（独立 AI 版）";
+    /** AI 版：供 tackshot.ai 包读取的自绘 UI 字体族（Tb 为包私有类）。 */
+    public static final String UI_FONT_FAMILY = Tb.UI_FAMILY;
     public static Cfg cfg = new Cfg();
     public static String exeDir = ".";
     public static String exePath = "";
     public static JFrame hidden;
     static TrayIcon tray;
     static Hotkeys hotkeys;
-    static boolean testMode, captureMode;
+    static boolean testMode, captureMode, aiTestMode;
     private static RandomAccessFile lockFile;
     private static FileLock fileLock;
 
@@ -60,8 +63,13 @@ public final class Main {
             String lo = a.toLowerCase();
             if (lo.equals("/test") || lo.equals("--test")) testMode = true;
             else if (lo.equals("/capture") || lo.equals("--capture")) captureMode = true;
+            else if (lo.equals("/aitest") || lo.equals("--aitest")) aiTestMode = true;
         }
         if (!acquireSingleInstance()) {
+            if (testMode || aiTestMode) {          // 自动化模式：不弹窗（无人交互会永久卡死），日志退出
+                System.err.println("已在运行：单实例锁被占用");
+                return;
+            }
             JOptionPane.showMessageDialog(null, "钉图 TackShot 已在运行（请查看系统托盘）。",
                     "钉图 TackShot", JOptionPane.INFORMATION_MESSAGE);
             return;
@@ -84,10 +92,10 @@ public final class Main {
         Log.dir = exeDir;
     }
 
-    /** 单实例：jar 同目录 tackshot.lock 文件锁（exeDir 来自 code source，路径受控）。 */
+    /** 单实例：jar 同目录 tackshot-ai.lock 文件锁（AI 版独立锁名，可与无 AI 主版本同机共存）。 */
     private static boolean acquireSingleInstance() {
         try {
-            File f = new File(exeDir, "tackshot.lock");
+            File f = new File(exeDir, "tackshot-ai.lock");
             lockFile = new RandomAccessFile(f, "rw");
             fileLock = lockFile.getChannel().tryLock();
             return fileLock != null;
@@ -117,6 +125,8 @@ public final class Main {
         });
         if (testMode) {
             runSmokeTest();
+        } else if (aiTestMode) {
+            runAiTest();
         } else {
             balloon("钉图 TackShot 已就绪", "Ctrl+Alt+A 开始截图 · 右键托盘图标查看菜单");
             if (captureMode) {
@@ -240,6 +250,10 @@ public final class Main {
         mi.addActionListener(e -> pinFromClipboard());
         m.add(mi);
         m.addSeparator();
+        mi = new JMenuItem("✨ AI 识别剪贴板图片");        // D3 托盘入口（FR-8.2）
+        mi.setFont(f);
+        mi.addActionListener(e -> tackshot.ai.AiService.runFromClipboard());
+        m.add(mi);
         mi = new JMenuItem("设置…");
         mi.setFont(f);
         mi.addActionListener(e -> Settings.showDialog());
@@ -252,10 +266,11 @@ public final class Main {
         mi = new JMenuItem("关于 钉图 TackShot");
         mi.setFont(f);
         mi.addActionListener(e -> JOptionPane.showMessageDialog(hidden,
-                VERSION + "（Java 版）\n轻量级开源截图 · 贴图工具\n\n"
+                VERSION + "\n轻量级开源截图 · 贴图工具 · AI 识别\n\n"
+                        + "AI 能力经官方 GitHub Copilot SDK 接入（需自备 Copilot 订阅与 PAT），\n"
+                        + "令牌仅存本机 Windows 凭据管理器；默认关闭，开启后按需联网。\n\n"
                         + "许可证：MIT（见 LICENSE 与 THIRD-PARTY-NOTICES）\n"
-                        + "默认热键：Ctrl+Alt+A 区域 / Ctrl+Alt+F 全屏 / Ctrl+Alt+P 贴图\n\n"
-                        + "本软件完全离线运行，不收集任何数据。",
+                        + "默认热键：Ctrl+Alt+A 区域 / Ctrl+Alt+F 全屏 / Ctrl+Alt+P 贴图",
                 "关于", JOptionPane.INFORMATION_MESSAGE));
         m.add(mi);
         mi = new JMenuItem("退出");
@@ -266,8 +281,13 @@ public final class Main {
         return m;
     }
 
-    static void balloon(String title, String text) {
+    public static void balloon(String title, String text) {
         if (tray != null) tray.displayMessage(title, text, TrayIcon.MessageType.INFO);
+    }
+
+    /** AI 版：剪贴板读图桥（Clip 为包私有类）。 */
+    public static BufferedImage clipImage() {
+        return Clip.fromClipboard();
     }
 
     // ---------------- 输出分发 ----------------
@@ -306,6 +326,7 @@ public final class Main {
 
     static void quit() {
         if (hotkeys != null) hotkeys.shutdown();
+        tackshot.ai.AiService.shutdown();   // AI：停结果浮窗与 SDK/CLI 子进程
         Pin.closeAll();
         if (trayHost != null) {
             JWindow h = trayHost;
@@ -316,6 +337,31 @@ public final class Main {
         cfg.save();
         Log.write("==== 退出 ====");
         System.exit(0);
+    }
+
+    // ---------------- AI 视觉验证（/aitest）：贴图 + 未配置引导卡 + 设置窗（含 AI 页） ----------------
+
+    private static void runAiTest() {
+        Log.write("==== AITEST 开始（贴图 + AI 未配置卡 + 设置三标签页）====");
+        final int W = 300, H = 150;
+        BufferedImage bmp = new BufferedImage(W, H, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = bmp.createGraphics();
+        g.setColor(java.awt.Color.WHITE);
+        g.fillRect(0, 0, W, H);
+        g.setColor(java.awt.Color.BLACK);
+        g.setFont(new Font(Tb.UI_FAMILY, Font.PLAIN, 16));
+        g.drawString("Weekly Report — Aug 24", 14, 34);
+        g.drawString("1. V2.2 对象编辑交付", 14, 64);
+        g.drawString("2. AI 版首次构建", 14, 92);
+        g.dispose();
+        Pin.create(bmp);
+        tackshot.ai.AiService.showUnconfiguredCard();
+        javax.swing.Timer t = new Timer(1200, e -> {
+            Log.write("AITEST: 打开设置窗（AI 标签页）");
+            Settings.showDialog();
+        });
+        t.setRepeats(false);
+        t.start();
     }
 
     // ---------------- 冒烟测试（/test）：保存 / 剪贴板 / 贴图链路 ----------------

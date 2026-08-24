@@ -6,18 +6,18 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
-/** tackshot.log：UTF-16LE 追加写（与 C++ 版及回归脚本保持兼容）。 */
-final class Log {
+/** tackshot-ai.log：UTF-16LE 追加写（AI 版文件名独立；类公开供 tackshot.ai 包写日志）。 */
+public final class Log {
     static String dir = ".";
     private static final Object LOCK = new Object();
     private static final DateTimeFormatter HMS = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     private Log() {}
 
-    static void write(String msg) {
+    public static void write(String msg) {
         String line = "[" + LocalTime.now().format(HMS) + "] " + msg + "\r\n";
         synchronized (LOCK) {
-            try (FileOutputStream fo = new FileOutputStream(dir + "\\tackshot.log", true)) {
+            try (FileOutputStream fo = new FileOutputStream(dir + "\\tackshot-ai.log", true)) {
                 fo.write(line.getBytes(StandardCharsets.UTF_16LE));
             } catch (IOException ignored) {
             }

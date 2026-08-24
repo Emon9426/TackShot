@@ -6,8 +6,11 @@ dist/
 *.log
 *.log.*
 config.json
+config-ai.json
 test_out.*
 tackshot.lock
+tackshot-ai.lock
+copilot-home/
 *.bmp
 # 本地工具链与临时脚本（不入库）
 tools/w64devkit/
