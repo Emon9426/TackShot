@@ -705,11 +705,11 @@ final class Capture {
     }
 
     private void updateCursor(int x, int y) {
+        int hh = selValid ? hitHandle(new Point(x + vx, y + vy)) : 0;
         Cursor c;
         if (tb.hit(x, y) != 0) c = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
         else if (!selValid || shapeDrag) c = cross;
-        else if (hitHandle(new Point(x + vx, y + vy)) != 0)
-            c = Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR);
+        else if (hh != 0) c = cursorForHandle(hh - 2);
         else if (sel.contains(x + vx, y + vy)) {
             if (ed.cur == Edit.Tool.Select) {
                 Point cp = new Point(x + vx - sel.x, y + vy - sel.y);
@@ -725,6 +725,7 @@ final class Capture {
         view.setCursor(c);
     }
 
+    /** 控制点方向光标：序号 0..7＝NW,N,NE,E,SE,S,SW,W（选区控制点与对象包围盒控制点同一布局）。 */
     private static Cursor cursorForHandle(int hd) {
         switch (hd) {
             case 0: case 4: return Cursor.getPredefinedCursor(Cursor.NW_RESIZE_CURSOR);
