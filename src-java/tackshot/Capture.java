@@ -844,6 +844,7 @@ final class Capture {
         if (!selValid) return;
         if (TextInput.active()) TextInput.cancel();
         BufferedImage out = compose();
+        Main.lastOutput = out;   // FR-6.10：记录最近处理的图片
         boolean copied = Clip.toClipboard(wnd, out);
         String dir = Main.cfg.outputDir.isEmpty() ? Out.defaultSaveDir() : Main.cfg.outputDir;
         boolean jpeg = Main.cfg.format.equals("jpeg");
@@ -862,6 +863,7 @@ final class Capture {
         if (!selValid) return;
         if (TextInput.active()) TextInput.cancel();
         BufferedImage out = compose();
+        Main.lastOutput = out;   // FR-6.10：记录最近处理的图片
         boolean copied = Clip.toClipboard(wnd, out);
         endSession(true);
         String msg = copied ? "已复制到剪贴板" : "复制到剪贴板失败";

@@ -35,7 +35,9 @@ import java.util.Map;
 
 /** 钉图 TackShot V2.0（Java 版）入口：单实例 / 托盘 / 热键 / 输出分发 / 冒烟测试。 */
 public final class Main {
-    public static final String VERSION = "钉图 TackShot v2.2";
+    public static final String VERSION = "钉图 TackShot v2.4.0";
+    /** FR-6.9 自动更新用：与 GitHub Release tag（去 v/V 前缀）比较，必须与发布 tag 一致。 */
+    public static final String APP_VERSION = "2.4.0";
     public static Cfg cfg = new Cfg();
     public static String exeDir = ".";
     public static String exePath = "";
@@ -239,10 +241,22 @@ public final class Main {
         mi.setFont(f);
         mi.addActionListener(e -> pinFromClipboard());
         m.add(mi);
+        mi = new JMenuItem("编辑剪贴板图片…");
+        mi.setFont(f);
+        mi.addActionListener(e -> editClipboardImage());
+        m.add(mi);
+        mi = new JMenuItem("打开最近图片…");
+        mi.setFont(f);
+        mi.addActionListener(e -> openRecentImage());
+        m.add(mi);
         m.addSeparator();
         mi = new JMenuItem("设置…");
         mi.setFont(f);
         mi.addActionListener(e -> Settings.showDialog());
+        m.add(mi);
+        mi = new JMenuItem("检查更新…");
+        mi.setFont(f);
+        mi.addActionListener(e -> Updater.checkForUpdate());
         m.add(mi);
         JCheckBoxMenuItem mAuto = new JCheckBoxMenuItem("开机自启动", Nat.autoRunEnabled());
         mAuto.setFont(f);
@@ -278,9 +292,51 @@ public final class Main {
         else balloon("钉图 TackShot", "剪贴板中没有图片");
     }
 
+    // ---------------- 打开图片处理（FR-6.10 · V2.4） ----------------
+
+    /** 本次会话最近一次输出的图片（截图确认/复制/保存/贴图保存均记录），供"打开最近图片"优先取用。 */
+    static BufferedImage lastOutput;
+
+    /** FR-6.10：打开剪贴板图片并直接进入贴图编辑态（八类标注/撤销/复制/保存全套工具条）。 */
+    static void editClipboardImage() {
+        BufferedImage bmp = Clip.fromClipboard();
+        if (bmp == null) {
+            balloon("钉图 TackShot", "剪贴板中没有图片");
+            return;
+        }
+        Pin.createEditing(bmp);
+        Log.write("打开剪贴板图片处理：" + bmp.getWidth() + "x" + bmp.getHeight());
+    }
+
+    /** FR-6.10：打开最近处理的一张图片进入编辑态。
+     *  优先取本次会话最近一次输出（含仅复制未落盘的）；无存档时回退到保存目录里最新的图片文件。 */
+    static void openRecentImage() {
+        if (lastOutput != null) {
+            Pin.createEditing(lastOutput);
+            Log.write("打开最近处理的图片（本次会话输出）："
+                    + lastOutput.getWidth() + "x" + lastOutput.getHeight());
+            return;
+        }
+        File f = Out.newestImageFile();
+        if (f == null) {
+            balloon("钉图 TackShot", "暂无最近处理的图片（可先用『保存』输出一张）");
+            Log.write("打开最近图片：无存档且保存目录无图片");
+            return;
+        }
+        BufferedImage img = Out.loadImage(f);
+        if (img == null) {
+            balloon("钉图 TackShot", "无法读取图片：" + f.getName());
+            Log.write("打开最近图片失败（解码）：" + f.getAbsolutePath());
+            return;
+        }
+        Pin.createEditing(img);
+        Log.write("打开最近处理的图片（保存目录）：" + f.getAbsolutePath());
+    }
+
     /** 确认（✓/Enter/双击/贴图按钮）输出分发：V2.0.3 起不写剪贴板，写剪贴板仅限复制/保存按钮。 */
     static void finishImage(BufferedImage img) {
         if (img == null) return;
+        lastOutput = img;   // FR-6.10：记录最近处理的图片
         String msg;
         if (cfg.confirmAction.equals("copy_save")) {
             String path = saveAuto(img);
@@ -374,6 +430,51 @@ public final class Main {
             Log.write("TEST FAIL: 贴图创建（" + n + " 个）/ 可见性（"
                     + (vis ? "可见" : "不可见") + "）");
         }
+
+        // FR-6.9 更新模块静态断言：版本比较（防无限更新循环）/ tag 前缀剥离 / Release Notes 中文转义
+        total++;
+        if (Updater.compareVersions("2.2", "2.3.0") < 0
+                && Updater.compareVersions("2.3.0", "2.3.0") == 0
+                && Updater.compareVersions("2.3.1", "2.3.0") > 0
+                && Updater.compareVersions("2.10", "2.9") > 0
+                && Updater.compareVersions("2.3", "2.3.0") == 0
+                && "2.3.0".equals(Updater.stripTagPrefix("V2.3.0"))
+                && "测试更新".equals(Updater.unescapeJson("\\u6d4b\\u8bd5\\u66f4\\u65b0"))
+                && "a\nb\"c".equals(Updater.unescapeJson("a\\nb\\\"c"))) {
+            Log.write("TEST PASS: FR-6.9 版本比较与 JSON 转义");
+            pass++;
+        } else Log.write("TEST FAIL: FR-6.9 版本比较与 JSON 转义");
+
+        // FR-6.10 最近图片：newestImageFileIn 必须选中最新修改的图片、忽略非图片文件
+        total++;
+        File ra = new File(exeDir, "test_recent_a.png");
+        File rb = new File(exeDir, "test_recent_b.jpg");
+        File rc = new File(exeDir, "test_recent_c.txt");
+        boolean recentOk = false;
+        try {
+            long now = System.currentTimeMillis();
+            if (Out.save(bmp, ra.getPath(), false, 90)
+                    && Out.save(bmp, rb.getPath(), true, 90)
+                    && ra.setLastModified(now - 2000)
+                    && rb.setLastModified(now + 10_000)   // 保证比同目录 test_out.png 新
+                    && rc.createNewFile()
+                    && rc.setLastModified(now + 20_000)) {
+                File newest = Out.newestImageFileIn(new File(exeDir));
+                BufferedImage loaded = newest != null ? Out.loadImage(newest) : null;
+                recentOk = rb.equals(newest)
+                        && loaded != null && loaded.getWidth() == W && loaded.getHeight() == H;
+            }
+        } catch (Throwable t) {
+            Log.write("TEST FR-6.10 异常：" + t);
+        } finally {
+            ra.delete();
+            rb.delete();
+            rc.delete();
+        }
+        if (recentOk) {
+            Log.write("TEST PASS: FR-6.10 最近图片扫描与加载");
+            pass++;
+        } else Log.write("TEST FAIL: FR-6.10 最近图片扫描与加载");
 
         Log.write("TEST 结果：" + pass + "/" + total + " 通过");
         Log.write("==== TEST 结束（1.5 秒后退出） ====");

@@ -1,6 +1,6 @@
 # 钉图 TackShot
 
-**轻量级截图 · 标注 · 贴图工具（Java 版 V2.2）**
+**轻量级截图 · 标注 · 贴图工具（Java 版 V2.4）**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%2B-0078D4.svg)](#)
@@ -74,7 +74,14 @@
 
 *托盘右键菜单为 Swing 完全自绘——在英文等非中文系统上中文不再是方框。*
 
-### 5. 输出与配置
+### 5. 打开图片处理（V2.4.0 新增）
+
+托盘右键菜单新增两个入口，打开后直接进入与贴图一致的编辑态（八类标注 / 选择工具 / 撤销重做 / 复制 / 保存）：
+
+- **编辑剪贴板图片…**：剪贴板有图片时直接打开处理；与 `Ctrl+Alt+P` 贴图的区别是**进来就是编辑态**，可直接补标注再复制/保存。
+- **打开最近图片…**：优先取本次会话最近一次输出的图（截图确认 / 复制 / 保存 / 贴图保存都算，覆盖"仅复制未落盘"的场景）；会话无存档时回退到保存目录里最新的一张 png/jpg。
+
+### 6. 输出与配置
 
 - 自动保存 PNG（默认）/ JPEG，时间戳命名；目录可在设置窗体中修改。
 - 便携配置 `config.json`（与 jar 同目录，也可不经设置窗体直接编辑）：
@@ -95,9 +102,12 @@
 
 ## 隐私
 
-本软件**完全离线运行**：不联网、不上传、不收集任何数据。开机自启动默认关闭，仅在你从托盘菜单开启后写入注册表 HKCU Run。
+本软件**默认完全离线**：截图 / 贴图 / 编辑全流程不联网、不上传、不收集任何数据。唯一联网行为是你主动点击托盘菜单「检查更新…」时连接 GitHub 查询并下载 Release 包（V2.3.0 起，FR-6.9）。开机自启动默认关闭，仅在你从托盘菜单开启后写入注册表 HKCU Run。
 
 ## 常见问题
+
+**Q：检查更新失败 / 下载失败？**
+多为网络无法访问 GitHub 所致，可在弹窗中选择「是」打开发布页手动下载，解压覆盖安装目录后重启（`config.json` 配置会保留）。更新过程日志见安装目录 `tackshot-update.log`。
 
 **Q：双击 start.bat 没有反应？**
 bat 会检测 `javaw`：请确认已安装 JDK/JRE 11/17 且在 PATH 中（或设置了 `JAVA_HOME`）。仍不行时，把 bat 里的 `javaw` 改成完整路径，例如 `"C:\Program Files\Java\jdk-17\bin\javaw.exe"`。
@@ -117,7 +127,7 @@ Java 版常驻约 60–120MB（启动参数已限 `-Xmx128m`）。相比 C++ 版
 
 ```bash
 bash build.sh                     # 产物 dist/TackShot.jar，并组装 release/ 发行文件夹与 zip
-java -jar dist/TackShot.jar --test  # 冒烟自测（3 项）
+java -jar dist/TackShot.jar --test  # 冒烟自测（4 项）
 ```
 
 技术栈：Java 11 + Swing/AWT + JNA 5.14（Apache-2.0，见 [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt)；许可证 MIT，见 [LICENSE](LICENSE)）。
@@ -132,7 +142,7 @@ java -jar dist/TackShot.jar --test  # 冒烟自测（3 项）
 
 # English Documentation
 
-# TackShot — Snap, Annotate, Pin (Java V2.2)
+# TackShot — Snap, Annotate, Pin (Java V2.4)
 
 **A lightweight screenshot, annotation and pin tool for Windows — now in Java.**
 
@@ -168,6 +178,7 @@ A single portable folder (`TackShot.jar` + `lib\` + `start.bat`) — **no exe at
 - **Finish actions** — ✓ confirm (pin by default) / **Pin** / **Copy** (clipboard + close, no file) / **Save** (auto-save + copy + close) / ✗ cancel.
 - **Pin** — black border; **per-pin always-on-top toggle** in the hover menu; corner = proportional resize, edge = single axis; wheel zoom; opacity ◐ (cycle / sub-menu / Ctrl+wheel, 95% cap); hover menu that always fits; **edit in place** — the pin edit toolbar also has Copy/Save (outputs the annotated composite and closes the pin); drag / double-click / Esc to close.
 - **Settings (new in V2.1)** — tray menu → Settings: capture-press hotkey remapping (Ctrl/Alt/Win required, conflict feedback) and default save folder.
+- **Open image for editing (new in V2.4.0)** — tray menu: *Edit Clipboard Image…* opens the clipboard image straight into the annotation editor; *Open Recent Image…* reopens the last output of this session (confirm/copy/save all count, even copy-without-save), falling back to the newest png/jpg in the save folder. Both land in the same edit mode as pin editing (8 annotation tools, select tool, undo/redo, copy/save).
 
 ![Settings](img/settings.png)
 
@@ -179,10 +190,11 @@ A single portable folder (`TackShot.jar` + `lib\` + `start.bat`) — **no exe at
 
 ## Privacy
 
-Fully offline. Auto-start is opt-in (HKCU Run, off by default).
+Fully offline by default: capture / pin / edit never touch the network. The only online action is **Check for Updates** in the tray menu (since V2.3.0, FR-6.9), which connects to GitHub only when you click it. Auto-start is opt-in (HKCU Run, off by default).
 
 ## FAQ
 
+- **Update check / download fails** — usually GitHub is unreachable from your network; choose "Yes" in the dialog to open the releases page and update manually (unzip over the install dir, `config.json` is kept). Update log: `tackshot-update.log` in the install dir.
 - **start.bat does nothing** — ensure JDK/JRE 11/17 is installed and `javaw` is on PATH (or `JAVA_HOME` set); or edit the bat to point at `javaw.exe` directly.
 - **exe blocked by policy** — this package ships no exe; the whitelisted corporate `javaw.exe` hosts the app.
 - **Chinese shows as boxes on English Windows** — fixed since V2.0.2/V2.0.4 (font-fallback probing + fully self-drawn tray menu).
@@ -192,7 +204,7 @@ Fully offline. Auto-start is opt-in (HKCU Run, off by default).
 
 ```bash
 bash build.sh                          # builds dist/TackShot.jar and assembles release/ + zip
-java -jar dist/TackShot.jar --test     # smoke test (3 checks)
+java -jar dist/TackShot.jar --test     # smoke test (4 checks)
 ```
 
 Stack: Java 11 + Swing/AWT + JNA 5.14 (Apache-2.0 — see [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt); MIT License — see [LICENSE](LICENSE)).
@@ -204,6 +216,27 @@ Email: **emonzhang3438@outlook.com** — feature requests and bug reports are wa
 ---
 
 ## 更新日志 / Changelog
+
+### V2.4.0（2026-11-05）
+
+**新增 / New**
+
+- 打开图片处理（FR-6.10）：托盘菜单新增「编辑剪贴板图片…」（剪贴板有图直接进入编辑态，与 Ctrl+Alt+P 贴图的区别是进来就能标注）与「打开最近图片…」（优先取本次会话最近一次输出，覆盖仅复制未落盘场景；无存档时回退保存目录最新 png/jpg）；两者复用贴图就地编辑的八类标注 / 选择工具 / 撤销重做 / 复制 / 保存全套能力
+- Open image for editing (FR-6.10): new tray entries "Edit Clipboard Image…" (clipboard image opens directly in edit mode — unlike Ctrl+Alt+P which just pins) and "Open Recent Image…" (this session's latest output first, even copy-without-save; otherwise the newest png/jpg in the save folder); both reuse the pin editor's full annotation toolset
+
+### V2.3.1（2026-11-05）
+
+**修复 / Fixed**
+
+- 更新流程彻底去 PowerShell 化（部分杀软会拦截 bat 调用 PowerShell）：解压改在应用内完成，等待退出改用单实例锁探测（纯 cmd），安装包改标准 zip 条目
+- Update flow no longer invokes PowerShell at all (some AV products flag it): unzip is done in-app, exit-waiting probes the single-instance lock (pure cmd), package uses standard zip entries
+
+### V2.3.0（2026-11-05）
+
+**新增 / New**
+
+- 一键自动更新（FR-6.9）：托盘菜单「检查更新…」→ 查询 GitHub Releases → 有新版时展示更新说明 → 下载（进度条）→ 自动退出、替换文件并重启，`config.json` 配置保留；失败时可一键打开发布页手动更新
+- One-click auto-update (FR-6.9): tray menu "Check for Updates" → queries GitHub Releases → shows release notes → downloads with progress → exits, replaces files and restarts automatically; `config.json` is preserved, and failures offer a manual-download escape hatch
 
 ### V2.2（2026-08-24）
 

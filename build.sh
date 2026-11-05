@@ -31,7 +31,7 @@ EOF
 
 echo "[3/5] 复制运行依赖..."
 mkdir -p dist/lib
-cp lib/*.jar dist/lib/
+cp lib/jna-5.14.0.jar lib/jna-platform-5.14.0.jar dist/lib/   # 只拷运行所需的 JNA（lib/ 里还有 AI 分支的 jar，勿带入）
 unix2dos -q start.bat 2>/dev/null || true
 cp start.bat dist/start.bat
 
@@ -39,12 +39,13 @@ echo "[4/5] 组装 release/TackShot ..."
 rm -rf release/TackShot release/TackShot-java.zip release/TackShot-win64
 mkdir -p release/TackShot/lib release/TackShot/img
 cp dist/TackShot.jar release/TackShot/
-cp lib/*.jar release/TackShot/lib/
+cp lib/jna-5.14.0.jar lib/jna-platform-5.14.0.jar release/TackShot/lib/
 cp start.bat README.md LICENSE THIRD-PARTY-NOTICES.txt release/TackShot/
 cp img/*.svg img/*.png release/TackShot/img/ 2>/dev/null || true
 
 echo "[5/5] 生成 SHA256SUMS 与 zip ..."
 (cd release/TackShot && sha256sum TackShot.jar lib/*.jar start.bat README.md LICENSE > SHA256SUMS.txt)
-powershell -NoProfile -Command "Compress-Archive -Path 'release/TackShot' -DestinationPath 'release/TackShot-java.zip' -Force" >/dev/null 2>&1 || true
+# 用 jar 打 zip（条目为标准正斜杠路径；不依赖 PowerShell，更新器 java.util.zip 可直接解）
+(cd release && "$JAR" cfM TackShot-java.zip TackShot)
 
 echo "完成：dist/TackShot.jar（本地运行）与 release/TackShot/（发行包，双击 start.bat 启动）"

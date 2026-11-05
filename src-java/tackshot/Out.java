@@ -7,6 +7,7 @@ import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.Graphics2D;
 import java.awt.Window;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -61,6 +62,39 @@ final class Out {
             return ImageIO.write(img, "png", f);
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    /** FR-6.10：当前保存目录（配置目录或默认目录）中最新的一张 png/jpg/jpeg；无则 null。 */
+    static File newestImageFile() {
+        String dir = Main.cfg.outputDir.isEmpty() ? defaultSaveDir() : Main.cfg.outputDir;
+        return newestImageFileIn(new File(dir));
+    }
+
+    static File newestImageFileIn(File d) {
+        File[] fs = d.listFiles((dd, n) -> {
+            String s = n.toLowerCase(java.util.Locale.ROOT);
+            return s.endsWith(".png") || s.endsWith(".jpg") || s.endsWith(".jpeg");
+        });
+        if (fs == null || fs.length == 0) return null;
+        File best = fs[0];
+        for (File f : fs) if (f.lastModified() > best.lastModified()) best = f;
+        return best;
+    }
+
+    /** FR-6.10：读取图片文件为 RGB BufferedImage；失败返回 null。 */
+    static BufferedImage loadImage(File f) {
+        try {
+            BufferedImage raw = ImageIO.read(f);
+            if (raw == null) return null;
+            BufferedImage rgb = new BufferedImage(raw.getWidth(), raw.getHeight(),
+                    BufferedImage.TYPE_INT_RGB);
+            Graphics2D g = rgb.createGraphics();
+            g.drawImage(raw, 0, 0, null);
+            g.dispose();
+            return rgb;
+        } catch (Exception e) {
+            return null;
         }
     }
 

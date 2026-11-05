@@ -89,8 +89,8 @@ final class Pin {
         return (int) ((24 + STRIP_GAP) * sc + 0.5f);
     }
 
-    static void create(BufferedImage src) {
-        if (src == null || src.getWidth() < 1 || src.getHeight() < 1) return;
+    static Pin create(BufferedImage src) {
+        if (src == null || src.getWidth() < 1 || src.getHeight() < 1) return null;
         Pin p = new Pin();
         p.iw = src.getWidth();
         p.ih = src.getHeight();
@@ -133,6 +133,29 @@ final class Pin {
         Nat.makeActivatable(p.wnd);
         pins.add(p);
         Log.write("贴图创建：image " + p.iw + "x" + p.ih + "，当前贴图 " + pins.size() + " 个");
+        return p;
+    }
+
+    /** FR-6.10：创建贴图并直接进入编辑态（打开剪贴板/最近图片处理用）。 */
+    static void createEditing(BufferedImage src) {
+        Pin p = create(src);
+        if (p != null) p.startEditing();
+    }
+
+    /** 进入就地编辑态（与悬浮菜单『编辑』同一路径）。 */
+    private void startEditing() {
+        editing = true;
+        menuVisible = false;           // 硬不变量：编辑态下入口菜单必须隐藏
+        hover = 0;
+        hoverT.stop();
+        hideT.stop();
+        ed.reset();
+        ed.cur = Edit.Tool.None;
+        ed.widthIdx = 1;
+        Nat.forceForeground(wnd);      // 托盘菜单等后台入口打开时抢前台，保证快捷键立即可用
+        view.requestFocusInWindow();
+        render();
+        Log.write("进入贴图编辑（入口菜单强制隐藏）");
     }
 
     static int count() {
@@ -519,6 +542,7 @@ final class Pin {
 
     /** 悬浮菜单/编辑工具条"保存"共用：自动保存 + 复制剪贴板 + 关闭贴图（V2.1 合并两条路径）。 */
     private void saveImageAndClose(BufferedImage image) {
+        Main.lastOutput = image;   // FR-6.10：记录最近处理的图片
         String dir = Main.cfg.outputDir.isEmpty() ? Out.defaultSaveDir() : Main.cfg.outputDir;
         boolean jpeg = Main.cfg.format.equals("jpeg");
         String path = Out.buildSavePath(dir, jpeg ? "jpg" : "png");
@@ -552,6 +576,7 @@ final class Pin {
     private void applyEdit() {
         if (TextInput.active()) TextInput.cancel();
         img = composeEdited();
+        Main.lastOutput = img;   // FR-6.10：就地编辑完成也算一次处理
         Main.balloon("钉图 TackShot", "贴图已更新（复制请点悬浮菜单『复制』）");
         editing = false;
         shapeDrag = false;
@@ -561,16 +586,7 @@ final class Pin {
     private void onMenu(int id) {
         switch (id) {
             case Tb.TB_EDIT:
-                editing = true;
-                menuVisible = false;       // 硬不变量：编辑态下入口菜单必须隐藏
-                hover = 0;
-                hoverT.stop();
-                hideT.stop();
-                ed.reset();
-                ed.cur = Edit.Tool.None;
-                ed.widthIdx = 1;
-                view.requestFocusInWindow();
-                Log.write("进入贴图编辑（入口菜单强制隐藏）");
+                startEditing();
                 break;
             case Tb.TB_COPYIMG:
                 Clip.toClipboard(wnd, img);
@@ -615,6 +631,7 @@ final class Pin {
                 return;
             case Tb.TB_COPYIMG: {          // 编辑态"复制"（V2.1）：输出含标注合成图并关闭贴图
                 BufferedImage out = composeEdited();
+                Main.lastOutput = out;   // FR-6.10
                 boolean copied = Clip.toClipboard(wnd, out);
                 String msg = copied ? "已复制到剪贴板（含编辑）" : "复制到剪贴板失败";
                 Main.balloon("钉图 TackShot", msg);
